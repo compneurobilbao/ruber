@@ -1,7 +1,7 @@
 ruber
 ==============================
 
-Analyzing Epilepsy patients from Ruber International￼Edit
+Analyzing Epilepsy patients from Ruber International
 
 Project Organization
 ------------
