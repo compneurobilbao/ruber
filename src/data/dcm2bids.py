@@ -5,6 +5,8 @@ import shutil
 import os
 import os.path as op
 import json
+import subprocess
+
 
 if __name__ == "__main__":
 
@@ -24,11 +26,12 @@ if __name__ == "__main__":
                       op.join(RAW_DATA, 'DICOM', idx))
             for i in range(6):
                 try:
-                    os.system("heudiconv -d '" + RAW_DATA + "/DICOM" + \
-                              "/{subject}/DICOM/*/*/*0" + str(i) + "/*'" + " -s " + \
-                              idx + " -f " + RAW_DATA + \
-                              "/convertall.py -c dcm2niix -b -o '" + \
-                              RAW_DATA + "/bids'")
+                    command = 'heudiconv -d \'' + RAW_DATA + '/DICOM' + \
+                              '/{subject}/DICOM/*/*/*0' + str(i) + '/*\'' + ' -s ' + \
+                              idx + ' -f ' + RAW_DATA + \
+                              '/convertall.py -c dcm2niix -b -o ' + \
+                              RAW_DATA + '/bids'
+                    subprocess.check_output(command, shell=True)
                     shutil.rmtree(op.join(RAW_DATA,'bids', 'sub-'+idx, 'info'))
                 except:
                     pass            
@@ -45,14 +48,7 @@ if __name__ == "__main__":
 heudiconv -d '/home/asier/git/ruber/data/raw/DICOM/{subject}/DICOM/*/*/*03/*' \
               -s 001 \
               -f /home/asier/git/ruber/data/raw/convertall.py \
-              -c dcm2niix -b -o '/home/asier/git/ruber/data/raw/bids'
+              -c dcm2niix -b -o /home/asier/git/ruber/data/raw/bids
               
               
-              
-import json
-d = {"one":1, "two":2}
-json.dump(d, open("text.txt",'w'))
-
-
-d2 = json.load(open("text.txt"))
-print d2             
+            
