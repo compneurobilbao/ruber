@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from src.env import RAW_DATA
+from src.env import RAW_DATA, HEUDICONV_BIN
 import shutil
 import os
 import os.path as op
@@ -11,44 +11,52 @@ import subprocess
 if __name__ == "__main__":
 
     subjects = os.listdir(op.join(RAW_DATA, 'DICOM'))
-    
+
     try:
         dcm2bids = json.load(open(op.join(RAW_DATA, 'dcm2bidsdict')))
     except:
         dcm2bids = {}
-    
+
     for idx, subject in enumerate(subjects, start=1):
         idx = '{0:03}'.format(idx)
-        
-        if not idx in dcm2bids.keys():
+
+        if (idx not in dcm2bids.keys() or
+           not op.exists(op.join(RAW_DATA, 'bids', 'sub-'+idx))):
+
             dcm2bids[idx] = subject
             os.rename(op.join(RAW_DATA, 'DICOM', subject),
                       op.join(RAW_DATA, 'DICOM', idx))
             for i in range(6):
                 try:
-                    command = 'heudiconv -d \'' + RAW_DATA + '/DICOM' + \
-                              '/{subject}/DICOM/*/*/*0' + str(i) + '/*\'' + ' -s ' + \
-                              idx + ' -f ' + RAW_DATA + \
-                              '/convertall.py -c dcm2niix -b -o ' + \
-                              RAW_DATA + '/bids'
-                    subprocess.check_output(command, shell=True)
-                    shutil.rmtree(op.join(RAW_DATA,'bids', 'sub-'+idx, 'info'))
+                    data_dir = RAW_DATA + '/DICOM' + \
+                               '/{subject}/DICOM/*/*/*0' + str(i) + '/*'
+
+                    command = [
+                       HEUDICONV_BIN,
+                       "-d",
+                       data_dir,
+                       "-s",
+                       idx,
+                       "-f",
+                       op.join(RAW_DATA, 'convertall.py'),
+                       "-c",
+                       "dcm2niix",
+                       "-b",
+                       "-o",
+                       op.join(RAW_DATA, 'bids')
+                    ]
+
+                    output, error = subprocess.Popen(
+                                        command, universal_newlines=True,
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE).communicate()
+
+                    shutil.rmtree(op.join(RAW_DATA, 'bids', 'sub-'+idx, 'info'))
                 except:
-                    pass            
+                    if op.exists(op.join(RAW_DATA, 'bids', 'sub-'+idx, 'info')):
+                        shutil.rmtree(op.join(RAW_DATA, 'bids', 'sub-'+idx, 'info'))
         else:
             print('Subject ', subject, ' already processed')
 
-    
-    
-    json.dump(dcm2bids, open(op.join(RAW_DATA, 'dcm2bidsdict'),'w'))
+    json.dump(dcm2bids, open(op.join(RAW_DATA, 'dcm2bidsdict'), 'w'))
 
-
-    
-
-heudiconv -d '/home/asier/git/ruber/data/raw/DICOM/{subject}/DICOM/*/*/*03/*' \
-              -s 001 \
-              -f /home/asier/git/ruber/data/raw/convertall.py \
-              -c dcm2niix -b -o /home/asier/git/ruber/data/raw/bids
-              
-              
-            
