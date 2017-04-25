@@ -1,0 +1,892 @@
+#!/usr/bin/env python
+
+"""Convert DICOM TimTrio dirs based on heuristic info
+
+This function uses DicomStack and Dcm2niix to convert Siemens
+TrioTim/Prisma directories. It proceeds by extracting dicominfo from each
+subject and writing a config file $subject_id/$subject_id.auto.txt in
+the output directory. Users can create a copy of the file called
+$subject_id.edit.txt and modify it to change the files that are
+converted. This edited file will always overwrite the original file. If
+there is a need to revert to original state, please delete this edit.txt
+file and rerun the conversion
+
+"""
+
+__version__ = '0.1'
+
+import argparse
+from glob import glob
+import inspect
+import json
+import os
+import shutil
+import sys
+from tempfile import mkdtemp
+import tarfile
+
+from collections import namedtuple
+from os.path import isdir
+
+import logging
+lgr = logging.getLogger('heudiconv')
+# Rudimentary logging support.  If you want it better -- we need to have
+# more than one file otherwise it is not manageable
+logging.basicConfig(
+    format='%(levelname)s: %(message)s',
+    level=getattr(logging, os.environ.get('HEUDICONV_LOGLEVEL', 'INFO'))
+)
+lgr.debug("Starting the abomination")  # just to "run-test" logging
+
+seqinfo_fields = ['total_files_till_now',  # 0
+                  'example_dcm_file',      # 1
+                  'series_number',         # 2
+                  'dcm_dir_name',          # 3
+                  'unspecified2',          # 4
+                  'unspecified3',          # 5
+                  'dim1', 'dim2', 'dim3', 'dim4', # 6, 7, 8, 9
+                  'TR', 'TE',              # 10, 11
+                  'protocol_name',         # 12
+                  'is_motion_corrected',   # 13
+                  # Introduced with namedtuple
+                  'is_derived',            # 14
+                  'patient_id',            # 15
+                  'study_description',     # 16
+                  'referring_physician_name',     # 17
+                  'series_description',    # 18
+                  'image_type',            # 19
+                  ]
+
+SeqInfo = namedtuple('SeqInfo', seqinfo_fields)
+
+
+def save_json(filename, data):
+    """Save data to a json file
+
+    Parameters
+    ----------
+    filename : str
+        Filename to save data in.
+    data : dict
+        Dictionary to save in json file.
+
+    """
+    with open(filename, 'w') as fp:
+        json.dump(data, fp, sort_keys=True, indent=4)
+
+
+def load_json(filename):
+    """Load data from a json file
+
+    Parameters
+    ----------
+    filename : str
+        Filename to load data from.
+
+    Returns
+    -------
+    data : dict
+
+    """
+    with open(filename, 'r') as fp:
+        data = json.load(fp)
+    return data
+
+
+# They (https://github.com/nipy/heudiconv/issues/11#issuecomment-144665678)
+# wanted it as a feature to have EVERYTHING in one file, so here you come
+#
+
+#
+#  find_files utility copied/borrowed from DataLad (Copyright 2016 DataLad developers, MIT license)
+#
+
+import re
+from os.path import sep as dirsep
+from os.path import curdir
+from os.path import join as opj
+
+_VCS_REGEX = '%s\.(?:git|gitattributes|svn|bzr|hg)(?:%s|$)' % (dirsep, dirsep)
+
+
+def find_files(regex, topdir=curdir, exclude=None, exclude_vcs=True, dirs=False):
+    """Generator to find files matching regex
+
+    Parameters
+    ----------
+    regex: basestring
+    exclude: basestring, optional
+      Matches to exclude
+    exclude_vcs:
+      If True, excludes commonly known VCS subdirectories.  If string, used
+      as regex to exclude those files (regex: `%r`)
+    topdir: basestring, optional
+      Directory where to search
+    dirs: bool, optional
+      Either to match directories as well as files
+    """
+
+    for dirpath, dirnames, filenames in os.walk(topdir):
+        names = (dirnames + filenames) if dirs else filenames
+        # TODO: might want to uniformize on windows to use '/'
+        paths = (opj(dirpath, name) for name in names)
+        for path in filter(re.compile(regex).search, paths):
+            path = path.rstrip(dirsep)
+            if exclude and re.search(exclude, path):
+                continue
+            if exclude_vcs and re.search(_VCS_REGEX, path):
+                continue
+            yield path
+find_files.__doc__ %= (_VCS_REGEX,)
+
+
+def process_dicoms(fl, dcmsession=None, basedir=None, dcmfilter=None):
+    """Process list of dicoms and return  seqinfo and file group
+
+    Parameters
+    ----------
+    fl : list of str
+      List of files to consider
+    dcmsession : list of int, optional
+      List of session ids (?) for each file if `fl`
+      corresponds to multiple sessions
+    basedir : str, optional
+      Base directory relative to which filenames are provided in `fl`
+    dcmfilter : callable, optional
+      If called on dcm_data and returns True, it is used to set
+      series_id
+
+    Returns
+    -------
+    seqinfo, filegrp : list of list, dict
+      `seqinfo` is a list of info entries per each sequence (some entry
+      there defines a key for `filegrp`)
+      `filegrp` is a dictionary with files groupped per each sequence.
+    """
+    import dcmstack as ds
+    import dicom as dcm
+
+    if dcmsession is None:
+        multi_session = False
+        dcmsession = [0] * len(fl)
+    else:
+        multi_session = True
+
+    groups = [[], []]
+    mwgroup = []
+    for fidx, filename in enumerate(fl):
+        if not basedir is None:
+            filename = os.path.join(basedir, filename)
+        mw = ds.wrapper_from_data(dcm.read_file(filename, force=True))
+        try:
+            del mw.series_signature['iop']
+        except:
+            pass
+        try:
+            del mw.series_signature['ICE_Dims']
+        except:
+            pass
+        try:
+            del mw.series_signature['SequenceName']
+        except:
+            pass
+        try:
+            series_id = (dcmsession[fidx],
+                         mw.dcm_data.SeriesNumber,
+                         mw.dcm_data.ProtocolName)
+        except AttributeError:
+            # not a normal DICOM -> ignore
+            series_id = (dcmsession[fidx], -1, 'none')
+        if not series_id[0] < 0:
+            if dcmfilter is not None and dcmfilter(mw.dcm_data):
+                series_id = (dcmsession[fidx], -1, mw.dcm_data.ProtocolName)
+        if not groups:
+            mwgroup.append(mw)
+            groups[0].append(series_id)
+            groups[1].append(len(mwgroup) - 1)
+            continue
+
+        N = len(mwgroup)
+        # filter out unwanted non-image-data DICOMs by assigning
+        # a series number < 0 (see test below)
+        if not series_id[1] < 0 and mw.dcm_data[0x0008, 0x0016].repval in (
+                'Raw Data Storage',
+                'GrayscaleSoftcopyPresentationStateStorage'):
+            series_id = (dcmsession[fidx], -1, mw.dcm_data.ProtocolName)
+        #print fidx, N, filename
+        ingrp = False
+        for idx in range(N):
+            same = mw.is_same_series(mwgroup[idx])
+            #print idx, same, groups[idx][0]
+            if same:
+                ingrp = True
+                if series_id[1] >= 0:
+                    series_id = (dcmsession[fidx],
+                                 mwgroup[idx].dcm_data.SeriesNumber,
+                                 mwgroup[idx].dcm_data.ProtocolName)
+                groups[0].append(series_id)
+                groups[1].append(idx)
+        if not ingrp:
+            mwgroup.append(mw)
+            groups[0].append(series_id)
+            groups[1].append(len(mwgroup) - 1)
+
+    group_map = dict(zip(groups[0], groups[1]))
+
+    total = 0
+    filegroup = {}
+    seqinfo = []
+    # for the next line to make any sense the series_id needs to
+    # be sortable in a way that preserves the series order
+    for series, mwidx in sorted(group_map.items()):
+        if series[1] < 0:
+            # skip our fake series with unwanted files
+            continue
+        mw = mwgroup[mwidx]
+        if mw.image_shape is None:
+            # this whole thing has now image data (maybe just PSg DICOMs)
+            # nothing to see here, just move on
+            continue
+        dcminfo = mw.dcm_data
+        files = [fl[i] for i, s in enumerate(groups[0]) if s == series]
+        # turn the series_id into a human-readable string -- string is needed
+        # for JSON storage later on
+        if multi_session:
+            series = '%i-%i-%s' % series
+        else:
+            series = '%i-%s' % series[1:]
+        filegroup[series] = files
+        size = list(mw.image_shape) + [len(files)]
+        total += size[-1]
+        if len(size) < 4:
+            size.append(1)
+        try:
+            TR = float(dcminfo.RepetitionTime) / 1000.
+        except AttributeError:
+            TR = -1
+        try:
+            TE = float(dcminfo.EchoTime)
+        except AttributeError:
+            TE = -1
+
+        info = SeqInfo(
+            total,
+            os.path.split(files[0])[1],
+            series,
+            os.path.basename(os.path.dirname(files[0])),
+            '-', '-',
+            size[0], size[1], size[2], size[3],
+            TR, TE,
+            dcminfo.ProtocolName,
+            'MoCo' in dcminfo.SeriesDescription,
+            # New ones by us
+            'derived' in [x.lower() for x in dcminfo.get('ImageType', [])],
+            dcminfo.PatientID,
+            dcminfo.StudyDescription,
+            dcminfo.ReferringPhysicianName,
+            dcminfo.SeriesDescription,
+            dcminfo.ImageType,
+        )
+        # candidates
+        # dcminfo.AccessionNumber
+        #   len(dcminfo.ReferencedImageSequence)
+        #   len(dcminfo.SourceImageSequence)
+        # FOR demographics
+        # dcminfo.PatientsAge
+        # dcminfo.PatientsSex
+        lgr.debug("%30s %27s %5s nref=%-2d nsrc=%-2d %s" % (
+            info.series_number,
+            dcminfo.SeriesDescription,
+            info.is_derived,
+            len(dcminfo.get('ReferencedImageSequence', '')),
+            len(dcminfo.get('SourceImageSequence', '')),
+            info.image_type
+        ))
+        #if dcminfo.SeriesDescription == 'ep2d_bold_moco_p2':
+        #    import pdb; pdb.set_trace()
+        seqinfo.append(info)
+    lgr.info("Generated sequence info with %d entries", len(info))
+    return seqinfo, filegroup
+
+
+def write_config(outfile, info):
+    from pprint import PrettyPrinter
+    with open(outfile, 'wt') as fp:
+        fp.writelines(PrettyPrinter().pformat(info))
+
+
+def read_config(infile):
+    with open(infile, 'rt') as fp:
+        info = eval(fp.read())
+    return info
+
+
+def conversion_info(subject, outdir, info, filegroup, basedir=None, ses=None):
+    convert_info = []
+    for key, items in info.items():
+        if not items:
+            continue
+        template = key[0]
+        outtype = key[1]
+        outpath = outdir
+        for idx, itemgroup in enumerate(items):
+            if not isinstance(itemgroup, list):
+                itemgroup = [itemgroup]
+            for subindex, item in enumerate(itemgroup):
+                parameters = {}
+                if isinstance(item, dict):
+                    parameters = {k: v for k, v in item.items()}
+                    item = parameters['item']
+                    del parameters['item']
+
+                # some helper meta-varaibles
+                parameters.update(dict(
+                    item=idx + 1,
+                    subject=subject,
+                    seqitem=item,
+                    subindex=subindex + 1,
+                    session='ses-' + str(ses), # if not used -- not used -- not a problem
+                    bids_subject_session_prefix=
+                        'sub-%s' % subject + (('_ses-%s' % ses) if ses else ''),
+                    bids_subject_session_dir=
+                        'sub-%s' % subject + (('/ses-%s' % ses) if ses else ''),
+                    # referring_physician_name
+                    # study_description
+                ))
+
+                try:
+                    files = filegroup[item]
+                except KeyError:
+                    files = filegroup[unicode(item)]
+
+                if basedir is not None:
+                    files = [os.path.join(basedir, f) for f in files]
+
+                outprefix = template.format(**parameters)
+                convert_info.append((os.path.join(outpath, outprefix), outtype, files))
+
+    return convert_info
+
+
+def embed_nifti(dcmfiles, niftifile, infofile, bids_info=None, force=False, min_meta=False):
+    import nibabel as nb
+    import os
+    import json
+    import re
+    if not min_meta:
+        import dcmstack as ds
+        stack = ds.parse_and_stack(dcmfiles, force=force).values()
+        if len(stack) > 1:
+            raise ValueError('Found multiple series')
+        stack = stack[0]
+        # Create the nifti image using the data array
+        if not os.path.exists(niftifile):
+            nifti_image = stack.to_nifti(embed_meta=True)
+            nifti_image.to_filename(niftifile)
+            return ds.NiftiWrapper(nifti_image).meta_ext.to_json()
+        orig_nii = nb.load(niftifile)
+        ornt = nb.orientations.io_orientation(orig_nii.affine)
+        axcodes = nb.orientations.ornt2axcodes(ornt)
+        new_nii = stack.to_nifti(voxel_order=''.join(axcodes), embed_meta=True)
+        meta = ds.NiftiWrapper(new_nii).meta_ext.to_json()
+        meta_info = json.loads(meta)
+    if bids_info:
+        if min_meta:
+            meta_info = bids_info
+        else:
+            meta_info = dict(meta_info.items() + bids_info.items())
+        try:
+            task = re.search('(?<=_task-)\w+', os.path.basename(infofile)).group(0).split('_')[0]
+            meta_info['TaskName'] = task
+        except AttributeError: # not BIDS functional
+            pass
+    with open(infofile, 'wt') as fp:
+        json.dump(meta_info, fp, indent=3, sort_keys=True)
+    return niftifile, infofile
+
+def compress_dicoms(dicom_list, prefix, sourcedir):
+    tmpdir = mkdtemp(prefix='dicomtar')
+    outtar = os.path.join(sourcedir, prefix + '.dicom.tgz')
+    with tarfile.open(outtar, 'w:gz', dereference=True) as tar:
+        for filename in dicom_list:
+            outfile = os.path.join(tmpdir, os.path.basename(filename))
+            if not os.path.islink(outfile):
+                os.symlink(filename, outfile)
+            tar.add(outfile, recursive=False)
+    tar.close()
+    shutil.rmtree(tmpdir)
+
+
+def convert(items, symlink=True, converter=None,
+        scaninfo_suffix='.json', custom_callable=None, with_prov=False,
+        is_bids=False, sourcedir=None, min_meta=False):
+    prov_files = []
+    tmpdir = mkdtemp(prefix='heudiconvtmp')
+    for item in items:
+        if isinstance(item[1], (list, tuple)):
+            outtypes = item[1]
+        else:
+            outtypes = [item[1]]
+        prefix = item[0]
+        print('Converting %s' % prefix)
+        dirname = os.path.dirname(prefix + '.ext')
+        print(dirname)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+        for outtype in outtypes:
+            item_dicoms = item[2]
+            lgr.info("Processing %d dicoms", len(item_dicoms))
+            lgr.debug(" those dicoms are: %s", item_dicoms)
+            if outtype == 'dicom':
+                if is_bids:
+                    if not os.path.exists(sourcedir):
+                        os.makedirs(sourcedir)
+                    dicom_list = []
+                    for filename in item_dicoms:
+                        dicom_list.append(filename)
+                    compress_dicoms(dicom_list, os.path.basename(prefix), sourcedir)
+                else:
+                    dicomdir = prefix + '_dicom'
+                    if os.path.exists(dicomdir):
+                        shutil.rmtree(dicomdir)
+                    os.mkdir(dicomdir)
+                    for filename in item_dicoms:
+                        outfile = os.path.join(dicomdir, os.path.split(filename)[1])
+                        if not os.path.islink(outfile):
+                            if symlink:
+                                os.symlink(filename, outfile)
+                            else:
+                                os.link(filename, outfile)
+            elif outtype in ['nii', 'nii.gz']:
+                outname = prefix + '.' + outtype
+                scaninfo = prefix + scaninfo_suffix
+                if not os.path.exists(outname):
+                    if with_prov:
+                        from nipype import config
+                        config.enable_provenance()
+                    from nipype import Function, Node
+                    from nipype.interfaces.base import isdefined
+                    print(converter)
+                    # deprecated
+                    if converter == 'mri_convert':
+                        lgr.warn('Deprecated - use dcm2niix for future conversions')
+                        from nipype.interfaces.freesurfer.preprocess import MRIConvert
+                        convertnode = Node(MRIConvert(), name='convert')
+                        convertnode.base_dir = tmpdir
+                        if outtype == 'nii.gz':
+                            convertnode.inputs.out_type = 'niigz'
+                        convertnode.inputs.in_file = item_dicoms[0]
+                        convertnode.inputs.out_file = os.path.abspath(outname)
+                        #cmd = 'mri_convert %s %s' % (item[2][0], outname)
+                        #print(cmd)
+                        #os.system(cmd)
+                        res = convertnode.run()
+                    elif converter in {'dcm2nii', 'dcm2niix'}:
+                        from nipype.interfaces.dcm2nii import Dcm2nii, Dcm2niix
+                        convertnode = Node(
+                            {'dcm2nii': Dcm2nii,
+                             'dcm2niix': Dcm2niix}[converter](),
+                            name='convert')
+                        convertnode.base_dir = tmpdir
+                        convertnode.inputs.source_names = item_dicoms
+                        if converter == 'dcm2nii':
+                            convertnode.inputs.gzip_output = outtype == 'nii.gz'
+                        else:
+                            convertnode.inputs.out_filename = os.path.basename(dirname +'_%e')
+                        convertnode.inputs.terminal_output = 'allatonce'
+                        res = convertnode.run()
+                        if isinstance(res.outputs.converted_files, list):
+                            lgr.warning(
+                                "Following series likely has multiple orientations: ",
+                                item_dicoms
+                            )
+                            for fl in res.outputs.converted_files:
+                                idx = fl.split('_')[-1][0:-7] # get echo number, remove .nii.gz
+                                outname = prefix + '-' + str(idx) + '.' + outtype
+                                shutil.copyfile(fl, outname)
+                        else:
+                            shutil.copyfile(res.outputs.converted_files, outname)
+                        if isdefined(res.outputs.bvecs):
+                            outname_bvecs = prefix + '.bvec'
+                            outname_bvals = prefix + '.bval'
+                            shutil.copyfile(res.outputs.bvecs, outname_bvecs)
+                            shutil.copyfile(res.outputs.bvals, outname_bvals)
+
+                        if converter == 'dcm2niix' \
+                                and isdefined(res.outputs.bids):
+                            ### extract bids
+                            if isinstance(res.outputs.bids, list):
+                                lgr.warning("There was someone catching lists!")
+                                for fl in res.outputs.bids:
+                                    idx = fl.split('_')[-1][0:-5] # get echo number, remove .json
+                                    scaninfo = prefix + '_' + str(idx) + '.json'
+                                    shutil.copyfile(fl, scaninfo)
+                            else:
+                                shutil.copyfile(res.outputs.bids, scaninfo)
+
+                    if with_prov:
+                        prov_file = prefix + '_prov.ttl'
+                        shutil.copyfile(os.path.join(convertnode.base_dir,
+                                                     convertnode.name,
+                                                    'provenance.ttl'),
+                                        prov_file)
+                        prov_files.append(prov_file)
+
+                from nipype import Node, Function
+                embedfunc = Node(Function(input_names=['dcmfiles',
+                                                       'niftifile',
+                                                       'infofile',
+                                                       'bids_info',
+                                                       'force',
+                                                       'min_meta'],
+                                          output_names=['outfile',
+                                                        'meta'],
+                                         function=embed_nifti),
+                                 name='embedder')
+                embedfunc.inputs.dcmfiles = item_dicoms
+                embedfunc.inputs.niftifile = os.path.abspath(outname)
+                embedfunc.inputs.infofile = os.path.abspath(scaninfo)
+                embedfunc.inputs.min_meta = min_meta
+                if is_bids and (converter == 'dcm2niix'):
+                    embedfunc.inputs.bids_info = load_json(os.path.abspath(scaninfo))
+                embedfunc.inputs.force = True
+                embedfunc.base_dir = tmpdir
+                cwd = os.getcwd()
+                try:
+                    res = embedfunc.run()
+                    os.chmod(scaninfo, 0o0440)
+                    if with_prov:
+                        g = res.provenance.rdf()
+                        g.parse(prov_file,
+                                format='turtle')
+                        g.serialize(prov_file, format='turtle')
+                        os.chmod(prov_file, 0o0440)
+                except:
+                    os.chdir(cwd)
+                os.chmod(outname, 0o0440)
+
+        if not custom_callable is None:
+            custom_callable(*item)
+    shutil.rmtree(tmpdir)
+
+
+def convert_dicoms(subjs, dicom_dir_template, outdir, heuristic_file, converter,
+                   queue=None, anon_sid_cmd=None, anon_outdir=None, with_prov=False,
+                   ses=None, is_bids=False, sbatch_args='-N1 -c2 --mem=20G -t 01:00:00',
+                   min_meta=False):
+    
+    if '%s' in dicom_dir_template:
+        raise ValueError("Formatting DICOM search pattern with '%s' is "
+                         "deprecated. Please indicate participant ID with "
+                         "'{subject}' and (optionally) timepoint with '{session}'.")
+    
+    for sid in subjs:
+        tmpdir = None
+        if queue:
+            # TODO This needs to be updated to better scale with additional args
+            progname = os.path.abspath(inspect.getfile(inspect.currentframe()))
+            convertcmd = ' '.join(['python', progname, '-d', dicom_dir_template,
+                                   '-o', outdir, '-f', heuristic_file, '-s', sid,
+                                   '-c', converter])
+            if ses:
+                convertcmd += " --ses " + str(ses)
+            if with_prov:
+                convertcmd += " --with-prov"
+            if is_bids:
+                convertcmd += " --bids"
+            if min_meta:
+                convertcmd += " --minmeta"
+            script_file = 'dicom-%s.sh' % sid
+            with open(script_file, 'wt') as fp:
+                fp.writelines(['#!/bin/bash\n', convertcmd])
+            outcmd = 'sbatch -J dicom-%s -p %s %s %s' % (sid, queue, sbatch_args, script_file)
+            os.system(outcmd)
+            continue
+
+        # TODO: RF into a function
+        # expand the input template
+        if sid:
+            sdir = dicom_dir_template.format(subject=sid, session=ses)
+            # and see what matches
+            fl = sorted(glob(sdir))
+        else:
+            # we were given no subject so we consider dicom_dir_template to be
+            # and actual directory to process
+            if not isdir(dicom_dir_template):
+                raise ValueError(
+                    "No subject id was provided, and dicom_dir_template=%s is not "
+                    "an existing directory to traverse" % str(dicom_dir_template)
+                )
+            fl = sorted(find_files('.*', topdir=dicom_dir_template))
+
+        lgr.info("Processing %d dicoms", len(fl))
+        dcmsessions = None
+        # some people keep compressed tarballs around -- be nice!
+        if len(fl) and tarfile.is_tarfile(fl[0]):
+            # check if we got a list of tarfiles
+            if not len(fl) == sum([tarfile.is_tarfile(i) for i in fl]):
+                raise ValueError("some but not all input files are tar files")
+            # tarfiles already know what they contain, and often the filenames
+            # are unique, or at least in a unqiue subdir per session
+            # strategy: extract everything in a temp dir and assemble a list
+            # of all files in all tarballs
+            content = []
+            tmpdir = mkdtemp(prefix='heudiconvtmp')
+            # needs sorting to keep the generated "session" label deterministic
+            for i, t in enumerate(sorted(fl)):
+                tf = tarfile.open(t)
+                # check content and sanitize permission bits
+                tmembers = tf.getmembers()
+                for tm in tmembers:
+                    tm.mode = 0o700
+                # get all files, assemble full path in tmp dir
+                tf_content = [m.name for m in tmembers if m.isfile()]
+                content += tf_content
+                if len(fl) > 1:
+                    # more than one tarball, take care of "session" indicator
+                    if dcmsessions is None:
+                        dcmsessions = []
+                    dcmsessions += ([i] * len(tf_content))
+                # extract into tmp dir
+                tf.extractall(path=tmpdir, members=tmembers)
+            fl = content
+
+        #dcmfile = dcm.read_file(fl[0], force=True)
+        #print sid, 'Dicom: ', dcmfile.PatientName, sid == dcmfile.PatientName
+
+        seqinfo = None   # we might need it earlier than later
+        if not sid:
+            # figure out the sid out of available information
+            seqinfo, filegroup = process_dicoms(
+                fl, dcmsessions, basedir=tmpdir,
+                dcmfilter=getattr(mod, 'filter_dicom', None))
+            # XXX session information handling is somewhat backwards since done above
+            # already. Moreover above logic with .edit.txt file -- seqinfo is
+            # available only on initial run - TODO
+            if not hasattr(mod, 'get_session_subject_id'):
+                raise ValueError(
+                    "%s has no get_session_subject_id needed to figure out "
+                    "subject/session from DICOMs" % mod
+                )
+
+            session_subject_ids = set(mod.get_session_subject_id(s)
+                                      for s in seqinfo)
+            assert len(session_subject_ids) == 1, \
+                "atm we support processing only 1 subject/session at a time"
+            sess, sid = session_subject_ids.pop()
+
+
+        if is_bids and not sid.isalnum(): # alphanumeric only
+            old_sid = sid
+            cleaner = lambda y: ''.join([x for x in y if x.isalnum()])
+            sid = cleaner(sid) #strip out
+            lgr.warn('{0} contained nonalphanumeric character(s), subject '
+                     'ID was cleaned to be {1}'.format(old_sid, sid))
+
+        # Figure out where to stick supplemental info files
+        if is_bids and not sid.startswith('sub-'):
+            idir = os.path.join(outdir, 'sub-' + sid)
+        else:
+            idir = os.path.join(outdir, sid)
+        if is_bids and ses:
+            idir = os.path.join(idir, 'ses-%s' % str(ses))
+        # all heudiconv stuff in info folder
+        idir = os.path.join(idir, 'info')
+        if not os.path.exists(idir):
+            os.makedirs(idir)
+
+        #
+        # Anonymization
+        #
+        anon_sid = sid
+        if anon_sid_cmd is not None:
+            from subprocess import check_output
+            anon_sid = check_output([anon_sid_cmd, sid]).strip()
+            lgr.info("Anonymized sid %s into %s", sid, anon_sid)
+        else:
+            anon_outdir = idir
+
+        shutil.copy(heuristic_file, idir)
+        path, fname = os.path.split(heuristic_file)
+        sys.path.append(path)
+        mod = __import__(fname.split('.')[0])
+
+        infofile = os.path.join(idir, '%s.auto.txt' % sid)
+        editfile = os.path.join(idir, '%s.edit.txt' % sid)
+        if os.path.exists(editfile):  # XXX may be condition on seqinfo is None
+            lgr.info("Reloading existing filegroup.json because %s exists",
+                     editfile)
+            info = read_config(editfile)
+            filegroup = load_json(os.path.join(idir, 'filegroup.json'))
+        else:
+            if seqinfo is None:
+                seqinfo, filegroup = process_dicoms(
+                    fl, dcmsessions, basedir=tmpdir,
+                    dcmfilter=getattr(mod, 'filter_dicom', None))
+            else:
+                lgr.debug("DICOMS were already processed, reusing that info")
+            save_json(os.path.join(idir, 'filegroup.json'), filegroup)
+            with open(os.path.join(idir, 'dicominfo.txt'), 'wt') as fp:
+                fp.write('\t'.join([val for val in seqinfo_fields]) + '\n')
+                for seq in seqinfo:
+                    fp.write('\t'.join([str(val) for val in seq]) + '\n')
+            lgr.debug("Calling out to %s.infodict", mod)
+            info = mod.infotodict(seqinfo)
+            write_config(infofile, info)
+            write_config(editfile, info)
+
+        #
+        # Conversion
+        #
+
+        sourcedir = None
+        if is_bids:
+            sourcedir = os.path.join(outdir, 'sourcedata', sid)
+            if ses:
+                sourcedir = os.path.join(sourcedir, 'ses-%s' % str(ses))
+
+        #tdir = os.path.join(anon_outdir, anon_sid)
+        if anon_sid_cmd:
+            tdir = os.path.join(anon_outdir, anon_sid)
+        else:
+            tdir = os.path.dirname(idir)
+
+        if converter != 'none':
+            lgr.info("Doing conversion using %s", converter)
+            cinfo = conversion_info(anon_sid, tdir, info, filegroup,
+                                    basedir=tmpdir,
+                                    ses=ses)
+            convert(cinfo,
+                    converter=converter,
+                    scaninfo_suffix=getattr(
+                        mod, 'scaninfo_suffix', '.json'),
+                    custom_callable=getattr(
+                        mod, 'custom_callable', None),
+                    with_prov=with_prov,
+                    is_bids=is_bids,
+                    sourcedir=sourcedir,
+                    min_meta=min_meta)
+
+        #
+        # Cleanup
+        #
+        if tmpdir is not None:
+            # clean up tmp dir with extracted tarball
+            shutil.rmtree(tmpdir)
+
+#
+# Additional handlers
+#
+def is_interactive():
+    """Return True if all in/outs are tty"""
+    # TODO: check on windows if hasattr check would work correctly and add value:
+    #
+    return sys.stdin.isatty() and sys.stdout.isatty() and sys.stderr.isatty()
+
+
+_sys_excepthook = sys.excepthook # Just in case we ever need original one
+
+def setup_exceptionhook():
+    """Overloads default sys.excepthook with our exceptionhook handler.
+
+       If interactive, our exceptionhook handler will invoke
+       pdb.post_mortem; if not interactive, then invokes default handler.
+    """
+
+    def _pdb_excepthook(type, value, tb):
+        if is_interactive():
+            import traceback, pdb
+            traceback.print_exception(type, value, tb)
+            print()
+            pdb.post_mortem(tb)
+        else:
+            lgr.warn("We cannot setup exception hook since not in interactive mode")
+            # we are in interactive mode or we don't have a tty-like
+            # device, so we call the default hook
+            #sys.__excepthook__(type, value, tb)
+            _sys_excepthook(type, value, tb)
+
+    sys.excepthook = _pdb_excepthook
+
+
+def main(args=None):
+    docstr = '\n'.join((__doc__,
+"""
+           Example:
+
+           heudiconv -d rawdata/%s -o . -f heuristic.py -s s1 s2
+s3
+"""))
+    parser = argparse.ArgumentParser(description=docstr)
+    parser.add_argument('--version', action='version', version=__version__)
+    parser.add_argument('-d', '--dicom_dir_template',
+                        dest='dicom_dir_template',
+                        required=True,
+                        help='''location of dicomdir that can be indexed with
+                        subject id {subject} and session {session}.
+                        Tarballs (can be compressed) are supported
+                        in addition to directory. All matching tarballs for a
+                        subject are extracted and their content processed in
+                        a single pass''')
+    parser.add_argument('-s', '--subjects', dest='subjs', required=True,
+                        type=str, nargs='+', help='list of subjects')
+    parser.add_argument('-c', '--converter', dest='converter',
+                        required=True,
+                        choices=('dcm2niix',
+                                 'none'),
+                        help='''tool to use for dicom conversion. Setting to
+                        "none" disables the actual conversion step -- useful
+                        for testing heuristics.''')
+    parser.add_argument('-o', '--outdir', dest='outputdir',
+                        default=os.getcwd(),
+                        help='''output directory for conversion setup (for
+                        further customization and future reference. This
+                        directory will refer to non-anonymized subject IDs''')
+    parser.add_argument('-a', '--conv-outdir', dest='conv_outputdir',
+                        default=None,
+                        help='''output directory for converted files. By
+                        default this is identical to --outdir. This option is
+                        most useful in combination with --anon-cmd''')
+    parser.add_argument('--anon-cmd', dest='anon_cmd',
+                        default=None,
+                        help='''command to run to convert subject IDs used for
+                        DICOMs to anonymmized IDs. Such command must take a
+                        single argument and return a single anonymized ID.
+                        Also see --conv-outdir''')
+    parser.add_argument('-f', '--heuristic', dest='heuristic_file', required=True,
+                        help='python script containing heuristic')
+    parser.add_argument('-q', '--queue', dest='queue', default=None,
+                        help='''select batch system to submit jobs to instead
+                        of running the conversion serially''')
+    parser.add_argument('-p', '--with-prov', dest='with_prov', action='store_true',
+                        help='''Store additional provenance information. Requires python-rdflib.''')
+    parser.add_argument('-ss', '--ses', dest='session', default=None,
+                        help='''session for longitudinal studies, default is none''')
+    parser.add_argument('-b', '--bids', dest='bids', action='store_true',
+                        help='''flag for output into BIDS structure''')
+    parser.add_argument('--dbg', action='store_true', dest='debug',
+                        help="do not catch exceptions and show exception traceback")
+    parser.add_argument('--sbargs', dest='sbatch_args', default='-N1 -c2 --mem=20G -t 01:00:00',
+                        help="Additional sbatch arguments if running with queue arg")
+    parser.add_argument('--minmeta', dest='minmeta', action='store_true',
+                        help="Exclude dcmstack's meta information in sidecar jsons")
+    args = parser.parse_args(args)
+
+    if args.debug:
+        setup_exceptionhook()
+    convert_dicoms(args.subjs, os.path.abspath(args.dicom_dir_template),
+                   os.path.abspath(args.outputdir),
+                   heuristic_file=os.path.realpath(args.heuristic_file),
+                   converter=args.converter,
+                   queue=args.queue,
+                   anon_sid_cmd=args.anon_cmd,
+                   anon_outdir=args.conv_outputdir,
+                   with_prov=args.with_prov,
+                   ses=args.session,
+                   is_bids=args.bids,
+                   sbatch_args=args.sbatch_args,
+                   min_meta=args.minmeta)
+
+
+if __name__ == '__main__':
+    main()
