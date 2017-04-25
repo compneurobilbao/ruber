@@ -21,14 +21,14 @@ DATA_DIR = BIDS_DATA
 OUTPUT_DIR = op.join(DATA, 'processed')
 WORK_DIR = op.join(DATA, 'interim')
 
-docker run -ti  \
+docker run -ti --rm \
 	-v $DATA_DIR:/data:ro \
 	-v $OUTPUT_DIR:/output \
 	-v $WORK_DIR:/work \
 	-w /work \
 	poldracklab/fmriprep:latest \
 	/data /output participant --participant_label sub-001 \
-	-w /work --no-freesurfer 
+	-w /work --no-freesurfer --ignore fieldmaps
 
 
 """
@@ -40,8 +40,8 @@ OUTPUT_DIR = op.join(DATA, 'processed')
 WORK_DIR = op.join(DATA, 'interim')
 
 
-docker run -ti  \
-	-v $DATA_DIR:/data \
+docker run -ti --rm \
+	-v $DATA_DIR:/data:ro \
 	-v $OUTPUT_DIR:/output \
 	-v $WORK_DIR:/work \
 	-w /work \
@@ -49,7 +49,7 @@ docker run -ti  \
 	/data /output participant --participant_label sub-001 \
 	-w /work --verbose-reports
 
-
+sudo chmod 777 -R DATA_DIR
 
 
 
