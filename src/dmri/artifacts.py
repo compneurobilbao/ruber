@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
+
 """
 Nipype workflow to detect and remove ardifacts in diffusion MRI.
 """
 import os.path as op
+from os.path import join as opj
 
+from   nipype.interfaces.io import SelectFiles, DataSink
 import nipype.pipeline.engine as pe
 from   nipype.interfaces.fsl import BET, ExtractROI
 from   nipype.interfaces.utility import Function, IdentityInterface
@@ -26,6 +29,10 @@ from ..utils   import (get_datasink,
                        extension_duplicates,
                        )
 
+# artifact_detect
+do_rapidart = True
+# nlmeans denoise
+apply_nlmeans = True
 
 def dti_artifact_correction(wf_name="dti_artifact_correction"):
     """ Run the diffusion MRI pre-processing workflow against the diff files in `data_dir`.
@@ -92,7 +99,9 @@ def dti_artifact_correction(wf_name="dti_artifact_correction"):
     Returns
     -------
     wf: nipype Workflow
-    """
+    """   
+    
+    
     # specify input and output fields
     in_fields  = ["diff", "bval", "bvec"]
     out_fields = ["eddy_corr_file",
@@ -104,7 +113,7 @@ def dti_artifact_correction(wf_name="dti_artifact_correction"):
                   "avg_b0",
                  ]
 
-    do_rapidart = get_config_setting("dmri.artifact_detect", True)
+
     if do_rapidart:
         out_fields += ["hmc_corr_file",
                        "hmc_corr_bvec",
@@ -118,11 +127,11 @@ def dti_artifact_correction(wf_name="dti_artifact_correction"):
                       ]
 
     # input interface
-    dti_input = setup_node(IdentityInterface(fields=in_fields, mandatory_inputs=True),
+    dti_input = pe.Node(IdentityInterface(fields=in_fields, mandatory_inputs=True),
                            name="dti_art_input")
 
     # resample
-    resample = setup_node(Function(function=reslice,
+    resample = pe.Node(Function(function=reslice,
                                    input_names=['in_file', 'new_zooms', 'order', 'out_file'],
                                    output_names=['out_file']),
                           name='dti_reslice')
@@ -139,7 +148,7 @@ def dti_artifact_correction(wf_name="dti_artifact_correction"):
     # For Eddy, the mask is only used for selecting voxels for the estimation of the hyperparameters,
     # so isn’t very critical.
     # Note also that it is better with a too conservative (small) mask than a too big.
-    bet_dwi0 = setup_node(BET(frac=0.3, mask=True, robust=True),
+    bet_dwi0 = pe.Node(BET(frac=0.3, mask=True, robust=True),
                           name='bet_dwi_pre')
 
     pick_first = lambda lst: lst[0]
@@ -149,19 +158,19 @@ def dti_artifact_correction(wf_name="dti_artifact_correction"):
         # head motion correction
         hmc = hmc_pipeline()
 
-        art = setup_node(rapidart_dti_artifact_detection(), name="detect_artifacts")
+        art = pe.Node(rapidart_dti_artifact_detection(), name="detect_artifacts")
 
     # Eddy
-    eddy = setup_node(Eddy(method='jac'), name="eddy")
+    eddy = pe.Node(Eddy(method='jac'), name="eddy")
 
     ## acquisition parameters for Eddy
-    write_acqp = setup_node(Function(function=dti_acquisition_parameters,
+    write_acqp = pe.Node(Function(function=dti_acquisition_parameters,
                                      input_names=["in_file"],
                                      output_names=["out_acqp", "out_index"],),
                             name="write_acqp")
 
     ## rotate b-vecs
-    rot_bvec = setup_node(Function(function=eddy_rotate_bvecs,
+    rot_bvec = pe.Node(Function(function=eddy_rotate_bvecs,
                                    input_names=["in_bvec", "eddy_params"],
                                    output_names=["out_file"],),
                           name="rot_bvec")
@@ -172,19 +181,18 @@ def dti_artifact_correction(wf_name="dti_artifact_correction"):
                                    output_names=['out_file'],),
                           name='b0_avg_post')
 
-    bet_dwi1 = setup_node(BET(frac=0.3, mask=True, robust=True),
+    bet_dwi1 = pe.Node(BET(frac=0.3, mask=True, robust=True),
                           name='bet_dwi_post')
 
-    # nlmeans denoise
-    apply_nlmeans = get_config_setting("dmri.apply_nlmeans", True)
+
     if apply_nlmeans:
-        nlmeans = setup_node(Function(function=nlmeans_denoise,
+        nlmeans = pe.Node(Function(function=nlmeans_denoise,
                                       input_names=['in_file', 'mask_file', 'out_file', 'N'],
                                       output_names=['out_file']),
                              name='nlmeans_denoise')
 
     # output interface
-    dti_output = setup_node(IdentityInterface(fields=out_fields),
+    dti_output = pe.Node(IdentityInterface(fields=out_fields),
                             name="dti_art_output")
 
     # Create the workflow object
@@ -282,7 +290,7 @@ def dti_artifact_correction(wf_name="dti_artifact_correction"):
     return wf
 
 
-def attach_dti_artifact_correction(main_wf, wf_name="dti_artifact_correction"):
+def run_dti_artifact_correction():
     """ Attach the FSL-based diffusion MRI artifact detection and correction
     workflow to the `main_wf`.
 
@@ -309,15 +317,41 @@ def attach_dti_artifact_correction(main_wf, wf_name="dti_artifact_correction"):
     -------
     main_wf: nipype Workflow
     """
-    in_files = get_input_node(main_wf)
-    datasink = get_datasink  (main_wf)
+    experiment_dir = '/home/asier/git/ruber'             # location of experiment folder
+    #data_dir = opj(experiment_dir, 'data')  # location of data folder
+    
+    subject_list = ['sub-001']    # list of subject identifiers
+    
+    # name of output folder
+    output_dir = opj(experiment_dir, 'data', 'processed')     
+    working_dir = opj(experiment_dir,'data', 'interim') 
 
+
+    # Infosource - a function free node to iterate over the list of subject names
+    infosource = pe.Node(IdentityInterface(fields=['subject_id']),
+                      name="infosource")
+    infosource.iterables = [('subject_id', subject_list)]
+    
+    # SelectFiles
+    templates = {'diff': 'data/raw/bids/{subject_id}/dwi/{subject_id}_dwi.nii.gz',
+                 'bval': 'data/raw/bids/{subject_id}/dwi/{subject_id}_dwi.bval',
+                 'bvec': 'data/raw/bids/{subject_id}/dwi/{subject_id}_dwi.bvec'}
+    selectfiles = pe.Node(SelectFiles(templates,
+                                      base_directory=experiment_dir),
+                          name="selectfiles")
+    
+    # Datasink
+    datasink = pe.Node(DataSink(base_directory=experiment_dir,
+                             container=output_dir),
+                    name="datasink")
+        
+    
     # The workflow box
-    art_dti_wf = dti_artifact_correction(wf_name=wf_name)
+    art_dti_wf = dti_artifact_correction()
 
     # dataSink output substitutions
     ## The base name of the 'diff' file for the substitutions
-    diff_fbasename = remove_ext(op.basename(get_input_file_name(in_files, 'diff')))
+    diff_fbasename = remove_ext(op.basename(get_input_file_name(selectfiles, 'diff')))
 
     regexp_subst = [
                     (r"/brain_mask_{diff}_space\.nii$", "/brain_mask.nii"),
@@ -329,24 +363,28 @@ def attach_dti_artifact_correction(main_wf, wf_name="dti_artifact_correction"):
     datasink.inputs.regexp_substitutions = extend_trait_list(datasink.inputs.regexp_substitutions,
                                                              regexp_subst)
 
-    # input and output diffusion MRI workflow to main workflow connections
-    main_wf.connect([(in_files,   art_dti_wf, [("diff", "dti_art_input.diff"),
-                                               ("bval", "dti_art_input.bval"),
-                                               ("bvec", "dti_art_input.bvec"),
-                                              ]),
-                     (art_dti_wf, datasink,   [("dti_art_output.eddy_corr_file", "diff.@eddy_corr_file"),
-                                               ("dti_art_output.bvec_rotated",   "diff.@bvec_rotated"),
-                                               ("dti_art_output.brain_mask_1",   "diff.@brain_mask_1"),
-                                               ("dti_art_output.brain_mask_2",   "diff.@brain_mask_2"),
-                                               ("dti_art_output.acqp",           "diff.@acquisition_pars"),
-                                               ("dti_art_output.index",          "diff.@acquisition_idx"),
-                                               ("dti_art_output.avg_b0",         "diff.@avg_b0"),
-                                              ]),
-                    ])
 
-    do_rapidart = get_config_setting("dmri.artifact_detect", True)
+    wf = pe.Workflow(name='artifact')
+    wf.base_dir = working_dir
+    
+    # input and output diffusion MRI workflow to main workflow connections
+    wf.connect([(infosource, selectfiles, [('subject_id', 'subject_id')]),
+                (selectfiles,   art_dti_wf, [("diff", "dti_art_input.diff"),
+                                             ("bval", "dti_art_input.bval"),
+                                             ("bvec", "dti_art_input.bvec"),
+                                             ]),
+                (art_dti_wf, datasink, [("dti_art_output.eddy_corr_file", "diff.@eddy_corr_file"),
+                                        ("dti_art_output.bvec_rotated",   "diff.@bvec_rotated"),
+                                        ("dti_art_output.brain_mask_1",   "diff.@brain_mask_1"),
+                                        ("dti_art_output.brain_mask_2",   "diff.@brain_mask_2"),
+                                        ("dti_art_output.acqp",           "diff.@acquisition_pars"),
+                                        ("dti_art_output.index",          "diff.@acquisition_idx"),
+                                        ("dti_art_output.avg_b0",         "diff.@avg_b0"),
+                                        ]),
+                ])
+
     if do_rapidart:
-        main_wf.connect([(art_dti_wf, datasink, [
+        wf.connect([(art_dti_wf, datasink, [
                                                  ("dti_art_output.hmc_corr_file",          "diff.artifact_stats.@hmc_corr_file"),
                                                  ("dti_art_output.hmc_corr_bvec",          "diff.artifact_stats.@hmc_rot_bvec"),
                                                  ("dti_art_output.hmc_corr_xfms",          "diff.artifact_stats.@hmc_corr_xfms"),
@@ -359,4 +397,6 @@ def attach_dti_artifact_correction(main_wf, wf_name="dti_artifact_correction"):
                                                 ]),
                         ])
 
-    return main_wf
+    
+    wf.run()
+    return

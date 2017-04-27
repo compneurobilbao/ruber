@@ -4,7 +4,7 @@ Diffusion Tensor Image preprocessing and tensor model fitting workflow.
 """
 import os.path as op
 
-from .artifacts import attach_dti_artifact_correction
+from .artifacts import run_dti_artifact_correction
 from .coregister import spm_anat_to_diff_coregistration
 from .._utils  import format_pair_list
 #from ..config  import check_atlas_file
@@ -52,7 +52,7 @@ def attach_spm_fsl_dti_preprocessing(main_wf, wf_name="spm_fsl_dti_preprocessing
     anat_output = get_interface_node(main_wf, 'anat_output')
 
     # attach the artifact detection and correction pipeline
-    main_wf = attach_dti_artifact_correction(main_wf)
+    main_wf = run_dti_artifact_correction(main_wf)
     dti_art_output = get_interface_node(main_wf, 'dti_art_output')
 
     # The workflow boxes
