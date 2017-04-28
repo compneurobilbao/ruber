@@ -77,13 +77,15 @@ def spm_anat_to_diff_coregistration(wf_name="spm_anat_to_diff_coregistration"):
     wf: nipype Workflow
     """
     # specify input and output fields
-    in_fields  = ["avg_b0", "tissues", "anat", "atlas_anat"]
+    in_fields  = ["avg_b0", "brain_mask", "anat", "atlas_anat"]
     out_fields = ["anat_diff",
-                  "tissues_diff",
                   "brain_mask_diff",
                   "atlas_diff",
                   ]
     
+    gunzip_atlas = pe.Node(Gunzip(), name="gunzip_atlas")
+    gunzip_anat = pe.Node(Gunzip(), name="gunzip_anat")
+    gunzip_brain_mask = pe.Node(Gunzip(), name="brain_mask")
     coreg_atlas = pe.Node(spm_coregister(cost_function="mi"), name="coreg_atlas")
     # set the registration interpolation to nearest neighbour.
     coreg_atlas.inputs.write_interp = 0
@@ -96,13 +98,11 @@ def spm_anat_to_diff_coregistration(wf_name="spm_anat_to_diff_coregistration"):
     coreg_b0  = pe.Node(spm_coregister(cost_function="mi"), name="coreg_b0")
 
     # co-registration
-    brain_sel    = pe.Node(Select(index=[0, 1, 2]),            name="brain_sel")
-    coreg_split  = pe.Node(Split(splits=[1, 2], squeeze=True), name="coreg_split")
-
-    brain_merge  = pe.Node(MultiImageMaths(), name="brain_merge")
-    brain_merge.inputs.op_string = "-add '%s' -add '%s' -abs -kernel gauss 4 -dilM -ero -kernel gauss 1 -dilM -bin"
-    brain_merge.inputs.out_file = "brain_mask_diff.nii.gz"
-
+    coreg_brain  = pe.Node(spm_coregister(cost_function="mi"), name="coreg_brain")
+    # set the registration interpolation to nearest neighbour.
+    coreg_brain.inputs.write_interp = 0
+    
+    
     # output interface
     dti_output = pe.Node(IdentityInterface(fields=out_fields),
                          name="dti_co_output")
@@ -111,30 +111,30 @@ def spm_anat_to_diff_coregistration(wf_name="spm_anat_to_diff_coregistration"):
     wf = pe.Workflow(name=wf_name)
 
     # Connect the nodes
-    wf.connect([
-                # co-registration
-                (dti_input, coreg_b0, [("anat", "source")]),
-
-                (dti_input,     brain_sel,   [("tissues",             "inlist")]),
-                (brain_sel,     coreg_b0,    [(("out", flatten_list), "apply_to_files")]),
-
+    wf.connect([(dti_input, gunzip_atlas,   [("atlas_anat",   "in_file")]),
+                (dti_input,  gunzip_anat , [("anat",          "in_file")]),
                 (dti_input,     gunzip_b0,   [("avg_b0",   "in_file")]),
-                (gunzip_b0,     coreg_b0,    [("out_file", "target")]),
+                (dti_input,     gunzip_brain_mask,   [("brain_mask",   "in_file")]),
+                # co-registration
+                
+                
+                # some of this code is not needed
+                (gunzip_b0,  coreg_b0,    [("out_file", "target")]),
+                (gunzip_brain_mask, coreg_b0, [("out_file",   "apply_to_files")]),
+                (gunzip_anat, coreg_b0, [("out_file", "source")]),
 
-                (coreg_b0,      coreg_split, [("coregistered_files", "inlist")]),
-                (coreg_split,   brain_merge, [("out1",               "in_file")]),
-                (coreg_split,   brain_merge, [("out2",               "operand_files")]),
-
-                (dti_input,   coreg_atlas, [("anat",               "source"),
-                                                ("atlas_anat",         "apply_to_files"),
-                                               ]),
-                (gunzip_b0,   coreg_atlas, [("out_file",           "target")]),
-                (coreg_atlas, dti_output,  [("coregistered_files", "atlas_diff")]),
-              
+                (gunzip_b0,     coreg_atlas,    [("out_file", "target")]),
+                (gunzip_atlas,   coreg_atlas, [("out_file",   "apply_to_files")]),
+                (gunzip_anat,   coreg_atlas, [("out_file",    "source"), ]),
+                
+                (gunzip_b0,     coreg_brain,    [("out_file", "target")]),
+                (gunzip_brain_mask,   coreg_brain, [("out_file",   "apply_to_files")]),
+                (gunzip_anat,   coreg_brain, [("out_file",    "source"), ]),
+                
                 # output
+                (coreg_atlas, dti_output,  [("coregistered_files", "atlas_diff")]),
                 (coreg_b0,     dti_output,     [("coregistered_source", "anat_diff")]),
-                (coreg_b0,     dti_output,     [("coregistered_files",  "tissues_diff")]),
-                (brain_merge,  dti_output,     [("out_file",            "brain_mask_diff")]),
+                (coreg_brain,  dti_output,     [("coregistered_files",  "brain_mask_diff")]),
               ])
 
     return wf
@@ -181,7 +181,7 @@ def run_spm_fsl_dti_preprocessing(experiment_dir, subject_list):
     
     # SelectFiles
     templates = {'avg_b0': 'data/processed/diff/_subject_id_{subject_id}/eddy_corrected_avg_b0.nii.gz',
-                 'tissues_native': 'data/processed/fmriprep/{subject_id}/anat/{subject_id}_T1w_dtissue.nii.gz',
+                 'brain_mask': 'data/processed/fmriprep/{subject_id}/anat/{subject_id}_T1w_brainmask.nii.gz',
                  'anat_biascorr': 'data/processed/fmriprep/{subject_id}/anat/{subject_id}_T1w_preproc.nii.gz',
                  'atlas_anat': 'data/processed/fmriprep/{subject_id}/anat/{subject_id}_atlas.nii.gz',
                  }
@@ -234,16 +234,15 @@ def run_spm_fsl_dti_preprocessing(experiment_dir, subject_list):
     # input and output diffusion MRI workflow to main workflow connections
     wf.connect([(infosource, selectfiles, [('subject_id', 'subject_id')]),
                 (selectfiles, coreg_dti_wf, [("avg_b0",         "dti_co_input.avg_b0"),]),
-                (selectfiles, coreg_dti_wf, [("tissues_native", "dti_co_input.tissues"),
+                (selectfiles, coreg_dti_wf, [("brain_mask", "dti_co_input.brain_mask"),
                                              ("anat_biascorr",  "dti_co_input.anat")
                                             ]),
                 (selectfiles,  coreg_dti_wf, [("atlas_anat", "dti_co_input.atlas_anat")]),
                 (coreg_dti_wf, datasink,     [("dti_co_output.atlas_diff", "diff.@atlas")]),
                 (coreg_dti_wf, datasink, [("dti_co_output.anat_diff",       "diff.@anat_diff"),
-                                           ("dti_co_output.tissues_diff",    "diff.tissues.@tissues_diff"),
                                            ("dti_co_output.brain_mask_diff", "diff.@brain_mask"),
                                           ]),
                 ])
     
     wf.run()
-    return main_wf
+    return 
