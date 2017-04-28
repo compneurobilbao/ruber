@@ -1,5 +1,5 @@
-from src.dmri import (attach_spm_fsl_dti_preprocessing,
-                      attach_camino_tractography)
+from src.dmri import (run_spm_fsl_dti_preprocessing,
+                      run_dti_artifact_correction)
 
 from src.interfaces import (CanICAInterface,
                             plot_all_components,

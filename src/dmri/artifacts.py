@@ -16,8 +16,8 @@ from   nipype.workflows.dmri.fsl import hmc_pipeline
 from ..interfaces import Eddy
 
 from .utils import (dti_acquisition_parameters,
-                    nlmeans_denoise, reslice,
-                    rapidart_dti_artifact_detection,)
+                    nlmeans_denoise, reslice,)
+#                    rapidart_dti_artifact_detection,)
 
 from .._utils  import format_pair_list
 #from ..config  import setup_node, get_config_setting
@@ -28,11 +28,6 @@ from ..utils   import (get_datasink,
                        get_input_file_name,
                        extension_duplicates,
                        )
-
-# artifact_detect
-do_rapidart = True
-# nlmeans denoise
-apply_nlmeans = True
 
 def dti_artifact_correction(wf_name="dti_artifact_correction"):
     """ Run the diffusion MRI pre-processing workflow against the diff files in `data_dir`.
@@ -111,20 +106,16 @@ def dti_artifact_correction(wf_name="dti_artifact_correction"):
                   "acqp",
                   "index",
                   "avg_b0",
-                 ]
-
-
-    if do_rapidart:
-        out_fields += ["hmc_corr_file",
-                       "hmc_corr_bvec",
-                       "hmc_corr_xfms",
+                  "hmc_corr_file",
+                  "hmc_corr_bvec",
+                  "hmc_corr_xfms",
 #                       "art_displacement_files",
 #                       "art_intensity_files",
 #                       "art_norm_files",
 #                       "art_outlier_files",
 #                       "art_plot_files",
 #                       "art_statistic_files",
-                      ]
+                  ]
 
     # input interface
     dti_input = pe.Node(IdentityInterface(fields=in_fields, mandatory_inputs=True),
@@ -154,11 +145,11 @@ def dti_artifact_correction(wf_name="dti_artifact_correction"):
     pick_first = lambda lst: lst[0]
 
     # motion artifacts detection, requires linear co-registration for motion estimation.
-    if do_rapidart:
-        # head motion correction
-        hmc = hmc_pipeline()
+    
+    # head motion correction
+    hmc = hmc_pipeline()
 
-        # art = pe.Node(rapidart_dti_artifact_detection(), name="detect_artifacts")
+    # art = pe.Node(rapidart_dti_artifact_detection(), name="detect_artifacts")
 
     # Eddy
     eddy = pe.Node(Eddy(method='jac'), name="eddy")
@@ -185,11 +176,11 @@ def dti_artifact_correction(wf_name="dti_artifact_correction"):
                           name='bet_dwi_post')
 
 
-    if apply_nlmeans:
-        nlmeans = pe.Node(Function(function=nlmeans_denoise,
-                                      input_names=['in_file', 'mask_file', 'out_file', 'N'],
-                                      output_names=['out_file']),
-                             name='nlmeans_denoise')
+    
+    nlmeans = pe.Node(Function(function=nlmeans_denoise,
+                                  input_names=['in_file', 'mask_file', 'out_file', 'N'],
+                                  output_names=['out_file']),
+                         name='nlmeans_denoise')
 
     # output interface
     dti_output = pe.Node(IdentityInterface(fields=out_fields),
@@ -222,7 +213,14 @@ def dti_artifact_correction(wf_name="dti_artifact_correction"):
                 (write_acqp, eddy, [("out_acqp",  "in_acqp"),
                                     ("out_index", "in_index")
                                    ]),
+                
+                # non-local means
+                (eddy,     nlmeans,   [("out_corrected", "in_file")]),
+                (bet_dwi1, nlmeans,   [("mask_file",     "mask_file")]),
 
+                # output
+                (nlmeans, dti_output, [("out_file", "eddy_corr_file")]),
+               
                 # rotate bvecs
                 (dti_input, rot_bvec, [("bvec",          "in_bvec")]),
                 (eddy,      rot_bvec, [("out_parameter", "eddy_params")]),
@@ -232,6 +230,34 @@ def dti_artifact_correction(wf_name="dti_artifact_correction"):
                 (eddy,        avg_b0_post, [("out_corrected", "in_dwi" )]),
                 (avg_b0_post, bet_dwi1,    [("out_file",      "in_file")]),
 
+                # head motion correction
+                (dti_input, hmc, [("bval", "inputnode.in_bval"),
+                                  ("bvec", "inputnode.in_bvec"),
+                                 ]),
+                (resample,  hmc, [("out_file",              "inputnode.in_file")]),
+                (bet_dwi0,  hmc, [("mask_file",             "inputnode.in_mask")]),
+                (list_b0,   hmc, [(("out_idx", pick_first), "inputnode.ref_num"),]),
+
+                # artifact detection
+#                    (hmc,      art, [("outputnode.out_file", "realigned_files"),
+#                                     ("outputnode.out_xfms", "realignment_parameters"),
+#                                    ]),
+#                    (bet_dwi1, art, [("mask_file", "mask_file"),]),
+
+                # output
+                (hmc, dti_output, [("outputnode.out_file", "hmc_corr_file"),
+                                   ("outputnode.out_bvec", "hmc_corr_bvec"),
+                                   ("outputnode.out_xfms", "hmc_corr_xfms"),
+                                  ]),
+
+#                    (art, dti_output, [("displacement_files",  "art_displacement_files"),
+#                                       ("intensity_files",     "art_intensity_files"),
+#                                       ("norm_files",          "art_norm_files"),
+#                                       ("outlier_files",       "art_outlier_files"),
+#                                       ("plot_files",          "art_plot_files"),
+#                                       ("statistic_files",     "art_statistic_files"),
+#                                      ]),
+    
                 # output
                 (write_acqp,  dti_output,  [("out_acqp",  "acqp"),
                                             ("out_index", "index")]),
@@ -241,56 +267,11 @@ def dti_artifact_correction(wf_name="dti_artifact_correction"):
                 (avg_b0_post, dti_output,  [("out_file",  "avg_b0")]),
               ])
 
-    if apply_nlmeans:
-        wf.connect([
-                    # non-local means
-                    (eddy,     nlmeans,   [("out_corrected", "in_file")]),
-                    (bet_dwi1, nlmeans,   [("mask_file",     "mask_file")]),
-
-                    # output
-                    (nlmeans, dti_output, [("out_file", "eddy_corr_file")]),
-                   ])
-    else:
-        wf.connect([
-                    # output
-                    (eddy, dti_output, [("out_corrected", "eddy_corr_file")]),
-                   ])
-
-    if do_rapidart:
-        wf.connect([
-                    # head motion correction
-                    (dti_input, hmc, [("bval", "inputnode.in_bval"),
-                                      ("bvec", "inputnode.in_bvec"),
-                                     ]),
-                    (resample,  hmc, [("out_file",              "inputnode.in_file")]),
-                    (bet_dwi0,  hmc, [("mask_file",             "inputnode.in_mask")]),
-                    (list_b0,   hmc, [(("out_idx", pick_first), "inputnode.ref_num"),]),
-
-                    # artifact detection
-#                    (hmc,      art, [("outputnode.out_file", "realigned_files"),
-#                                     ("outputnode.out_xfms", "realignment_parameters"),
-#                                    ]),
-#                    (bet_dwi1, art, [("mask_file", "mask_file"),]),
-
-                    # output
-                    (hmc, dti_output, [("outputnode.out_file", "hmc_corr_file"),
-                                       ("outputnode.out_bvec", "hmc_corr_bvec"),
-                                       ("outputnode.out_xfms", "hmc_corr_xfms"),
-                                      ]),
-
-#                    (art, dti_output, [("displacement_files",  "art_displacement_files"),
-#                                       ("intensity_files",     "art_intensity_files"),
-#                                       ("norm_files",          "art_norm_files"),
-#                                       ("outlier_files",       "art_outlier_files"),
-#                                       ("plot_files",          "art_plot_files"),
-#                                       ("statistic_files",     "art_statistic_files"),
-#                                      ]),
-                  ])
 
     return wf
 
 
-def run_dti_artifact_correction():
+def run_dti_artifact_correction(experiment_dir, subject_list):
     """ Attach the FSL-based diffusion MRI artifact detection and correction
     workflow to the `main_wf`.
 
@@ -317,10 +298,6 @@ def run_dti_artifact_correction():
     -------
     main_wf: nipype Workflow
     """
-    experiment_dir = '/home/asier/git/ruber'             # location of experiment folder
-    #data_dir = opj(experiment_dir, 'data')  # location of data folder
-    
-    subject_list = ['sub-001']    # list of subject identifiers
     
     # name of output folder
     output_dir = opj(experiment_dir, 'data', 'processed')     
@@ -380,22 +357,19 @@ def run_dti_artifact_correction():
                                         ("dti_art_output.acqp",           "diff.@acquisition_pars"),
                                         ("dti_art_output.index",          "diff.@acquisition_idx"),
                                         ("dti_art_output.avg_b0",         "diff.@avg_b0"),
-                                        ]),
-                ])
-
-    if do_rapidart:
-        wf.connect([(art_dti_wf, datasink, [
-                                                 ("dti_art_output.hmc_corr_file",          "diff.artifact_stats.@hmc_corr_file"),
-                                                 ("dti_art_output.hmc_corr_bvec",          "diff.artifact_stats.@hmc_rot_bvec"),
-                                                 ("dti_art_output.hmc_corr_xfms",          "diff.artifact_stats.@hmc_corr_xfms"),
+                                        ("dti_art_output.hmc_corr_file",          "diff.artifact_stats.@hmc_corr_file"),
+                                        ("dti_art_output.hmc_corr_bvec",          "diff.artifact_stats.@hmc_rot_bvec"),
+                                        ("dti_art_output.hmc_corr_xfms",          "diff.artifact_stats.@hmc_corr_xfms"),
 #                                                 ("dti_art_output.art_displacement_files", "diff.artifact_stats.@art_disp_files"),
 #                                                 ("dti_art_output.art_intensity_files",    "diff.artifact_stats.@art_ints_files"),
 #                                                 ("dti_art_output.art_norm_files",         "diff.artifact_stats.@art_norm_files"),
 #                                                 ("dti_art_output.art_outlier_files",      "diff.artifact_stats.@art_outliers"),
 #                                                 ("dti_art_output.art_plot_files",         "diff.artifact_stats.@art_plots"),
 #                                                 ("dti_art_output.art_statistic_files",    "diff.artifact_stats.@art_stats"),
-                                                ]),
-                        ])
+                                    
+                                        ]),
+                ])
+
 
     
     wf.run()
