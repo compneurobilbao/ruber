@@ -2,6 +2,10 @@
 """
 Nipype workflows to use Camino for tractography.
 """
+import os.path as op
+from os.path import join as opj
+
+from   nipype.interfaces.io import SelectFiles, DataSink
 import nipype.pipeline.engine    as pe
 import nipype.algorithms.misc    as misc
 from   nipype.interfaces.utility import IdentityInterface
@@ -66,19 +70,19 @@ def camino_tractography(wf_name="camino_tract"):
                                              mandatory_inputs=True),
                            name="tract_input")
 
-    img2vox_diff = setup_node(Image2Voxel(out_type="float"), name="img2vox_diff")
-    img2vox_mask = setup_node(Image2Voxel(out_type="short"), name="img2vox_mask")
-    fsl2scheme   = setup_node(FSL2Scheme(),                  name="fsl2scheme")
-    dtifit       = setup_node(DTIFit(),                      name="dtifit")
-    fa           = setup_node(ComputeFractionalAnisotropy(), name="fa")
+    img2vox_diff = pe.Node(Image2Voxel(out_type="float"), name="img2vox_diff")
+    img2vox_mask = pe.Node(Image2Voxel(out_type="short"), name="img2vox_mask")
+    fsl2scheme   = pe.Node(FSL2Scheme(),                  name="fsl2scheme")
+    dtifit       = pe.Node(DTIFit(),                      name="dtifit")
+    fa           = pe.Node(ComputeFractionalAnisotropy(), name="fa")
 
-    analyzehdr_fa = setup_node(interface=AnalyzeHeader(), name="analyzeheader_fa")
+    analyzehdr_fa = pe.Node(interface=AnalyzeHeader(), name="analyzeheader_fa")
     analyzehdr_fa.inputs.datatype = "double"
 
-    fa2nii = setup_node(interface=misc.CreateNifti(), name='fa2nii')
+    fa2nii = pe.Node(interface=misc.CreateNifti(), name='fa2nii')
 
-    track  = setup_node(Track(inputmodel="dt", out_file="tracts.Bfloat"), name="track")
-    conmat = setup_node(Conmat(output_root="conmat_"), name="conmat")
+    track  = pe.Node(Track(inputmodel="dt", out_file="tracts.Bfloat"), name="track")
+    conmat = pe.Node(Conmat(output_root="conmat_"), name="conmat")
 
     tract_output = pe.Node(IdentityInterface(fields=out_fields),
                            name="tract_output")
@@ -133,7 +137,7 @@ def camino_tractography(wf_name="camino_tract"):
     return wf
 
 
-def attach_camino_tractography(main_wf, wf_name="camino_tract"):
+def run_camino_tractography(experiment_dir, subject_list):
     """ Attach the Camino-based tractography workflow to the `main_wf`.
 
     Parameters
@@ -164,34 +168,55 @@ def attach_camino_tractography(main_wf, wf_name="camino_tract"):
     -------
     main_wf: nipype Workflow
     """
-    in_files = get_input_node(main_wf)
-    datasink = get_datasink  (main_wf)
-    dti_coreg_output = get_interface_node(main_wf, 'dti_co_output')
-    dti_artif_output = get_interface_node(main_wf, 'dti_art_output')
+    output_dir = opj(experiment_dir, 'data', 'processed')     
+    working_dir = opj(experiment_dir,'data', 'interim') 
+
+
+    # Infosource - a function free node to iterate over the list of subject names
+    infosource = pe.Node(IdentityInterface(fields=['subject_id']),
+                      name="infosource")
+    infosource.iterables = [('subject_id', subject_list)]
+    
+    # SelectFiles
+    templates = {'eddy_corr_file': 'data/processed/diff/_subject_id_{subject_id}/eddy_corrected_denoised.nii.gz',
+                 'bval': 'data/raw/bids/{subject_id}/dwi/{subject_id}_dwi.bval',
+                 'bvec_rotated': 'data/processed/diff/_subject_id_{subject_id}/{subject_id}_dwi_rotated.bvec',
+                 # TODO: Check if correct mask
+                 'brain_mask_diff': 'data/processed/diff/_subject_id_{subject_id}/r{subject_id}_T1w_brainmask.nii',
+                 'atlas_diff': 'data/processed/diff/_subject_id_{subject_id}/r{subject_id}_atlas.nii'}
+    selectfiles = pe.Node(SelectFiles(templates,
+                                      base_directory=experiment_dir),
+                          name="selectfiles")
+    # Datasink
+    datasink = pe.Node(DataSink(base_directory=experiment_dir,
+                             container=output_dir),
+                    name="datasink")
+
 
     # The workflow box
-    tract_wf = camino_tractography(wf_name=wf_name)
+    tract_wf = camino_tractography()
 
+    wf = pe.Workflow(name='artifact')
+    wf.base_dir = working_dir
     # input and output diffusion MRI workflow to main workflow connections
-    main_wf.connect([(in_files,         tract_wf, [("bval",            "tract_input.bval")]),
-                     (dti_coreg_output, tract_wf, [("brain_mask_diff", "tract_input.mask")]),
+    wf.connect([(infosource, selectfiles, [('subject_id', 'subject_id')]),
+                
+                (selectfiles, tract_wf, [("bval",            "tract_input.bval"),
+                                         ("brain_mask_diff", "tract_input.mask"),
+                                         ("eddy_corr_file",  "tract_input.diff"),
+                                         ("bvec_rotated",    "tract_input.bvec"),
+                                         ("atlas_diff", "tract_input.atlas")]),
 
-                     (dti_artif_output, tract_wf, [("eddy_corr_file",  "tract_input.diff"),
-                                                   ("bvec_rotated",    "tract_input.bvec"),
-                                                  ]),
-
-                     # output
-                     (tract_wf, datasink, [("tract_output.tensor",       "tract.@tensor"),
-                                           ("tract_output.tracks",       "tract.@tracks"),
-                                           ("tract_output.connectivity", "tract.@connectivity"),
-                                           ("tract_output.mean_fa",      "tract.@mean_fa"),
-                                           ("tract_output.fa",           "tract.@fa"),
-                                           ])
-                    ])
+                # output
+                (tract_wf, datasink, [("tract_output.tensor",       "tract.@tensor"),
+                                      ("tract_output.tracks",       "tract.@tracks"),
+                                      ("tract_output.connectivity", "tract.@connectivity"),
+                                      ("tract_output.mean_fa",      "tract.@mean_fa"),
+                                      ("tract_output.fa",           "tract.@fa"),
+                                      ])
+                ])
 
     # pass the atlas if it's the case
-    do_atlas, _ = check_atlas_file()
-    if do_atlas:
-        main_wf.connect([(dti_coreg_output, tract_wf, [("atlas_diff", "tract_input.atlas")])])
-
-    return main_wf
+    wf.run()
+    
+    return
