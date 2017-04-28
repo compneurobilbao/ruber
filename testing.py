@@ -16,5 +16,4 @@ flirt -interp nearestneighbour -in /home/asier/git/ruber/data/raw/atlas_3000.nii
     
 
 from src.dmri import run_spm_fsl_dti_preprocessing
-
-run_spm_fsl_dti_preprocessing(experiment_dir, subject_list)
+run_spm_fsl_dti_preprocessing('/home/asier/git/ruber' ,  ['sub-001']  )

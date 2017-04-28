@@ -183,7 +183,7 @@ def run_spm_fsl_dti_preprocessing(experiment_dir, subject_list):
     templates = {'avg_b0': 'data/processed/diff/_subject_id_{subject_id}/eddy_corrected_avg_b0.nii.gz',
                  'tissues_native': 'data/processed/fmriprep/{subject_id}/anat/{subject_id}_T1w_dtissue.nii.gz',
                  'anat_biascorr': 'data/processed/fmriprep/{subject_id}/anat/{subject_id}_T1w_preproc.nii.gz',
-                 'atlas_anat': 'data/processed/fmriprep/{subject_id}/anat/{subject_id}__atlas.nii.gz',
+                 'atlas_anat': 'data/processed/fmriprep/{subject_id}/anat/{subject_id}_atlas.nii.gz',
                  }
     selectfiles = pe.Node(SelectFiles(templates,
                                       base_directory=experiment_dir),
@@ -200,33 +200,33 @@ def run_spm_fsl_dti_preprocessing(experiment_dir, subject_list):
 
     # dataSink output substitutions
     ## The base name of the 'diff' file for the substitutions
-    diff_fbasename = remove_ext(op.basename(get_input_file_name(selectfiles, 'diff')))
-    anat_fbasename = remove_ext(op.basename(get_input_file_name(selectfiles, 'anat')))
-
-    regexp_subst = [
-                    (r"/brain_mask_{diff}_space\.nii$", "/brain_mask.nii"),
-                    (r"/eddy_corrected\.nii$",          "/{diff}_eddycor.nii"),
-                    (r"/rc1anat_hc_corrected\.nii$",    "/gm_diff.nii"),
-                    (r"/rc2anat_hc_corrected\.nii$",    "/wm_diff.nii"),
-                    (r"/rc3anat_hc_corrected\.nii$",    "/csf_diff.nii"),
-                    (r"/rmanat_hc_corrected\.nii$",     "/{anat}_diff.nii"),
-                   ]
-    regexp_subst = format_pair_list(regexp_subst, diff=diff_fbasename,
-                                                  anat=anat_fbasename)
-
-    # prepare substitution for atlas_file
-
-    atlas_basename = remove_ext(op.basename(get_input_file_name(selectfiles, 'atlas_anat')))
-    regexp_subst.extend([
-                         (r"/[\w]*{atlas}.*\.nii$", "/{atlas}_{diff}_space.nii"),
-                        ])
-    regexp_subst = format_pair_list(regexp_subst, atlas=atlas_basename,
-                                                  diff=diff_fbasename)
-
-
-    regexp_subst += extension_duplicates(regexp_subst)
-    datasink.inputs.regexp_substitutions = extend_trait_list(datasink.inputs.regexp_substitutions,
-                                                             regexp_subst)
+#    diff_fbasename = remove_ext(op.basename(get_input_file_name(selectfiles, 'avg_b0')))
+#    anat_fbasename = remove_ext(op.basename(get_input_file_name(selectfiles, 'anat_biascorr')))
+#
+#    regexp_subst = [
+#                    (r"/brain_mask_{diff}_space\.nii$", "/brain_mask.nii"),
+#                    (r"/eddy_corrected\.nii$",          "/{diff}_eddycor.nii"),
+#                    (r"/rc1anat_hc_corrected\.nii$",    "/gm_diff.nii"),
+#                    (r"/rc2anat_hc_corrected\.nii$",    "/wm_diff.nii"),
+#                    (r"/rc3anat_hc_corrected\.nii$",    "/csf_diff.nii"),
+#                    (r"/rmanat_hc_corrected\.nii$",     "/{anat}_diff.nii"),
+#                   ]
+#    regexp_subst = format_pair_list(regexp_subst, diff=diff_fbasename,
+#                                                  anat=anat_fbasename)
+#
+#    # prepare substitution for atlas_file
+#
+#    atlas_basename = remove_ext(op.basename(get_input_file_name(selectfiles, 'atlas_anat')))
+#    regexp_subst.extend([
+#                         (r"/[\w]*{atlas}.*\.nii$", "/{atlas}_{diff}_space.nii"),
+#                        ])
+#    regexp_subst = format_pair_list(regexp_subst, atlas=atlas_basename,
+#                                                  diff=diff_fbasename)
+#
+#
+#    regexp_subst += extension_duplicates(regexp_subst)
+#    datasink.inputs.regexp_substitutions = extend_trait_list(datasink.inputs.regexp_substitutions,
+#                                                             regexp_subst)
 
     wf = pe.Workflow(name='artifact')
     wf.base_dir = working_dir
