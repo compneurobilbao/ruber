@@ -21,3 +21,5 @@ run_spm_fsl_dti_preprocessing('/home/asier/git/ruber', ['sub-001'])
 
 from src.dmri import run_camino_tractography
 run_camino_tractography('/home/asier/git/ruber', ['sub-001'] )
+
+http://web4.cs.ucl.ac.uk/research/medic/camino/pmwiki/pmwiki.php?n=Tutorials.TrackingTutorial

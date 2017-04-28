@@ -125,14 +125,12 @@ def camino_tractography(wf_name="camino_tract"):
                 # connectivity matrix
                 (tract_input,   conmat,           [("atlas",                 "target_file" )]),
                 (track,         conmat,           [("tracked",               "in_file"     )]),
-                (fa2nii,        conmat,           [("nifti_file",            "scalar_file" )]),
 
                 # output
                 (fa2nii,        tract_output,     [("nifti_file",            "fa"          )]),
                 (dtifit,        tract_output,     [("tensor_fitted",         "tensor"      )]),
                 (track,         tract_output,     [("tracked",               "tracks"      )]),
-                (conmat,        tract_output,     [("conmat_sc",             "connectivity"),
-                                                   ("conmat_ts",             "mean_fa"     )]),
+                (conmat,        tract_output,     [("conmat_sc",             "connectivity")]),
               ])
     return wf
 
