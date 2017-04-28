@@ -118,12 +118,12 @@ def dti_artifact_correction(wf_name="dti_artifact_correction"):
         out_fields += ["hmc_corr_file",
                        "hmc_corr_bvec",
                        "hmc_corr_xfms",
-                       "art_displacement_files",
-                       "art_intensity_files",
-                       "art_norm_files",
-                       "art_outlier_files",
-                       "art_plot_files",
-                       "art_statistic_files",
+#                       "art_displacement_files",
+#                       "art_intensity_files",
+#                       "art_norm_files",
+#                       "art_outlier_files",
+#                       "art_plot_files",
+#                       "art_statistic_files",
                       ]
 
     # input interface
@@ -158,7 +158,7 @@ def dti_artifact_correction(wf_name="dti_artifact_correction"):
         # head motion correction
         hmc = hmc_pipeline()
 
-        art = pe.Node(rapidart_dti_artifact_detection(), name="detect_artifacts")
+        # art = pe.Node(rapidart_dti_artifact_detection(), name="detect_artifacts")
 
     # Eddy
     eddy = pe.Node(Eddy(method='jac'), name="eddy")
@@ -267,10 +267,10 @@ def dti_artifact_correction(wf_name="dti_artifact_correction"):
                     (list_b0,   hmc, [(("out_idx", pick_first), "inputnode.ref_num"),]),
 
                     # artifact detection
-                    (hmc,      art, [("outputnode.out_file", "realigned_files"),
-                                     ("outputnode.out_xfms", "realignment_parameters"),
-                                    ]),
-                    (bet_dwi1, art, [("mask_file", "mask_file"),]),
+#                    (hmc,      art, [("outputnode.out_file", "realigned_files"),
+#                                     ("outputnode.out_xfms", "realignment_parameters"),
+#                                    ]),
+#                    (bet_dwi1, art, [("mask_file", "mask_file"),]),
 
                     # output
                     (hmc, dti_output, [("outputnode.out_file", "hmc_corr_file"),
@@ -278,13 +278,13 @@ def dti_artifact_correction(wf_name="dti_artifact_correction"):
                                        ("outputnode.out_xfms", "hmc_corr_xfms"),
                                       ]),
 
-                    (art, dti_output, [("displacement_files",  "art_displacement_files"),
-                                       ("intensity_files",     "art_intensity_files"),
-                                       ("norm_files",          "art_norm_files"),
-                                       ("outlier_files",       "art_outlier_files"),
-                                       ("plot_files",          "art_plot_files"),
-                                       ("statistic_files",     "art_statistic_files"),
-                                      ]),
+#                    (art, dti_output, [("displacement_files",  "art_displacement_files"),
+#                                       ("intensity_files",     "art_intensity_files"),
+#                                       ("norm_files",          "art_norm_files"),
+#                                       ("outlier_files",       "art_outlier_files"),
+#                                       ("plot_files",          "art_plot_files"),
+#                                       ("statistic_files",     "art_statistic_files"),
+#                                      ]),
                   ])
 
     return wf
@@ -388,12 +388,12 @@ def run_dti_artifact_correction():
                                                  ("dti_art_output.hmc_corr_file",          "diff.artifact_stats.@hmc_corr_file"),
                                                  ("dti_art_output.hmc_corr_bvec",          "diff.artifact_stats.@hmc_rot_bvec"),
                                                  ("dti_art_output.hmc_corr_xfms",          "diff.artifact_stats.@hmc_corr_xfms"),
-                                                 ("dti_art_output.art_displacement_files", "diff.artifact_stats.@art_disp_files"),
-                                                 ("dti_art_output.art_intensity_files",    "diff.artifact_stats.@art_ints_files"),
-                                                 ("dti_art_output.art_norm_files",         "diff.artifact_stats.@art_norm_files"),
-                                                 ("dti_art_output.art_outlier_files",      "diff.artifact_stats.@art_outliers"),
-                                                 ("dti_art_output.art_plot_files",         "diff.artifact_stats.@art_plots"),
-                                                 ("dti_art_output.art_statistic_files",    "diff.artifact_stats.@art_stats"),
+#                                                 ("dti_art_output.art_displacement_files", "diff.artifact_stats.@art_disp_files"),
+#                                                 ("dti_art_output.art_intensity_files",    "diff.artifact_stats.@art_ints_files"),
+#                                                 ("dti_art_output.art_norm_files",         "diff.artifact_stats.@art_norm_files"),
+#                                                 ("dti_art_output.art_outlier_files",      "diff.artifact_stats.@art_outliers"),
+#                                                 ("dti_art_output.art_plot_files",         "diff.artifact_stats.@art_plots"),
+#                                                 ("dti_art_output.art_statistic_files",    "diff.artifact_stats.@art_stats"),
                                                 ]),
                         ])
 

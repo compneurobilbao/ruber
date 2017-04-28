@@ -1,15 +1,15 @@
 from src.dmri import (attach_spm_fsl_dti_preprocessing,
-                  attach_camino_tractography)
+                      attach_camino_tractography)
 
 from src.interfaces import (CanICAInterface,
-                        plot_all_components,
-                        plot_ica_components,
-                        plot_multi_slices,
-                        plot_overlays,
-                        plot_stat_overlay,
-                        KellyKapowski,
-                        EddyCorrect, 
-                        Eddy)
+                            plot_all_components,
+                            plot_ica_components,
+                            plot_multi_slices,
+                            plot_overlays,
+                            plot_stat_overlay,
+                            KellyKapowski,
+                            EddyCorrect,
+                            Eddy)
 
 from src.utils import (spm_tpm_priors_path,
                        remove_ext,
