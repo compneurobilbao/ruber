@@ -53,18 +53,8 @@ sudo chmod 777 -R DATA_DIR
 
 
 
-
-
-
-
-
-DATA_DIR='/home/asier/Desktop/test_ruber/bids'
-
-docker run -ti --rm \
-	-v $DATA_DIR:/data:ro \
-	-v $DATA_DIR:/output \
-	-v $DATA_DIR:/work \
-	-w /work \
-	poldracklab/fmriprep:latest \
-	/data /output participant --participant_label sub-001 \
-	-w /work --no-freesurfer --ignore fieldmaps --output-space template --template MNI152NLin2009cAsym
+T1='/home/asier/Desktop/test_ruber/t1.nii.gz'
+${FSLDIR}/bin/bet $T1 T1_brain -B -f "0.1" -s -m 
+ 
+flirt -in atlas_3000.nii -ref ${FSLDIR}/data/standard/MNI152_T1_1mm_brain_mask.nii.gz -out atlas_1000 -cost mutualinfo -interp nearestneighbour
+flirt -in T1_brain -ref  ${FSLDIR}/data/standard/MNI152_T1_1mm_brain.nii.gz -out t1_brain_mni
