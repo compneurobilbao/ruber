@@ -55,3 +55,16 @@ sudo chmod 777 -R DATA_DIR
 
 
 
+
+
+
+DATA_DIR='/home/asier/Desktop/test_ruber/bids'
+
+docker run -ti --rm \
+	-v $DATA_DIR:/data:ro \
+	-v $DATA_DIR:/output \
+	-v $DATA_DIR:/work \
+	-w /work \
+	poldracklab/fmriprep:latest \
+	/data /output participant --participant_label sub-001 \
+	-w /work --no-freesurfer --ignore fieldmaps --output-space template --template MNI152NLin2009cAsym
