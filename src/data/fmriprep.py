@@ -8,7 +8,7 @@ Created on Tue Apr 25 11:35:55 2017
 from src.env import BIDS_DATA, DATA
 import shutil
 import os
-import os.path as op
+from os.path import join as opj
 import json
 import subprocess
 
@@ -18,8 +18,8 @@ fmriprep
 """
 
 DATA_DIR = BIDS_DATA
-OUTPUT_DIR = op.join(DATA, 'processed')
-WORK_DIR = op.join(DATA, 'interim')
+OUTPUT_DIR = opj(DATA, 'processed')
+WORK_DIR = opj(DATA, 'interim')
 
 docker run -ti --rm \
 	-v $DATA_DIR:/data:ro \
@@ -28,7 +28,9 @@ docker run -ti --rm \
 	-w /work \
 	poldracklab/fmriprep:latest \
 	/data /output participant --participant_label sub-001 \
-	-w /work --no-freesurfer --ignore fieldmaps
+	-w /work --no-freesurfer --ignore fieldmaps \
+     --output-space template --template MNI152NLin2009cAsym
+
 
 
 """
@@ -36,8 +38,8 @@ MRIQC
 """
 
 DATA_DIR = BIDS_DATA
-OUTPUT_DIR = op.join(DATA, 'processed')
-WORK_DIR = op.join(DATA, 'interim')
+OUTPUT_DIR = opj(DATA, 'processed')
+WORK_DIR = opj(DATA, 'interim')
 
 
 docker run -ti --rm \
@@ -49,7 +51,7 @@ docker run -ti --rm \
 	/data /output participant --participant_label sub-001 \
 	-w /work --verbose-reports
 
-sudo chmod 777 -R DATA_DIR
+sudo chmod 777 -R $DATA_DIR
 
 
 
