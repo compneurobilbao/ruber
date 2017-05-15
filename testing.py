@@ -10,10 +10,9 @@ from src.dmri import run_dti_artifact_correction
 run_dti_artifact_correction(experiment_dir, subject_list)
 
 ## this is still wrong, but just for testing
-flirt -interp nearestneighbour -in /home/asier/git/ruber/data/raw/atlas_3000.nii \
+flirt -interp nearestneighbour -in /home/asier/git/ruber/data/external/bha_atlas_1mm_mni09c.nii.gz \
 -ref /home/asier/git/ruber/data/processed/fmriprep/sub-001/anat/sub-001_T1w_brainmask.nii.gz \
--out /home/asier/git/ruber/data/processed/fmriprep/sub-001/anat/sub-001_atlas.nii.gz -dof 6    
-    
+-out /home/asier/git/ruber/data/processed/fmriprep/sub-001/anat/sub-001_atlas.nii.gz        
 
 from src.dmri import run_spm_fsl_dti_preprocessing
 run_spm_fsl_dti_preprocessing('/home/asier/git/ruber', ['sub-001'])
