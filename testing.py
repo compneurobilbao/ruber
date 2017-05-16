@@ -51,11 +51,25 @@ subject_list = ['sub-001']
     
 from src.dmri import run_dti_artifact_correction
 run_dti_artifact_correction(experiment_dir, subject_list)
+
 from src.dmri import run_spm_fsl_dti_preprocessing
 run_spm_fsl_dti_preprocessing('/home/asier/git/ruber', ['sub-001'])
-
 
 from src.dmri import run_camino_tractography
 run_camino_tractography('/home/asier/git/ruber', ['sub-001'] )
 
 http://web4.cs.ucl.ac.uk/research/medic/camino/pmwiki/pmwiki.php?n=Tutorials.TrackingTutorial
+
+
+"""
+fMRI nuisance pipeline
+"""
+# Include 6 motion parameters, FD, and aCompCor
+import pandas as pd
+confounds = '/home/asier/git/ruber/data/processed/fmriprep/sub-001/func/sub-001_task-rest_bold_confounds.tsv'
+'/home/asier/git/ruber/data/processed/fmriprep/sub-001/func/sub-001_task-rest_bold_space-MNI152NLin2009cAsym_preproc.nii.gz'
+data = pd.read_csv(confounds, delimiter='\t', na_values='n/a').fillna(0)
+
+data['vx-wisestdDVARS']
+
+'FramewiseDisplacement'
