@@ -58,18 +58,34 @@ sudo chmod 777 -R $DATA
 """
 Atlas to 2009c
 """
-
-flirt -in /home/asier/Desktop/test_ruber/atlas_3000.nii \
--ref /home/asier/Desktop/mni_icbm152_nlin_asym_09c_nifti/mni_icbm152_nlin_asym_09c/mni_icbm152_t1_tal_nlin_asym_09c_mask.nii \
--out /home/asier/Desktop/bha_atlas_1mm_mni09c.nii.gz \ 
--cost mutualinfo -interp nearestneighbour
-
+## 3mm to 1mm
+flirt -in /home/asier/Desktop/test_ruber/atlas_2514.nii.gz \
+-ref  /home/asier/Desktop/test_ruber/MNI152_T1_3mm_brain.nii.gz \
+-out /home/asier/Desktop/test_ruber/atlas_2514_1mm.nii.gz \
+-init /home/asier/Desktop/test_ruber/3mmto1mm.mat -applyxfm -interp nearestneighbour 
 
 flirt -in /home/asier/Desktop/test_ruber/atlas_2754.nii.gz \
--ref /home/asier/Desktop/mni_icbm152_nlin_asym_09c_nifti/mni_icbm152_nlin_asym_09c/mni_icbm152_t1_tal_nlin_asym_09c_mask.nii \
--out /home/asier/Desktop/bha_atlas_1mm_mni09c.nii.gz \
--cost mutualinfo -interp nearestneighbour 
+-ref  /home/asier/Desktop/test_ruber/MNI152_T1_3mm_brain.nii.gz \
+-out /home/asier/Desktop/test_ruber/atlas_2754_1mm.nii.gz \
+-init /home/asier/Desktop/test_ruber/3mmto1mm.mat -applyxfm -interp nearestneighbour 
 
+## Brain MNI152 -> Brain 2009c (save omat) 
+## Atlas MNI152 -> 2009c space (using previous omat)
+
+flirt -in ${FSLDIR}/data/standard/MNI152_T1_1mm_brain.nii.gz  \
+-ref /home/asier/git/ruber/data/external/standard_mni_asym_09c/mni_icbm152_t1_tal_nlin_asym_09c_brain.nii \
+-cost mutualinfo -omat mni152_2_09c.mat
+
+
+flirt -in /home/asier/Desktop/test_ruber/atlas_2514_1mm.nii.gz \
+-ref /home/asier/git/ruber/data/external/standard_mni_asym_09c/mni_icbm152_t1_tal_nlin_asym_09c_brain.nii \
+-out /home/asier/git/ruber/data/external/bha_atlas_2514_1mm_mni09c.nii.gz \
+-init /home/asier/git/ruber/data/external/standard_mni_asym_09c/mni152_2_09c.mat -applyxfm -interp nearestneighbour 
+
+flirt -in /home/asier/Desktop/test_ruber/atlas_2754_1mm.nii.gz \
+-ref /home/asier/git/ruber/data/external/standard_mni_asym_09c/mni_icbm152_t1_tal_nlin_asym_09c_brain.nii \
+-out /home/asier/git/ruber/data/external/bha_atlas_2754_1mm_mni09c.nii.gz \
+-init /home/asier/git/ruber/data/external/standard_mni_asym_09c/mni152_2_09c.mat -applyxfm -interp nearestneighbour 
 
 
 """
