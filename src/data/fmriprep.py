@@ -55,12 +55,36 @@ sudo chmod 777 -R $DATA
 
 
 
+"""
+Atlas to 2009c
+"""
+
+flirt -in /home/asier/Desktop/test_ruber/atlas_3000.nii \
+-ref /home/asier/Desktop/mni_icbm152_nlin_asym_09c_nifti/mni_icbm152_nlin_asym_09c/mni_icbm152_t1_tal_nlin_asym_09c_mask.nii \
+-out /home/asier/Desktop/bha_atlas_1mm_mni09c.nii.gz \ 
+-cost mutualinfo -interp nearestneighbour
+
+
+flirt -in /home/asier/Desktop/test_ruber/atlas_2754.nii.gz \
+-ref /home/asier/Desktop/mni_icbm152_nlin_asym_09c_nifti/mni_icbm152_nlin_asym_09c/mni_icbm152_t1_tal_nlin_asym_09c_mask.nii \
+-out /home/asier/Desktop/bha_atlas_1mm_mni09c.nii.gz \
+-cost mutualinfo -interp nearestneighbour 
+
+
+
+"""
+Extract brain from electrodes T1W
+"""
+
 T1='/home/asier/Desktop/test_ruber/t1.nii.gz'
 ${FSLDIR}/bin/bet $T1 T1_brain -B -f "0.1" -s -m 
- 
-flirt -in atlas_3000.nii -ref ${FSLDIR}/data/standard/MNI152_T1_1mm_brain_mask.nii.gz -out atlas_1000 -cost mutualinfo -interp nearestneighbour
-flirt -in T1_brain -ref  ${FSLDIR}/data/standard/MNI152_T1_1mm_brain.nii.gz -out t1_brain_mni
 
-                          
-flirt -in /home/asier/Desktop/test_ruber/atlas_3000.nii -ref /home/asier/Desktop/mni_icbm152_nlin_asym_09c_nifti/mni_icbm152_nlin_asym_09c/mni_icbm152_t1_tal_nlin_asym_09c_mask.nii -out /home/asier/Desktop/bha_atlas_1mm_mni09c.nii.gz -cost mutualinfo -interp nearestneighbour
+"""
+Atlas to subject space
+"""
                          
+flirt -in T1_brain -ref   -out t1_brain_mni                      
+
+
+
+
