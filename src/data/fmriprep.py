@@ -29,7 +29,9 @@ docker run -ti --rm \
 	poldracklab/fmriprep:latest \
 	/data /output participant --participant_label sub-001 \
 	-w /work --no-freesurfer --ignore fieldmaps \
-     --output-space template --template MNI152NLin2009cAsym
+     --output-space T1w
+    
+#  template --template MNI152NLin2009cAsymZ
 
 
 

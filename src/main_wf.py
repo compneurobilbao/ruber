@@ -60,3 +60,83 @@ run_camino_tractography('/home/asier/git/ruber', ['sub-001'] )
 
 http://web4.cs.ucl.ac.uk/research/medic/camino/pmwiki/pmwiki.php?n=Tutorials.TrackingTutorial
 
+
+
+
+
+
+
+"""
+fMRI pipeline postproc
+"""
+
+from os.path import join as opj
+
+base_path = '/home/asier/git/ruber/data/processed/fmriprep/sub-001/func/'
+
+confounds = opj(base_path, 'sub-001_task-rest_bold_confounds.tsv')
+preproc_data =  opj(base_path,  'sub-001_task-rest_bold_space-MNI152NLin2009cAsym_preproc.nii.gz')
+confounds = pd.read_csv(confounds, delimiter='\t', na_values='n/a').fillna(0)
+
+atlas_2514 = # to be build in subject space
+
+# 1.- Nuisance regressors and filtering
+from nilearn.input_data import NiftiLabelsMasker
+import nibabel as nib
+
+fmri = nib.load(preproc_data)
+fmri_data = fmri.get_data()
+
+confounds_id = [ 'FramewiseDisplacement',
+                'aCompCor0',
+                'aCompCor1',
+                'aCompCor2',
+                'aCompCor3',
+                'aCompCor4',
+                'aCompCor5',
+                'X',
+                'Y',
+                'Z',
+                'RotX',
+                'RotY',
+                'RotZ',
+                ]
+
+# standardize=False?¿
+masker = NiftiMasker(labels_img=atlas_2514, detrend=True, standardize=True,
+                     confounds=confounds[confounds_id].as_matrix(),
+                     smoothing_fwhm=6,
+                     low_pass=0.1, high_pass=0.01)
+
+time_series = masker.fit_transform(preproc_data) # confounds etc. here?
+
+
+data_img = nibabel.Nifti1Image(time_series, fmri.affine)
+
+# 2.- Scrubbing
+from src.fmri_posproc import scrubbing
+import pandas as pd
+
+
+
+
+# extract six movement/motion parameters into rest_mc.1D
+confounds.iloc[:,-6:].to_csv(opj(base_path,'rest_mc.1D'), sep='\t', header=False, index=False)
+# extract FramewiseDisplacement into frames_in.1D
+confounds.iloc[:,5].to_csv(opj(base_path,'frames_in.1D'), sep='\t', header=False, index=False)
+
+
+sc = scrubbing.create_scrubbing_preproc()
+sc.inputs.inputspec.frames_in_ID = opj(base_path,'frames_in.1D')
+sc.inputs.inputpsec.movement_parameters = opj(base_path,'rest_mc.1D')
+sc.inputs.inputpsec.preprocessed = preproc_data
+sc.run()
+
+
+
+# 3.- ROI extraction with atlas
+
+
+
+
+

@@ -5,7 +5,7 @@ Created on Wed May 17 11:23:57 2017
 
 @author: Scrubbing (using C-PAC's code)
 """
-import nipype.interfaces.afni.preprocess as e_afni
+import nipype.interfaces.afni.utils as Calc
 import nipype.pipeline.engine as pe
 import nipype.interfaces.utility as util
 
@@ -95,7 +95,7 @@ def create_scrubbing_preproc():
                                    name='scrubbed_movement_parameters',
                                    iterfield=["infile_a", "infile_b"])
 
-    scrubbed_preprocessed = pe.MapNode(interface=e_afni.Threedcalc(), 
+    scrubbed_preprocessed = pe.MapNode(interface=Calc(), 
                                name='scrubbed_preprocessed',
                                iterfield=["infile_a", "list_idx"] )
     scrubbed_preprocessed.inputs.expr = '\'a\''
