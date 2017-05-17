@@ -22,17 +22,17 @@ OUTPUT_DIR = opj(DATA, 'processed')
 WORK_DIR = opj(DATA, 'interim')
 
 docker run -ti --rm \
-	-v $DATA_DIR:/data:ro \
-	-v $OUTPUT_DIR:/output \
-	-v $WORK_DIR:/work \
-	-w /work \
-	poldracklab/fmriprep:latest \
-	/data /output participant --participant_label sub-001 \
-	-w /work --no-freesurfer --ignore fieldmaps \
-     --output-space T1w
-    
-#  template --template MNI152NLin2009cAsymZ
+    -v $DATA_DIR:/data:ro \
+    -v $OUTPUT_DIR:/output \
+    -v $WORK_DIR:/work \
+    -w /work \
+    poldracklab/fmriprep:latest \
+    /data /output participant --participant_label sub-001 \
+    -w /work --no-freesurfer --ignore fieldmaps \
+    --output-space template --template MNI152NLin2009cAsymZ
 
+    
+#  T1w
 
 
 """

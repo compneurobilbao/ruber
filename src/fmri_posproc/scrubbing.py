@@ -5,7 +5,7 @@ Created on Wed May 17 11:23:57 2017
 
 @author: Scrubbing (using C-PAC's code)
 """
-import nipype.interfaces.afni.utils as Calc
+from nipype.interfaces.afni.preprocess import Calc
 import nipype.pipeline.engine as pe
 import nipype.interfaces.utility as util
 
