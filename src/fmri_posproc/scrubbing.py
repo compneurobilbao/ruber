@@ -11,7 +11,7 @@ Created on Wed May 17 11:23:57 2017
 fMRI postproc
 """
 
-# Scrubing (using C-PAC's code)
+# Scrubbing (using C-PAC's code)
 
 import CPAC.interfaces.afni.preprocess as e_afni
 import nipype.pipeline.engine as pe
@@ -199,35 +199,3 @@ def get_indx(in_file):
             f.close()
             print "indx in else", indx
             return indx
-
-
-# Nuisance regression
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Filtering (probably with nuisance regression using signal.clean from nilearn)
-
-
-
-# Include 6 motion parameters, FD, and aCompCor
-import pandas as pd
-confounds = '/home/asier/git/ruber/data/processed/fmriprep/sub-001/func/sub-001_task-rest_bold_confounds.tsv'
-'/home/asier/git/ruber/data/processed/fmriprep/sub-001/func/sub-001_task-rest_bold_space-MNI152NLin2009cAsym_preproc.nii.gz'
-data = pd.read_csv(confounds, delimiter='\t', na_values='n/a').fillna(0)
-
-data['vx-wisestdDVARS']
-
-'FramewiseDisplacement'
