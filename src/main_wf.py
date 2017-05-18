@@ -83,19 +83,46 @@ confounds = opj(base_path, 'sub-001_task-rest_bold_confounds.tsv')
 preproc_data =  opj(base_path,  'sub-001_task-rest_bold_space-MNI152NLin2009cAsym_preproc.nii.gz')
 confounds = pd.read_csv(confounds, delimiter='\t', na_values='n/a').fillna(0)
 
-# to be build in subject space
+# to be build in subject space. 
+# TODO: Check if this atlas is the same for all subjects (it should)
 atlas_2514 = '/home/asier/git/ruber/data/external/bha_atlas_2514_1mm_mni09c.nii.gz'
 atlas_2514_img = nib.load(atlas_2514)
 fmri = nib.load(preproc_data)
-resampled_2514_atlas = resample_img(atlas_2514_img, target_affine=fmri.affine)
+resampled_2514_atlas = resample_img(atlas_2514_img, target_affine=fmri.affine,
+                                    interpolation='nearest')
 nib.save(resampled_2514_atlas, opj(base_path, 'sub-001_atlas_2514_bold_space.nii.gz'))
 
 # to be build in subject space
 atlas_2754 = '/home/asier/git/ruber/data/external/bha_atlas_2754_1mm_mni09c.nii.gz'
 atlas_2754_img = nib.load(atlas_2754)
 fmri = nib.load(preproc_data)
-resampled_2754_atlas = resample_img(atlas_2754_img, target_affine=fmri.affine)
+resampled_2754_atlas = resample_img(atlas_2754_img, target_affine=fmri.affine,
+                                    interpolation='nearest')
 nib.save(resampled_2754_atlas, opj(base_path, 'sub-001_atlas_2754_bold_space.nii.gz'))
+
+def atlas_with_all_rois():
+    atlas_old = '/home/asier/git/ruber/data/external/bha_atlas_2754_1mm_mni09c.nii.gz'
+    atlas_new = opj(base_path, 'sub-001_atlas_2754_bold_space.nii.gz')
+
+    atlas_new_img = nib.load(atlas_new)
+    m = atlas_new_img.affine[:3, :3]
+
+    atlas_old_data = nib.load(atlas_old).get_data()
+    atlas_old_data_rois = np.unique(atlas_old_data)
+    atlas_new_data = atlas_new_img.get_data()
+    atlas_new_data_rois = np.unique(atlas_new_data)
+
+    diff_rois = np.setdiff1d(atlas_old_data_rois, atlas_new_data_rois)
+
+    for roi in diff_rois:
+        p = np.argwhere(atlas_old_data == roi)[0]
+        x, y, z = (np.round(np.diag(np.divide(p, m)))).astype(int)
+        atlas_new_data[x, y, z] = roi
+
+    atlas_new_data_img_corrected = nib.Nifti1Image(atlas_new_data,
+                                                   affine=atlas_new_img.affine)
+    nib.save(atlas_new_data_img_corrected,
+             opj(base_path, 'sub-001_atlas_2754_bold_space.nii.gz'))
 
 
 # 1.- Nuisance regressors, filtering and ROI extraction with atlas
@@ -117,13 +144,23 @@ confounds_id = [ 'FramewiseDisplacement',
                 'RotZ',
                 ]
 
-# standardize=False?¿
-masker = NiftiLabelsMasker(labels_img=atlas_2514, detrend=True, standardize=True,
-                     smoothing_fwhm=6,
-                     low_pass=0.1, high_pass=0.01)
+confounds_matrix = confounds[confounds_id].as_matrix()
 
-time_series = masker.fit_transform(preproc_data,
-                                   confounds=confounds[confounds_id].as_matrix()) # confounds etc. here?
+# atlas_2514
+masker = NiftiLabelsMasker(labels_img=atlas_2514, background_label=0,
+                           verbose=5, detrend=True, standardize=True, t_r=2.72,
+                           smoothing_fwhm=6, low_pass=0.1, high_pass=0.01)
+
+time_series_2514 = masker.fit_transform(preproc_data,
+                                        confounds=confounds_matrix)
+
+# atlas_2754
+masker = NiftiLabelsMasker(labels_img=atlas_2754, background_label=0,
+                           verbose=5, detrend=True, standardize=True, t_r=2.72,
+                           smoothing_fwhm=6, low_pass=0.1, high_pass=0.01)
+
+time_series_2754 = masker.fit_transform(preproc_data,
+                                        confounds=confounds_matrix) 
 
 
 # data_img = nibabel.Nifti1Image(time_series, fmri.affine)
