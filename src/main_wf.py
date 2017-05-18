@@ -70,11 +70,17 @@ http://web4.cs.ucl.ac.uk/research/medic/camino/pmwiki/pmwiki.php?n=Tutorials.Tra
 fMRI pipeline postproc
 """
 
+# location of experiment folder 
+experiment_dir = '/home/asier/git/ruber'       
+# list of subject identifiers         
+subject_list = ['sub-001'] 
+
+# TODO: move this to postproc.utils
 from os.path import join as opj
 from nilearn.input_data import NiftiLabelsMasker
 from nilearn.image import resample_img
 import nibabel as nib
-from src.fmri_posproc import scrubbing
+from src.postproc.utils import scrubbing
 import pandas as pd
 
 base_path = '/home/asier/git/ruber/data/processed/fmriprep/sub-001/func/'
@@ -99,31 +105,6 @@ fmri = nib.load(preproc_data)
 resampled_2754_atlas = resample_img(atlas_2754_img, target_affine=fmri.affine,
                                     interpolation='nearest')
 nib.save(resampled_2754_atlas, opj(base_path, 'sub-001_atlas_2754_bold_space.nii.gz'))
-
-def atlas_with_all_rois():
-    atlas_old = '/home/asier/git/ruber/data/external/bha_atlas_2754_1mm_mni09c.nii.gz'
-    atlas_new = opj(base_path, 'sub-001_atlas_2754_bold_space.nii.gz')
-
-    atlas_new_img = nib.load(atlas_new)
-    m = atlas_new_img.affine[:3, :3]
-
-    atlas_old_data = nib.load(atlas_old).get_data()
-    atlas_old_data_rois = np.unique(atlas_old_data)
-    atlas_new_data = atlas_new_img.get_data()
-    atlas_new_data_rois = np.unique(atlas_new_data)
-
-    diff_rois = np.setdiff1d(atlas_old_data_rois, atlas_new_data_rois)
-
-    for roi in diff_rois:
-        p = np.argwhere(atlas_old_data == roi)[0]
-        x, y, z = (np.round(np.diag(np.divide(p, m)))).astype(int)
-        atlas_new_data[x, y, z] = roi
-
-    atlas_new_data_img_corrected = nib.Nifti1Image(atlas_new_data,
-                                                   affine=atlas_new_img.affine)
-    nib.save(atlas_new_data_img_corrected,
-             opj(base_path, 'sub-001_atlas_2754_bold_space.nii.gz'))
-
 
 # 1.- Nuisance regressors, filtering and ROI extraction with atlas
 atlas_2514 = opj(base_path, 'sub-001_atlas_2514_bold_space.nii.gz')
@@ -170,11 +151,8 @@ thres = 0.2
 time_series_2514 = scrubbing(time_series_2514, FD, thres)
 time_series_2754 = scrubbing(time_series_2754, FD, thres)
 
-
-sc.inputs.inputspec.frames_in_ID = opj(base_path,'frames_in.1D')
-sc.inputs.inputpsec.movement_parameters = 'rest_mc.1D'
-sc.inputs.inputpsec.preprocessed = preproc_data
-sc.run()
+np.savetxt(opj(base_path, 'time_series_2514.txt'), time_series_2514)
+np.savetxt(opj(base_path, 'time_series_2754.txt'), time_series_2754)
 
 
 
