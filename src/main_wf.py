@@ -162,19 +162,16 @@ masker = NiftiLabelsMasker(labels_img=atlas_2754, background_label=0,
 time_series_2754 = masker.fit_transform(preproc_data,
                                         confounds=confounds_matrix) 
 
-
-# data_img = nibabel.Nifti1Image(time_series, fmri.affine)
-
 # 2.- Scrubbing
+# extract FramewiseDisplacement
+FD = confounds.iloc[:,5].as_matrix()
+thres = 0.2
 
-# extract six movement/motion parameters into rest_mc.1D
-confounds.iloc[:,-6:].to_csv(opj(base_path,'rest_mc.1D'), sep='\t', header=False, index=False)
-# extract FramewiseDisplacement into frames_in.1D
-confounds.iloc[:,5].to_csv(opj(base_path,'frames_in.1D'), sep='\t', header=False, index=False)
+time_series_2514 = scrubbing(time_series_2514, FD, thres)
+time_series_2754 = scrubbing(time_series_2754, FD, thres)
 
 
-sc = scrubbing.create_scrubbing_preproc()
-sc.inputs.inputspec.frames_in_ID = 'frames_in.1D'
+sc.inputs.inputspec.frames_in_ID = opj(base_path,'frames_in.1D')
 sc.inputs.inputpsec.movement_parameters = 'rest_mc.1D'
 sc.inputs.inputpsec.preprocessed = preproc_data
 sc.run()
