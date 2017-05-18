@@ -159,5 +159,21 @@ np.savetxt(opj(base_path, 'time_series_2754.txt'), time_series_2754)
 
 
 
+"""
+Extract brain from electrodes T1W -> this to BIDS
+"""
 
+T1='/home/asier/Desktop/test_ruber/t1.nii.gz'
+${FSLDIR}/bin/bet $T1 /home/asier/Desktop/test_ruber/T1_brain -B -f "0.1" -s -m 
+
+"""
+Atlas to subject space
+"""
+                         
+flirt -in /home/asier/Desktop/test_ruber/T1_brain \
+-ref /home/asier/git/ruber/data/external/standard_mni_asym_09c/mni_icbm152_t1_tal_nlin_asym_09c_brain.nii \
+-cost mutualinfo -out /home/asier/Desktop/test_ruber/t1_brain_09c                    
+
+# TODO: Include this in the pipeline in an organize way, preferrably following BIDS
+# TODO: Mark electrodes by hand, locate them and tell ROIs belonging to. 
 

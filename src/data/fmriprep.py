@@ -90,19 +90,4 @@ flirt -in /home/asier/Desktop/test_ruber/atlas_2754_1mm.nii.gz \
 -init /home/asier/git/ruber/data/external/standard_mni_asym_09c/mni152_2_09c.mat -applyxfm -interp nearestneighbour 
 
 
-"""
-Extract brain from electrodes T1W
-"""
-
-T1='/home/asier/Desktop/test_ruber/t1.nii.gz'
-${FSLDIR}/bin/bet $T1 T1_brain -B -f "0.1" -s -m 
-
-"""
-Atlas to subject space
-"""
-                         
-flirt -in T1_brain -ref   -out t1_brain_mni                      
-
-
-
 
