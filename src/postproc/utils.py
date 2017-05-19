@@ -114,7 +114,7 @@ def locate_electrodes(elec_dict, atlas_file, neighbours=0):
 
     writeDict(roi_location_mni09,
               '/home/asier/Desktop/test_ruber/sub001elec_' + 
-              roi_number + '_rois_' + neighbours + '_neighbours.roi')
+              str(roi_number) + '_rois_' + str(neighbours) + '_neighbours.roi')
 
 
 
