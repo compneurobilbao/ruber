@@ -9,15 +9,13 @@ from os.path import join as opj
 import numpy as np
 import nibabel as nib
 
+
 def scrubbing(time_series, FD, thres=0.2):
     """
     simple scrubbing strategy based on timepoint removal
     """
-    
-    scrubbed_time_series = time_series.T[:,(FD<thres)]
-    
+    scrubbed_time_series = time_series.T[:, (FD < thres)]
     return scrubbed_time_series.T
-
 
 
 def atlas_with_all_rois():
@@ -53,11 +51,46 @@ def atlas_with_all_rois():
 def load_elec_file(elec_file):
     pass
 
-def extend_elec_location(elec_location_mni09):
-    
-    
-    
-    pass
+def extend_elec_location(elec_location):
+
+    for elec_key, value in elec_location.items():
+        x, y, z = value[0]
+        elec_location[elec_key].append([x + 1, y + 1, z + 1])
+        elec_location[elec_key].append([x + 1, y + 1, z - 1])
+        elec_location[elec_key].append([x + 1, y + 1, z])
+        elec_location[elec_key].append([x + 1, y - 1, z + 1])
+        elec_location[elec_key].append([x + 1, y - 1, z - 1])
+        elec_location[elec_key].append([x + 1, y - 1, z])
+        elec_location[elec_key].append([x + 1, y, z + 1])
+        elec_location[elec_key].append([x + 1, y, z - 1])
+        elec_location[elec_key].append([x + 1, y, z])
+
+        elec_location[elec_key].append([x - 1, y + 1, z + 1])
+        elec_location[elec_key].append([x - 1, y + 1, z - 1])
+        elec_location[elec_key].append([x - 1, y + 1, z])
+        elec_location[elec_key].append([x - 1, y - 1, z + 1])
+        elec_location[elec_key].append([x - 1, y - 1, z - 1])
+        elec_location[elec_key].append([x - 1, y - 1, z])
+        elec_location[elec_key].append([x - 1, y, z + 1])
+        elec_location[elec_key].append([x - 1, y, z - 1])
+        elec_location[elec_key].append([x - 1, y, z])
+
+        elec_location[elec_key].append([x, y + 1, z + 1])
+        elec_location[elec_key].append([x, y + 1, z - 1])
+        elec_location[elec_key].append([x, y + 1, z])
+        elec_location[elec_key].append([x, y - 1, z + 1])
+        elec_location[elec_key].append([x, y - 1, z - 1])
+        elec_location[elec_key].append([x, y - 1, z])
+        elec_location[elec_key].append([x, y, z + 1])
+        elec_location[elec_key].append([x, y, z - 1])
+    return elec_location
+
+
+def writeDict(dict, filename, sep=','):
+    with open(filename, "a") as f:
+        for i in dict.keys():
+            f.write(i + ":" + sep.join([str(x) for x in dict[i]]) + "\n")
+
 
 def locate_electrodes(elec_file, atlas_file, neighbours=0):
     from collections import defaultdict
@@ -65,15 +98,17 @@ def locate_electrodes(elec_file, atlas_file, neighbours=0):
     elec_location_mni09 = load_elec_file(elec_file)
     if neighbours:
         elec_location_mni09 = extend_elec_location(elec_location_mni09)
-    atlas_file = '/home/asier/git/ruber/data/external/bha_atlas_2754_1mm_mni09c.nii.gz'
 
     atlas_data = nib.load(atlas_file).get_data()
     roi_location_mni09 = defaultdict(set)
 
     for elec in elec_location_mni09.keys():
-        for x, y, z in elec_location_mni09[elec]:
+        for location in elec_location_mni09[elec]:
+            x, y, z = location
             roi_location_mni09[elec].add(atlas_data[x, y, z].astype('int'))
 
+    writeDict(roi_location_mni09,
+              '/home/asier/Desktop/test_ruber/sub001elec.roi')
 
 
 
