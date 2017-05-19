@@ -5,7 +5,9 @@ Created on Wed May 17 11:23:57 2017
 
 @author: asier
 """
-
+from os.path import join as opj
+import numpy as np
+import nibabel as nib
 
 def scrubbing(time_series, FD, thres=0.2):
     """
@@ -19,6 +21,10 @@ def scrubbing(time_series, FD, thres=0.2):
 
 
 def atlas_with_all_rois():
+    """
+    Function to correct atlas after resampling (looses some rois),
+    this function recovers those lost rois
+    """
     atlas_old = '/home/asier/git/ruber/data/external/bha_atlas_2754_1mm_mni09c.nii.gz'
     atlas_new = opj(base_path, 'sub-001_atlas_2754_bold_space.nii.gz')
 
@@ -41,11 +47,32 @@ def atlas_with_all_rois():
                                                    affine=atlas_new_img.affine)
     nib.save(atlas_new_data_img_corrected,
              opj(base_path, 'sub-001_atlas_2754_bold_space.nii.gz'))
+
+
+# TODO: 
+def load_elec_file(elec_file):
+    pass
+
+def extend_elec_location(elec_location_mni09):
     
     
+    
+    pass
 
+def locate_electrodes(elec_file, atlas_file, neighbours=0):
+    from collections import defaultdict
 
+    elec_location_mni09 = load_elec_file(elec_file)
+    if neighbours:
+        elec_location_mni09 = extend_elec_location(elec_location_mni09)
+    atlas_file = '/home/asier/git/ruber/data/external/bha_atlas_2754_1mm_mni09c.nii.gz'
 
+    atlas_data = nib.load(atlas_file).get_data()
+    roi_location_mni09 = defaultdict(set)
+
+    for elec in elec_location_mni09.keys():
+        for x, y, z in elec_location_mni09[elec]:
+            roi_location_mni09[elec].add(atlas_data[x, y, z].astype('int'))
 
 
 
