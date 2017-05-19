@@ -156,9 +156,6 @@ np.savetxt(opj(base_path, 'time_series_2754.txt'), time_series_2754)
 
 
 
-
-
-
 """
 Extract brain from electrodes T1W -> this to BIDS
 """
@@ -175,7 +172,6 @@ flirt -in /home/asier/Desktop/test_ruber/T1_brain \
 -cost mutualinfo -out /home/asier/Desktop/test_ruber/t1_brain_09c                    
 
 # TODO: Include this in the pipeline in an organize way, preferrably following BIDS
-# TODO: Mark electrodes by hand, locate them and tell ROIs belonging to. 
 
 elec_file = '/home/asier/Desktop/test_ruber/sub001elec.loc'
 
