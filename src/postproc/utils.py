@@ -92,14 +92,19 @@ def writeDict(dict, filename, sep=','):
             f.write(i + ":" + sep.join([str(x) for x in dict[i]]) + "\n")
 
 
-def locate_electrodes(elec_file, atlas_file, neighbours=0):
+def locate_electrodes(elec_dict, atlas_file, neighbours=0):
     from collections import defaultdict
 
-    elec_location_mni09 = load_elec_file(elec_file)
+    ###
+    ### TODO
+    ###
+    elec_location_mni09 = elec_dict
+    #elec_location_mni09 = load_elec_file(elec_file)
     if neighbours:
         elec_location_mni09 = extend_elec_location(elec_location_mni09)
 
     atlas_data = nib.load(atlas_file).get_data()
+    roi_number = np.unique(atlas_data).shape[0]-1
     roi_location_mni09 = defaultdict(set)
 
     for elec in elec_location_mni09.keys():
@@ -108,7 +113,8 @@ def locate_electrodes(elec_file, atlas_file, neighbours=0):
             roi_location_mni09[elec].add(atlas_data[x, y, z].astype('int'))
 
     writeDict(roi_location_mni09,
-              '/home/asier/Desktop/test_ruber/sub001elec.roi')
+              '/home/asier/Desktop/test_ruber/sub001elec_' + 
+              roi_number + '_rois_' + neighbours + '_neighbours.roi')
 
 
 

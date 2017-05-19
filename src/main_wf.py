@@ -80,7 +80,7 @@ from os.path import join as opj
 from nilearn.input_data import NiftiLabelsMasker
 from nilearn.image import resample_img
 import nibabel as nib
-from src.postproc.utils import scrubbing
+from src.postproc.utils import scrubbing, locate_electrodes
 import pandas as pd
 
 base_path = '/home/asier/git/ruber/data/processed/fmriprep/sub-001/func/'
@@ -177,3 +177,24 @@ flirt -in /home/asier/Desktop/test_ruber/T1_brain \
 # TODO: Include this in the pipeline in an organize way, preferrably following BIDS
 # TODO: Mark electrodes by hand, locate them and tell ROIs belonging to. 
 
+elec_file = '/home/asier/Desktop/test_ruber/sub001elec.loc'
+
+locate_electrodes(elec_file, 
+                  atlas_2514, 
+                  neighbours=0)
+
+locate_electrodes(elec_file, 
+                  atlas_2754, 
+                  neighbours=0)
+    
+locate_electrodes(elec_file, 
+                  atlas_2514, 
+                  neighbours=1)
+        
+locate_electrodes(elec_file, 
+                  atlas_2754, 
+                  neighbours=1)
+    
+
+    
+    
