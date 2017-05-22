@@ -2,19 +2,52 @@
 """
 ONLY WORKS WITH python 2.7 DUE TO DCMSTACK. "source activate ruber"
 """
-from env import RAW_DATA, HEUDICONV_BIN, HEUDICONV_FOLDER, SESSION_TYPES
+import sys
 import shutil
 import subprocess
 import argparse
-import os
-import sys
 import os.path as op
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(op.dirname(op.dirname(op.abspath(__file__))))
+from env import RAW_DATA, HEUDICONV_BIN, HEUDICONV_FOLDER, SESSION_TYPES
 
 
-def electrodes_session_processing():
+def electrodes_session_processing(sub, ses):
 
-    # TODO
+    try:
+        data_dir = RAW_DATA + '/DICOM' + \
+                   '/' + sub + '/' + ses \
+                   + '/*/*/*'
+
+        command = [
+           HEUDICONV_BIN,
+           "-d",
+           data_dir,
+           "-s",
+           sub,
+           "-ss",
+           ses,
+           "-f",
+           op.join(HEUDICONV_FOLDER, 'convertall_electrodes.py'),
+           "-c",
+           "dcm2niix",
+           "-b",
+           "-o",
+           op.join(RAW_DATA, 'bids')
+        ]
+
+        output, error = subprocess.Popen(
+                            command, universal_newlines=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE).communicate()
+
+        shutil.rmtree(op.join(RAW_DATA, 'bids', 'sub-' + sub,
+                      'ses-' + ses, 'info'))
+    except:
+        pass
+#        if op.exists(op.join(RAW_DATA, 'bids', 'sub-' + sub,
+#                     'ses-' + ses, 'info')):
+#            shutil.rmtree(op.join(RAW_DATA, 'bids', 'sub-' + sub,
+#                          'ses-' + ses, 'info'))
 
     return
 
