@@ -1,44 +1,54 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from src.env import RAW_DATA, HEUDICONV_BIN
-import shutil
 import os
+import sys
 import os.path as op
-import json
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from env import RAW_DATA, HEUDICONV_BIN, HEUDICONV_FOLDER
+import shutil
 import subprocess
+import argparse
 
 
 if __name__ == "__main__":
 
-    subjects = os.listdir(op.join(RAW_DATA, 'DICOM'))
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-s", "--subject", nargs='+',
+                        help="subject id for heudiconv convertion",
+                        required=True)
+    parser.add_argument("-ses", "--session", nargs='+',
+                        help="session id for heudiconv convertion",
+                        required=True)
 
-    try:
-        dcm2bids = json.load(open(op.join(RAW_DATA, 'dcm2bidsdict')))
-    except:
-        dcm2bids = {}
+    args = parser.parse_args()
+    sub_ses_comb = [[subject, session] for subject in args.subject
+                    for session in args.session]
 
-    for idx, subject in enumerate(subjects, start=1):
-        idx = '{0:03}'.format(idx)
+    for sub, ses in sub_ses_comb:
 
-        if (idx not in dcm2bids.keys() or
-            not op.exists(op.join(RAW_DATA, 'bids', 'sub-'+idx))):
+        if not op.exists(op.join(RAW_DATA, 'bids', 'sub-' + sub,
+                                 'ses-' + ses)):
+            print('Calculating: Subject ', sub, ' and session', ses)
 
-            dcm2bids[idx] = subject
-            os.rename(op.join(RAW_DATA, 'DICOM', subject),
-                      op.join(RAW_DATA, 'DICOM', idx))
             for i in range(6):
                 try:
                     data_dir = RAW_DATA + '/DICOM' + \
-                               '/{subject}/DICOM/*/*/*0' + str(i) + '/*'
+                               '/' + sub + '/' + ses \
+                               + '/' \
+                               + 'DICOM/*/*/*0' + \
+                               str(i) + '/*'
 
                     command = [
                        HEUDICONV_BIN,
                        "-d",
                        data_dir,
                        "-s",
-                       idx,
+                       sub,
+                       "-ss",
+                       ses,
                        "-f",
-                       op.join(RAW_DATA, 'convertall.py'),
+                       op.join(HEUDICONV_FOLDER, 'convertall.py'),
                        "-c",
                        "dcm2niix",
                        "-b",
@@ -51,12 +61,14 @@ if __name__ == "__main__":
                                         stdout=subprocess.PIPE,
                                         stderr=subprocess.PIPE).communicate()
 
-                    shutil.rmtree(op.join(RAW_DATA, 'bids', 'sub-'+idx, 'info'))
+                    shutil.rmtree(op.join(RAW_DATA, 'bids', 'sub-' + sub,
+                                 'ses-' + ses, 'info'))
                 except:
-                    if op.exists(op.join(RAW_DATA, 'bids', 'sub-'+idx, 'info')):
-                        shutil.rmtree(op.join(RAW_DATA, 'bids', 'sub-'+idx, 'info'))
+                    print(error)
+                    if op.exists(op.join(RAW_DATA, 'bids', 'sub-' + sub,
+                                 'ses-' + ses, 'info')):
+                        shutil.rmtree(op.join(RAW_DATA, 'bids', 'sub-' + sub,
+                                 'ses-' + ses, 'info'))
         else:
-            print('Subject ', subject, ' already processed')
-
-    json.dump(dcm2bids, open(op.join(RAW_DATA, 'dcm2bidsdict'), 'w'))
+            print('Subject ', sub, ' and session', ses, ' already processed')
 

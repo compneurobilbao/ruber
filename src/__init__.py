@@ -56,3 +56,5 @@ from src.preproc import (PETPVC,
                          STCParameters,
                          STCParametersInterface,
                          get_bounding_box)
+
+from src.data import dcm2bids
