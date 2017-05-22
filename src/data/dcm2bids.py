@@ -2,7 +2,7 @@
 """
 ONLY WORKS WITH python 2.7 DUE TO DCMSTACK. "source activate ruber"
 """
-from env import RAW_DATA, HEUDICONV_BIN, HEUDICONV_FOLDER
+from env import RAW_DATA, HEUDICONV_BIN, HEUDICONV_FOLDER, SESSION_TYPES
 import shutil
 import subprocess
 import argparse
@@ -11,6 +11,54 @@ import sys
 import os.path as op
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+
+def electrodes_session_processing():
+
+    # TODO
+
+    return
+
+
+def normal_sesssion_processing(sub, ses):
+
+    for i in range(6):
+        try:
+            data_dir = RAW_DATA + '/DICOM' + \
+                       '/' + sub + '/' + ses \
+                       + '/' \
+                       + 'DICOM/*/*/*0' + \
+                       str(i) + '/*'
+
+            command = [
+               HEUDICONV_BIN,
+               "-d",
+               data_dir,
+               "-s",
+               sub,
+               "-ss",
+               ses,
+               "-f",
+               op.join(HEUDICONV_FOLDER, 'convertall.py'),
+               "-c",
+               "dcm2niix",
+               "-b",
+               "-o",
+               op.join(RAW_DATA, 'bids')
+            ]
+
+            output, error = subprocess.Popen(
+                                command, universal_newlines=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE).communicate()
+
+            shutil.rmtree(op.join(RAW_DATA, 'bids', 'sub-' + sub,
+                          'ses-' + ses, 'info'))
+        except:
+            if op.exists(op.join(RAW_DATA, 'bids', 'sub-' + sub,
+                         'ses-' + ses, 'info')):
+                shutil.rmtree(op.join(RAW_DATA, 'bids', 'sub-' + sub,
+                              'ses-' + ses, 'info'))
+    return
 
 if __name__ == "__main__":
     """Process list of dicoms and creates bids dirs
@@ -44,43 +92,13 @@ if __name__ == "__main__":
         if not op.exists(op.join(RAW_DATA, 'bids', 'sub-' + sub,
                                  'ses-' + ses)):
             print('Calculating: Subject ', sub, ' and session', ses)
-
-            for i in range(6):
-                try:
-                    data_dir = RAW_DATA + '/DICOM' + \
-                               '/' + sub + '/' + ses \
-                               + '/' \
-                               + 'DICOM/*/*/*0' + \
-                               str(i) + '/*'
-
-                    command = [
-                       HEUDICONV_BIN,
-                       "-d",
-                       data_dir,
-                       "-s",
-                       sub,
-                       "-ss",
-                       ses,
-                       "-f",
-                       op.join(HEUDICONV_FOLDER, 'convertall.py'),
-                       "-c",
-                       "dcm2niix",
-                       "-b",
-                       "-o",
-                       op.join(RAW_DATA, 'bids')
-                    ]
-
-                    output, error = subprocess.Popen(
-                                        command, universal_newlines=True,
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE).communicate()
-
-                    shutil.rmtree(op.join(RAW_DATA, 'bids', 'sub-' + sub,
-                                  'ses-' + ses, 'info'))
-                except:
-                    if op.exists(op.join(RAW_DATA, 'bids', 'sub-' + sub,
-                                 'ses-' + ses, 'info')):
-                        shutil.rmtree(op.join(RAW_DATA, 'bids', 'sub-' + sub,
-                                      'ses-' + ses, 'info'))
+            
+            if ses == 'electrodes':
+                electrodes_session_processing(sub, ses)
+            elif ses in SESSION_TYPES:
+                normal_sesssion_processing(sub, ses)
+            else:
+                print('Session type not defined')
+                    
         else:
             print('Subject ', sub, ' and session', ses, ' already processed')
