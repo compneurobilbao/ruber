@@ -1,17 +1,31 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
-import os
-import sys
-import os.path as op
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+"""
+ONLY WORKS WITH python 2.7 DUE TO DCMSTACK. "source activate ruber"
+"""
 from env import RAW_DATA, HEUDICONV_BIN, HEUDICONV_FOLDER
 import shutil
 import subprocess
 import argparse
+import os
+import sys
+import os.path as op
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 if __name__ == "__main__":
+    """Process list of dicoms and creates bids dirs
+
+    Parameters
+    ----------
+    subject : list of str
+      List of subjects to consider
+    session : list of str
+      List of session ids, corresponds to multiple sessions
+
+    Returns
+    -------
+    Converts DICOMs to BIDS protocol
+    """
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-s", "--subject", nargs='+',
@@ -62,13 +76,11 @@ if __name__ == "__main__":
                                         stderr=subprocess.PIPE).communicate()
 
                     shutil.rmtree(op.join(RAW_DATA, 'bids', 'sub-' + sub,
-                                 'ses-' + ses, 'info'))
+                                  'ses-' + ses, 'info'))
                 except:
-                    print(error)
                     if op.exists(op.join(RAW_DATA, 'bids', 'sub-' + sub,
                                  'ses-' + ses, 'info')):
                         shutil.rmtree(op.join(RAW_DATA, 'bids', 'sub-' + sub,
-                                 'ses-' + ses, 'info'))
+                                      'ses-' + ses, 'info'))
         else:
             print('Subject ', sub, ' and session', ses, ' already processed')
-
