@@ -21,7 +21,7 @@ if __name__ == "__main__":
         idx = '{0:03}'.format(idx)
 
         if (idx not in dcm2bids.keys() or
-           not op.exists(op.join(RAW_DATA, 'bids', 'sub-'+idx))):
+            not op.exists(op.join(RAW_DATA, 'bids', 'sub-'+idx))):
 
             dcm2bids[idx] = subject
             os.rename(op.join(RAW_DATA, 'DICOM', subject),

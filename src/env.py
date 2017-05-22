@@ -3,5 +3,4 @@
 DATA = '/home/asier/git/ruber/data/'
 RAW_DATA = '/home/asier/git/ruber/data/raw'
 BIDS_DATA = '/home/asier/git/ruber/data/raw/bids'
-HEUDICONV_BIN = '/home/asier/git/ruber/src/heudiconv'
-
+HEUDICONV_BIN = '/home/asier/git/ruber/src/heudiconv/heudiconv'
