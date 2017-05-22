@@ -43,11 +43,10 @@ def electrodes_session_processing(sub, ses):
         shutil.rmtree(op.join(RAW_DATA, 'bids', 'sub-' + sub,
                       'ses-' + ses, 'info'))
     except:
-        pass
-#        if op.exists(op.join(RAW_DATA, 'bids', 'sub-' + sub,
-#                     'ses-' + ses, 'info')):
-#            shutil.rmtree(op.join(RAW_DATA, 'bids', 'sub-' + sub,
-#                          'ses-' + ses, 'info'))
+        if op.exists(op.join(RAW_DATA, 'bids', 'sub-' + sub,
+                     'ses-' + ses, 'info')):
+            shutil.rmtree(op.join(RAW_DATA, 'bids', 'sub-' + sub,
+                          'ses-' + ses, 'info'))
 
     return
 
