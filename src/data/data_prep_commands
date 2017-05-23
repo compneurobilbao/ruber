@@ -1,0 +1,93 @@
+# -*- coding: utf-8 -*-
+
+"""
+T1w electrodes to nifti using Slicer and nibabel/nilearn)
+"""
+"""
+In Slicer:
+"""
+slicer.util.loadVolume("/home/asier/Desktop/ruber_data/colocacion electrodos/3099986/5331/00010001")
+node = slicer.util.getNode("00010001_1")
+filename = '/home/asier/Desktop/ruber_data/colocacion electrodos/3099986/SaveTests.nii.gz'
+slicer.util.saveNode(node, filename)
+
+
+
+"""
+Resampling commands Python for T1w electrodes to 1mm
+"""
+from nilearn.image import resample_img
+import nibabel as nib
+import numpy as np
+
+img = nib.load('/home/asier/Desktop/ruber_data/colocacion electrodos/3099986/SaveTests.nii.gz')
+img.affine
+
+img_data = img.get_data()
+img_data.shape
+
+corrected_img = np.squeeze(img_data[:,:,:,0,0])
+
+img = nib.Nifti1Image(corrected_img, img.affine)
+
+resampled_img = resample_img(img, target_affine=np.diag((1, 1, 1)))
+
+nib.save(resampled_img, '/home/asier/Desktop/ruber_data/colocacion electrodos/test.nii.gz')
+
+"""
+Anonimize
+"""
+
+# cd Desktop/ruber_data/colocacion\ electrodos
+#gdcmanon --dumb --empty 10,10 --empty 10,20 -i 3099986 -o 3099986_anon -r -V --continue
+#
+#gdcmanon --dumb --empty 10,10 --empty 10,20 --remove 10,40 --remove 10,1010 --replace 10,1030,10 -i 3099986 -o 3099986_anon -r -V --continue
+
+
+
+
+
+
+"""
+One-time commands to resample Atlases to MNI09c space
+"""
+"""
+Atlas to 2009c
+"""
+
+## 3mm to 1mm
+flirt -in /home/asier/Desktop/test_ruber/atlas_2514.nii.gz \
+-ref  /home/asier/Desktop/test_ruber/MNI152_T1_3mm_brain.nii.gz \
+-out /home/asier/Desktop/test_ruber/atlas_2514_1mm.nii.gz \
+-init /home/asier/Desktop/test_ruber/3mmto1mm.mat -applyxfm -interp nearestneighbour 
+
+flirt -in /home/asier/Desktop/test_ruber/atlas_2754.nii.gz \
+-ref  /home/asier/Desktop/test_ruber/MNI152_T1_3mm_brain.nii.gz \
+-out /home/asier/Desktop/test_ruber/atlas_2754_1mm.nii.gz \
+-init /home/asier/Desktop/test_ruber/3mmto1mm.mat -applyxfm -interp nearestneighbour 
+
+## Brain MNI152 -> Brain 2009c (save omat) 
+## Atlas MNI152 -> 2009c space (using previous omat)
+
+flirt -in ${FSLDIR}/data/standard/MNI152_T1_1mm_brain.nii.gz  \
+-ref /home/asier/git/ruber/data/external/standard_mni_asym_09c/mni_icbm152_t1_tal_nlin_asym_09c_brain.nii \
+-cost mutualinfo -omat mni152_2_09c.mat
+
+flirt -in /home/asier/Desktop/test_ruber/atlas_2514_1mm.nii.gz \
+-ref /home/asier/git/ruber/data/external/standard_mni_asym_09c/mni_icbm152_t1_tal_nlin_asym_09c_brain.nii \
+-out /home/asier/git/ruber/data/external/bha_atlas_2514_1mm_mni09c.nii.gz \
+-init /home/asier/git/ruber/data/external/standard_mni_asym_09c/mni152_2_09c.mat -applyxfm -interp nearestneighbour 
+
+flirt -in /home/asier/Desktop/test_ruber/atlas_2754_1mm.nii.gz \
+-ref /home/asier/git/ruber/data/external/standard_mni_asym_09c/mni_icbm152_t1_tal_nlin_asym_09c_brain.nii \
+-out /home/asier/git/ruber/data/external/bha_atlas_2754_1mm_mni09c.nii.gz \
+-init /home/asier/git/ruber/data/external/standard_mni_asym_09c/mni152_2_09c.mat -applyxfm -interp nearestneighbour 
+
+
+"""
+Extract brain from 09c (just once)
+"""
+
+T1='/home/asier/git/ruber/data/external/standard_mni_asym_09c/mni_icbm152_t1_tal_nlin_asym_09c.nii'
+mask='/home/asier/git/ruber/data/external/standard_mni_asym_09c/mni_icbm152_t1_tal_nlin_asym_09c_mask.nii'
+fslmaths $T1 -mas $mask mni_icbm152_t1_tal_nlin_asym_09c_brain.nii

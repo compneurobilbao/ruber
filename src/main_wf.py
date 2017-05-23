@@ -1,16 +1,105 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""
-Extract brain from 09c (just once)
-"""
+subject_list = ['sub-001']
+session_list = ['ses-presurg']
 
-T1='/home/asier/git/ruber/data/external/standard_mni_asym_09c/mni_icbm152_t1_tal_nlin_asym_09c.nii'
-mask='/home/asier/git/ruber/data/external/standard_mni_asym_09c/mni_icbm152_t1_tal_nlin_asym_09c_mask.nii'
-fslmaths $T1 -mas $mask mni_icbm152_t1_tal_nlin_asym_09c_brain.nii
 
 """
-Atlas to T1W space
+fmriprep and mriqc calls
+"""
+
+run_fmriprep(subject_list, session_list)
+
+run_mriqc(subject_list, session_list)
+
+
+from src.env import BIDS_DATA, DATA
+import shutil
+import os
+from os.path import join as opj
+import json
+import subprocess
+
+
+"""
+fmriprep
+"""
+
+DATA_DIR = BIDS_DATA
+OUTPUT_DIR = opj(DATA, 'processed')
+WORK_DIR = opj(DATA, 'interim')
+
+docker run -ti --rm \
+    -v $DATA_DIR:/data:ro \
+    -v $OUTPUT_DIR:/output \
+    -v $WORK_DIR:/work \
+    -w /work \
+    poldracklab/fmriprep:latest \
+    /data /output participant --participant_label sub-001 \
+    -s presurg \
+    -w /work --no-freesurfer --ignore fieldmaps \
+    --output-space template --template MNI152NLin2009cAsymZ
+
+    
+#  T1w
+
+
+"""
+MRIQC
+"""
+
+DATA_DIR = BIDS_DATA
+OUTPUT_DIR = opj(DATA, 'processed')
+WORK_DIR = opj(DATA, 'interim')
+
+
+docker run -ti --rm \
+	-v $DATA_DIR:/data:ro \
+	-v $OUTPUT_DIR:/output \
+	-v $WORK_DIR:/work \
+	-w /work \
+	poldracklab/mriqc:latest \
+	/data /output participant --participant_label sub-001 \
+	-w /work --verbose-reports
+
+sudo chmod 777 -R $DATA
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"""
+Atlas to T1w space
 """
 #Extract brain from subject space
 fslmaths /home/asier/git/ruber/data/processed/fmriprep/sub-001/anat/sub-001_T1w_preproc.nii.gz \

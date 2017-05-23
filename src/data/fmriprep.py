@@ -5,21 +5,55 @@ Created on Tue Apr 25 11:35:55 2017
 
 @author: asier
 """
-from src.env import BIDS_DATA, DATA
+from src.env import BIDS_DATA, DATA, NTHREADS
 import shutil
-import os
+import os.path as op
 from os.path import join as opj
 import json
 import subprocess
 
-
-"""
-fmriprep
-"""
-
 DATA_DIR = BIDS_DATA
 OUTPUT_DIR = opj(DATA, 'processed')
 WORK_DIR = opj(DATA, 'interim')
+
+
+def run_fmriprep(subject_list, session_list):
+
+    sub_ses_comb = [[subject, session] for subject in subject_list
+                    for session in session_list]
+
+    for sub, ses in sub_ses_comb:
+        if not op.exists(op.join(OUTPUT_DIR, 'fmriprep', 'sub-' + sub,
+                                 'ses-' + ses)):
+            print('Calculating: Subject ', sub, ' and session', ses)
+
+            command = [
+                   'docker', 'run', '-i', '--rm',
+                   '-v', DATA_DIR + ':/data:ro',
+                   '-v', OUTPUT_DIR + ':/output',
+                   '-v', WORK_DIR + ':/work',
+                   '-w', '/work',
+                   'poldracklab/fmriprep:latest',
+                   '/data', '/output', 'participant',
+                   '--participant_label', sub, '-s', ses,
+                   '-w', '/work', '--no-freesurfer', '--ignore', 'fieldmaps',
+                   '--n_cpus', str(NTHREADS),
+                   '--output-space', 'template',
+                   '--template', 'MNI152NLin2009cAsym',
+                ]
+            
+            output, error = subprocess.Popen(
+                                    command, universal_newlines=True,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE).communicate()
+    
+
+def run_mriqc(subject_list, session_list):
+    
+    
+"""
+fmriprep
+"""
 
 docker run -ti --rm \
     -v $DATA_DIR:/data:ro \
@@ -28,20 +62,15 @@ docker run -ti --rm \
     -w /work \
     poldracklab/fmriprep:latest \
     /data /output participant --participant_label sub-001 \
+    --session-id post \
     -w /work --no-freesurfer --ignore fieldmaps \
-    --output-space template --template MNI152NLin2009cAsymZ
+    --output-space template --template MNI152NLin2009cAsym
 
     
-#  T1w
-
 
 """
 MRIQC
 """
-
-DATA_DIR = BIDS_DATA
-OUTPUT_DIR = opj(DATA, 'processed')
-WORK_DIR = opj(DATA, 'interim')
 
 
 docker run -ti --rm \
@@ -55,39 +84,6 @@ docker run -ti --rm \
 
 sudo chmod 777 -R $DATA
 
-
-
-"""
-Atlas to 2009c
-"""
-## 3mm to 1mm
-flirt -in /home/asier/Desktop/test_ruber/atlas_2514.nii.gz \
--ref  /home/asier/Desktop/test_ruber/MNI152_T1_3mm_brain.nii.gz \
--out /home/asier/Desktop/test_ruber/atlas_2514_1mm.nii.gz \
--init /home/asier/Desktop/test_ruber/3mmto1mm.mat -applyxfm -interp nearestneighbour 
-
-flirt -in /home/asier/Desktop/test_ruber/atlas_2754.nii.gz \
--ref  /home/asier/Desktop/test_ruber/MNI152_T1_3mm_brain.nii.gz \
--out /home/asier/Desktop/test_ruber/atlas_2754_1mm.nii.gz \
--init /home/asier/Desktop/test_ruber/3mmto1mm.mat -applyxfm -interp nearestneighbour 
-
-## Brain MNI152 -> Brain 2009c (save omat) 
-## Atlas MNI152 -> 2009c space (using previous omat)
-
-flirt -in ${FSLDIR}/data/standard/MNI152_T1_1mm_brain.nii.gz  \
--ref /home/asier/git/ruber/data/external/standard_mni_asym_09c/mni_icbm152_t1_tal_nlin_asym_09c_brain.nii \
--cost mutualinfo -omat mni152_2_09c.mat
-
-
-flirt -in /home/asier/Desktop/test_ruber/atlas_2514_1mm.nii.gz \
--ref /home/asier/git/ruber/data/external/standard_mni_asym_09c/mni_icbm152_t1_tal_nlin_asym_09c_brain.nii \
--out /home/asier/git/ruber/data/external/bha_atlas_2514_1mm_mni09c.nii.gz \
--init /home/asier/git/ruber/data/external/standard_mni_asym_09c/mni152_2_09c.mat -applyxfm -interp nearestneighbour 
-
-flirt -in /home/asier/Desktop/test_ruber/atlas_2754_1mm.nii.gz \
--ref /home/asier/git/ruber/data/external/standard_mni_asym_09c/mni_icbm152_t1_tal_nlin_asym_09c_brain.nii \
--out /home/asier/git/ruber/data/external/bha_atlas_2754_1mm_mni09c.nii.gz \
--init /home/asier/git/ruber/data/external/standard_mni_asym_09c/mni152_2_09c.mat -applyxfm -interp nearestneighbour 
 
 
 
