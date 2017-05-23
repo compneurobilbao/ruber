@@ -8,6 +8,19 @@ Created on Wed May 17 11:23:57 2017
 from os.path import join as opj
 import numpy as np
 import nibabel as nib
+import subprocess
+
+
+def execute(cmd):
+    popen = subprocess.Popen(cmd,
+                             stdout=subprocess.PIPE,
+                             universal_newlines=True)
+    for stdout_line in iter(popen.stdout.readline, ""):
+        yield stdout_line
+    popen.stdout.close()
+    return_code = popen.wait()
+    if return_code:
+        raise subprocess.CalledProcessError(return_code, cmd)
 
 
 def scrubbing(time_series, FD, thres=0.2):
@@ -50,6 +63,7 @@ def atlas_with_all_rois():
 # TODO: 
 def load_elec_file(elec_file):
     pass
+
 
 def extend_elec_location(elec_location):
 
@@ -116,6 +130,60 @@ def locate_electrodes(elec_dict, atlas_file, neighbours=0):
               '/home/asier/Desktop/test_ruber/sub001elec_' + 
               str(roi_number) + '_rois_' + str(neighbours) + '_neighbours.roi')
 
+
+def atlas_to_t1(subject_list, session_list):
+    """
+    Atlas to T1w space
+    """
+    
+    sub_ses_comb = [[subject, session] for subject in subject_list
+                    for session in session_list]
+
+    for sub, ses in sub_ses_comb:
+#        if not op.exists(op.join(OUTPUT_DIR, 'fmriprep', 'sub-' + sub,
+#                                 'ses-' + ses)):
+#            print('Calculating: Subject ', sub, ' and session', ses)
+
+            command = [
+                   'docker', 'run', '-i', '--rm',
+                   '-v', DATA_DIR + ':/data:ro',
+                   '-v', OUTPUT_DIR + ':/output',
+                   '-v', WORK_DIR + ':/work',
+                   '-w', '/work',
+                   'poldracklab/fmriprep:latest',
+                   '/data', '/output', 'participant',
+                   '--participant_label', sub, '-s', ses,
+                   '-w', '/work', '--no-freesurfer', '--ignore', 'fieldmaps',
+                   '--output-space', 'template',
+                   '--template', 'MNI152NLin2009cAsym',
+                ]
+              for output in execute(command):
+                print(output)  
+                
+                
+    #Extract brain from subject space
+    fslmaths /home/asier/git/ruber/data/processed/fmriprep/sub-001/anat/sub-001_T1w_preproc.nii.gz \
+    -mas /home/asier/git/ruber/data/processed/fmriprep/sub-001/anat/sub-001_T1w_brainmask.nii.gz \
+    /home/asier/git/ruber/data/processed/fmriprep/sub-001/anat/sub-001_T1w_brain.nii.gz
+    
+    ## this must be included in the pipelines
+    ## Brain 09c -> Brain subject (save omat) (previously we have to generate Brain Subject)
+    ## Atlas 09c -> Subject space (using previous omat)
+    flirt -in /home/asier/git/ruber/data/external/standard_mni_asym_09c/mni_icbm152_t1_tal_nlin_asym_09c_brain.nii \
+    -ref /home/asier/git/ruber/data/processed/fmriprep/sub-001/anat/sub-001_T1w_brain.nii.gz \
+    -omat /home/asier/git/ruber/data/processed/fmriprep/sub-001/anat/09c_2_sub-001.mat
+    
+    flirt -in  /home/asier/git/ruber/data/external/bha_atlas_2514_1mm_mni09c.nii.gz \
+    -ref /home/asier/git/ruber/data/processed/fmriprep/sub-001/anat/sub-001_T1w_brain.nii.gz \
+    -out /home/asier/git/ruber/data/processed/fmriprep/sub-001/anat/sub-001_atlas_2514.nii.gz \
+    -init /home/asier/git/ruber/data/processed/fmriprep/sub-001/anat/09c_2_sub-001.mat \
+    -applyxfm -interp nearestneighbour 
+    
+    flirt -in  /home/asier/git/ruber/data/external/bha_atlas_2754_1mm_mni09c.nii.gz \
+    -ref /home/asier/git/ruber/data/processed/fmriprep/sub-001/anat/sub-001_T1w_brain.nii.gz \
+    -out /home/asier/git/ruber/data/processed/fmriprep/sub-001/anat/sub-001_atlas_2754.nii.gz \
+    -init /home/asier/git/ruber/data/processed/fmriprep/sub-001/anat/09c_2_sub-001.mat \
+    -applyxfm -interp nearestneighbour 
 
 
 

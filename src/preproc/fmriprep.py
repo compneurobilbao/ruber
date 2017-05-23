@@ -5,28 +5,14 @@ Created on Tue Apr 25 11:35:55 2017
 
 @author: asier
 """
-from src.env import BIDS_DATA, DATA, NTHREADS
-import shutil
+from src.env import BIDS_DATA, DATA
 import os.path as op
 from os.path import join as opj
-import json
-import subprocess
+from src.postproc.utils import execute
 
 DATA_DIR = BIDS_DATA
 OUTPUT_DIR = opj(DATA, 'processed')
 WORK_DIR = opj(DATA, 'interim')
-
-
-def execute(cmd):
-    popen = subprocess.Popen(cmd,
-                             stdout=subprocess.PIPE,
-                             universal_newlines=True)
-    for stdout_line in iter(popen.stdout.readline, ""):
-        yield stdout_line
-    popen.stdout.close()
-    return_code = popen.wait()
-    if return_code:
-        raise subprocess.CalledProcessError(return_code, cmd)
 
 
 def run_fmriprep(subject_list, session_list):
@@ -52,13 +38,13 @@ def run_fmriprep(subject_list, session_list):
                    '--output-space', 'template',
                    '--template', 'MNI152NLin2009cAsym',
                 ]
-            
+
             for output in execute(command):
                 print(output)
-    
+
 
 def run_mriqc(subject_list, session_list):
-    
+
     sub_ses_comb = [[subject, session] for subject in subject_list
                     for session in session_list]
 
@@ -78,13 +64,9 @@ def run_mriqc(subject_list, session_list):
                    '--participant_label', sub, '-s', ses,
                    '-w', '/work', '--verbose-reports',
                 ]
-            
+
             for output in execute(command):
                 print(output)
-    
+
 
 # sudo chmod 777 -R $DATA
-
-
-
-
