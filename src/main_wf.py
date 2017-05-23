@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from src.preproc import run_fmriprep, run_mriqc
+
 from src.postproc.utils import atlas_to_t1
+
+from src.dmri import run_dti_artifact_correction
+from src.dmri import run_spm_fsl_dti_preprocessing
+from src.dmri import run_camino_tractography
 
 subject_list = ['sub-001']
 session_list = ['ses-presurg']
@@ -30,20 +35,14 @@ atlas_to_t1(subject_list, session_list)
 dMRI pipeline
 """
 
-# location of experiment folder 
-experiment_dir = '/home/asier/git/ruber'       
-# list of subject identifiers         
-    
-from src.dmri import run_dti_artifact_correction
-run_dti_artifact_correction(experiment_dir, subject_list)
+run_dti_artifact_correction(subject_list, session_list)
 
-from src.dmri import run_spm_fsl_dti_preprocessing
-run_spm_fsl_dti_preprocessing('/home/asier/git/ruber', ['sub-001'])
+run_spm_fsl_dti_preprocessing(subject_list, session_list)
 
-from src.dmri import run_camino_tractography
-run_camino_tractography('/home/asier/git/ruber', ['sub-001'] )
+run_camino_tractography(subject_list, session_list)
 
-http://web4.cs.ucl.ac.uk/research/medic/camino/pmwiki/pmwiki.php?n=Tutorials.TrackingTutorial
+# Visualization
+# http://web4.cs.ucl.ac.uk/research/medic/camino/pmwiki/pmwiki.php?n=Tutorials.TrackingTutorial
 
 
 

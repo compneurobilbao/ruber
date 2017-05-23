@@ -3,6 +3,8 @@
 """
 Nipype workflow to detect and remove ardifacts in diffusion MRI.
 """
+from src.env import DATA
+
 import os.path as op
 from os.path import join as opj
 
@@ -271,7 +273,7 @@ def dti_artifact_correction(wf_name="dti_artifact_correction"):
     return wf
 
 
-def run_dti_artifact_correction(experiment_dir, subject_list):
+def run_dti_artifact_correction(subject_list, session_list):
     """ Attach the FSL-based diffusion MRI artifact detection and correction
     workflow to the `main_wf`.
 
@@ -300,25 +302,27 @@ def run_dti_artifact_correction(experiment_dir, subject_list):
     """
     
     # name of output folder
-    output_dir = opj(experiment_dir, 'data', 'processed')     
-    working_dir = opj(experiment_dir,'data', 'interim') 
+    output_dir = opj(DATA, 'processed')     
+    working_dir = opj(DATA, 'interim') 
 
 
     # Infosource - a function free node to iterate over the list of subject names
-    infosource = pe.Node(IdentityInterface(fields=['subject_id']),
-                      name="infosource")
-    infosource.iterables = [('subject_id', subject_list)]
+    infosource = pe.Node(IdentityInterface(fields=['subject_id',
+                                                   'session_id']),
+                         name="infosource")
+    infosource.iterables = [('subject_id', subject_list),
+                            ('session_id', session_list)]
     
     # SelectFiles
-    templates = {'diff': 'data/raw/bids/{subject_id}/dwi/{subject_id}_dwi.nii.gz',
-                 'bval': 'data/raw/bids/{subject_id}/dwi/{subject_id}_dwi.bval',
-                 'bvec': 'data/raw/bids/{subject_id}/dwi/{subject_id}_dwi.bvec'}
+    templates = {'diff': 'raw/bids/{subject_id}/{session_id}/dwi/{subject_id}_{session_id}_dwi.nii.gz',
+                 'bval': 'raw/bids/{subject_id}/{session_id}/dwi/{subject_id}_{session_id}_dwi.bval',
+                 'bvec': 'raw/bids/{subject_id}/{session_id}/dwi/{subject_id}_{session_id}_dwi.bvec'}
     selectfiles = pe.Node(SelectFiles(templates,
-                                      base_directory=experiment_dir),
+                                      base_directory=DATA),
                           name="selectfiles")
     
     # Datasink
-    datasink = pe.Node(DataSink(base_directory=experiment_dir,
+    datasink = pe.Node(DataSink(base_directory=DATA,
                              container=output_dir),
                     name="datasink")
         
@@ -345,7 +349,8 @@ def run_dti_artifact_correction(experiment_dir, subject_list):
     wf.base_dir = working_dir
     
     # input and output diffusion MRI workflow to main workflow connections
-    wf.connect([(infosource, selectfiles, [('subject_id', 'subject_id')]),
+    wf.connect([(infosource, selectfiles, [('subject_id', 'subject_id'),
+                                           ('session_id', 'session_id')]),
                 (selectfiles,   art_dti_wf, [("diff", "dti_art_input.diff"),
                                              ("bval", "dti_art_input.bval"),
                                              ("bvec", "dti_art_input.bvec"),

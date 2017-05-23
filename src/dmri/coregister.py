@@ -2,6 +2,8 @@
 """
 Nipype workflows to co-register anatomical MRI to diffusion MRI.
 """
+from src.env import DATA
+
 import nipype.pipeline.engine as pe
 from nipype.interfaces.fsl import MultiImageMaths
 from nipype.interfaces.utility import IdentityInterface, Select, Split
@@ -152,7 +154,7 @@ def spm_anat_to_diff_coregistration(wf_name="spm_anat_to_diff_coregistration"):
     return wf
 
 
-def run_spm_fsl_dti_preprocessing(experiment_dir, subject_list):
+def run_spm_fsl_dti_preprocessing(subject_list, session_list):
     """ Attach a set of pipelines to the `main_wf` for Diffusion MR (`diff`) image processing.
     - dti_artifact_correction
     - spm_anat_to_diff_coregistration
@@ -182,28 +184,30 @@ def run_spm_fsl_dti_preprocessing(experiment_dir, subject_list):
     main_wf: nipype Workflow
     """
     # name of output folder
-    output_dir = opj(experiment_dir, 'data', 'processed')     
-    working_dir = opj(experiment_dir,'data', 'interim') 
+    output_dir = opj(DATA, 'processed')     
+    working_dir = opj(DATA, 'interim') 
 
 
     # Infosource - a function free node to iterate over the list of subject names
-    infosource = pe.Node(IdentityInterface(fields=['subject_id']),
-                      name="infosource")
-    infosource.iterables = [('subject_id', subject_list)]
+    infosource = pe.Node(IdentityInterface(fields=['subject_id',
+                                                   'session_id']),
+                  name="infosource")
+    infosource.iterables = [('subject_id', subject_list),
+                            ('session_id', session_list)]
     
     # SelectFiles
-    templates = {'avg_b0': 'data/processed/diff/_subject_id_{subject_id}/eddy_corrected_avg_b0.nii.gz',
-                 'brain_mask': 'data/processed/fmriprep/{subject_id}/anat/{subject_id}_T1w_brainmask.nii.gz',
-                 'anat_biascorr': 'data/processed/fmriprep/{subject_id}/anat/{subject_id}_T1w_preproc.nii.gz',
-                 'atlas_2514': 'data/processed/fmriprep/{subject_id}/anat/{subject_id}_atlas_2514.nii.gz',
-                 'atlas_2754': 'data/processed/fmriprep/{subject_id}/anat/{subject_id}_atlas_2754.nii.gz',
+    templates = {'avg_b0': 'processed/diff/_subject_id_{subject_id}/eddy_corrected_avg_b0.nii.gz',
+                 'brain_mask': 'processed/fmriprep/{subject_id}/{session_id}/anat/{subject_id}_{session_id}_T1w_brainmask.nii.gz',
+                 'anat_biascorr': 'processed/fmriprep/{subject_id}/{session_id}/anat/{subject_id}_{session_id}_T1w_preproc.nii.gz',
+                 'atlas_2514': 'processed/fmriprep/{subject_id}/{session_id}/anat/{subject_id}_{session_id}_atlas_2514.nii.gz',
+                 'atlas_2754': 'processed/fmriprep/{subject_id}/{session_id}/anat/{subject_id}_{session_id}_atlas_2754.nii.gz',
                  }
     selectfiles = pe.Node(SelectFiles(templates,
-                                      base_directory=experiment_dir),
+                                      base_directory=DATA),
                           name="selectfiles")
     
     # Datasink
-    datasink = pe.Node(DataSink(base_directory=experiment_dir,
+    datasink = pe.Node(DataSink(base_directory=DATA,
                              container=output_dir),
                     name="datasink")
         
@@ -245,7 +249,8 @@ def run_spm_fsl_dti_preprocessing(experiment_dir, subject_list):
     wf.base_dir = working_dir
     
     # input and output diffusion MRI workflow to main workflow connections
-    wf.connect([(infosource, selectfiles, [('subject_id', 'subject_id')]),
+    wf.connect([(infosource, selectfiles, [('subject_id', 'subject_id'),
+                                           ('session_id', 'session_id')]),
                 (selectfiles, coreg_dti_wf, [("avg_b0",         "dti_co_input.avg_b0"),]),
                 (selectfiles, coreg_dti_wf, [("brain_mask", "dti_co_input.brain_mask"),
                                              ("anat_biascorr",  "dti_co_input.anat")
