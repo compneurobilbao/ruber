@@ -49,7 +49,6 @@ def run_fmriprep(subject_list, session_list):
                    '/data', '/output', 'participant',
                    '--participant_label', sub, '-s', ses,
                    '-w', '/work', '--no-freesurfer', '--ignore', 'fieldmaps',
-                   '--n_cpus', str(NTHREADS),
                    '--output-space', 'template',
                    '--template', 'MNI152NLin2009cAsym',
                 ]

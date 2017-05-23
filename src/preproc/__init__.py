@@ -24,3 +24,6 @@ from .slicetime_params import (STCParameters,
                                STCParametersInterface)
 
 from .spatial import get_bounding_box
+
+from .fmriprep import run_fmriprep, run_mriqc
+

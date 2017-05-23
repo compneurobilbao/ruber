@@ -1,5 +1,6 @@
 from src.dmri import (run_spm_fsl_dti_preprocessing,
-                      run_dti_artifact_correction)
+                      run_dti_artifact_correction,
+                      )
 
 from src.interfaces import (CanICAInterface,
                             plot_all_components,
@@ -9,7 +10,8 @@ from src.interfaces import (CanICAInterface,
                             plot_stat_overlay,
                             KellyKapowski,
                             EddyCorrect,
-                            Eddy)
+                            Eddy,
+                            )
 
 from src.utils import (spm_tpm_priors_path,
                        remove_ext,
@@ -32,7 +34,8 @@ from src.utils import (spm_tpm_priors_path,
                        get_interface_node,
                        get_input_file_name,
                        add_table_headers,
-                       write_tabbed_excel)
+                       write_tabbed_excel,
+                       )
 
 from src.preproc import (PETPVC,
                          nipy_motion_correction,
@@ -55,6 +58,9 @@ from src.preproc import (PETPVC,
                          auto_nipy_slicetime,
                          STCParameters,
                          STCParametersInterface,
-                         get_bounding_box)
+                         get_bounding_box,
+                         run_fmriprep,
+                         run_mriqc,
+                         )
 
 from src.data import dcm2bids
