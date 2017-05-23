@@ -5,7 +5,7 @@ Created on Wed May 17 11:23:57 2017
 
 @author: asier
 """
-from src.env import DATA, ATLAS_TYPE
+from src.env import DATA, ATLAS_TYPES
 
 import os.path as op
 from os.path import join as opj
@@ -181,7 +181,7 @@ def atlas_to_t1(subject_list, session_list):
             for output in execute(command):
                 print(output)
 
-            for atlas in ATLAS_TYPE:
+            for atlas in ATLAS_TYPES:
                 # Atlas 09c -> Subject space (using previous omat)
                 command = ['flirt',
                            '-in',
