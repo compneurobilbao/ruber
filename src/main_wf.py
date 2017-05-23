@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from src.preproc import run_fmriprep, run_mriqc
-
+from src.postproc.utils import atlas_to_t1
 
 subject_list = ['sub-001']
 session_list = ['ses-presurg']
@@ -15,6 +15,8 @@ run_fmriprep(subject_list, session_list)
 
 run_mriqc(subject_list, session_list)
 
+# WARNING!! Execute permission change over files before continue
+# sudo chmod d------rwx -R $OUTPUT_DIR
 # sudo chmod 777 -R $OUTPUT_DIR
 
 
@@ -22,7 +24,7 @@ run_mriqc(subject_list, session_list)
 Atlas to T1w space
 """
 
-
+atlas_to_t1(subject_list, session_list)
 
 """
 dMRI pipeline
@@ -31,7 +33,6 @@ dMRI pipeline
 # location of experiment folder 
 experiment_dir = '/home/asier/git/ruber'       
 # list of subject identifiers         
-subject_list = ['sub-001']    
     
 from src.dmri import run_dti_artifact_correction
 run_dti_artifact_correction(experiment_dir, subject_list)

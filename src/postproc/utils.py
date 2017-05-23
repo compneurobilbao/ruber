@@ -5,10 +5,17 @@ Created on Wed May 17 11:23:57 2017
 
 @author: asier
 """
+from src.env import DATA, ATLAS_TYPE
+
+import os.path as op
 from os.path import join as opj
 import numpy as np
 import nibabel as nib
 import subprocess
+
+PROCESSED = opj(DATA, 'processed', 'fmriprep')
+EXTERNAL = opj(DATA, 'external')
+EXTERNAL_MNI_09c = opj(EXTERNAL, 'standard_mni_asym_09c')
 
 
 def execute(cmd):
@@ -140,53 +147,61 @@ def atlas_to_t1(subject_list, session_list):
                     for session in session_list]
 
     for sub, ses in sub_ses_comb:
-#        if not op.exists(op.join(OUTPUT_DIR, 'fmriprep', 'sub-' + sub,
-#                                 'ses-' + ses)):
-#            print('Calculating: Subject ', sub, ' and session', ses)
+        # TODO: CORRECT if exists
+        #  not op.exists(op.join(PROCESSED, 'fmriprep', 'sub-' + sub,
+#                                 'ses-' + ses))
+        if True:
+            print('Calculating: Subject ', sub, ' and session', ses)
 
-            command = [
-                   'docker', 'run', '-i', '--rm',
-                   '-v', DATA_DIR + ':/data:ro',
-                   '-v', OUTPUT_DIR + ':/output',
-                   '-v', WORK_DIR + ':/work',
-                   '-w', '/work',
-                   'poldracklab/fmriprep:latest',
-                   '/data', '/output', 'participant',
-                   '--participant_label', sub, '-s', ses,
-                   '-w', '/work', '--no-freesurfer', '--ignore', 'fieldmaps',
-                   '--output-space', 'template',
-                   '--template', 'MNI152NLin2009cAsym',
-                ]
-              for output in execute(command):
-                print(output)  
-                
-                
-    #Extract brain from subject space
-    fslmaths /home/asier/git/ruber/data/processed/fmriprep/sub-001/anat/sub-001_T1w_preproc.nii.gz \
-    -mas /home/asier/git/ruber/data/processed/fmriprep/sub-001/anat/sub-001_T1w_brainmask.nii.gz \
-    /home/asier/git/ruber/data/processed/fmriprep/sub-001/anat/sub-001_T1w_brain.nii.gz
-    
-    ## this must be included in the pipelines
-    ## Brain 09c -> Brain subject (save omat) (previously we have to generate Brain Subject)
-    ## Atlas 09c -> Subject space (using previous omat)
-    flirt -in /home/asier/git/ruber/data/external/standard_mni_asym_09c/mni_icbm152_t1_tal_nlin_asym_09c_brain.nii \
-    -ref /home/asier/git/ruber/data/processed/fmriprep/sub-001/anat/sub-001_T1w_brain.nii.gz \
-    -omat /home/asier/git/ruber/data/processed/fmriprep/sub-001/anat/09c_2_sub-001.mat
-    
-    flirt -in  /home/asier/git/ruber/data/external/bha_atlas_2514_1mm_mni09c.nii.gz \
-    -ref /home/asier/git/ruber/data/processed/fmriprep/sub-001/anat/sub-001_T1w_brain.nii.gz \
-    -out /home/asier/git/ruber/data/processed/fmriprep/sub-001/anat/sub-001_atlas_2514.nii.gz \
-    -init /home/asier/git/ruber/data/processed/fmriprep/sub-001/anat/09c_2_sub-001.mat \
-    -applyxfm -interp nearestneighbour 
-    
-    flirt -in  /home/asier/git/ruber/data/external/bha_atlas_2754_1mm_mni09c.nii.gz \
-    -ref /home/asier/git/ruber/data/processed/fmriprep/sub-001/anat/sub-001_T1w_brain.nii.gz \
-    -out /home/asier/git/ruber/data/processed/fmriprep/sub-001/anat/sub-001_atlas_2754.nii.gz \
-    -init /home/asier/git/ruber/data/processed/fmriprep/sub-001/anat/09c_2_sub-001.mat \
-    -applyxfm -interp nearestneighbour 
+            # Extract brain from subject space
+            command = ['fslmaths',
+                       opj(PROCESSED, sub, ses, 'anat',
+                           sub + '_' + ses + '_T1w_preproc.nii.gz'),
+                       '-mas',
+                       opj(PROCESSED, sub, ses, 'anat',
+                           sub + '_' + ses + '_T1w_brainmask.nii.gz'),
+                       opj(PROCESSED, sub, ses, 'anat',
+                           sub + '_' + ses + '_T1w_brain.nii.gz'),
+                       ]
+            for output in execute(command):
+                print(output)
 
+            # Brain 09c -> Brain subject (save omat)
+            command = ['flirt',
+                       '-in',
+                       opj(EXTERNAL_MNI_09c,
+                           'mni_icbm152_t1_tal_nlin_asym_09c_brain.nii'),
+                       '-ref',
+                       opj(PROCESSED, sub, ses, 'anat',
+                           sub + '_' + ses + '_T1w_brain.nii.gz'),
+                       '-omat',
+                       opj(PROCESSED, sub, ses, 'anat',
+                           '09c_2_' + sub + '_' + ses + '.mat'),
+                       ]
+            for output in execute(command):
+                print(output)
 
+            for atlas in ATLAS_TYPE:
+                # Atlas 09c -> Subject space (using previous omat)
+                command = ['flirt',
+                           '-in',
+                           opj(EXTERNAL,
+                               'bha_' + atlas + '_1mm_mni09c.nii.gz'),
+                           '-ref',
+                           opj(PROCESSED, sub, ses, 'anat',
+                               sub + '_' + ses + '_T1w_brain.nii.gz'),
+                           '-out',
+                           opj(PROCESSED, sub, ses, 'anat',
+                               sub + '_' + ses + '_' + atlas + '.nii.gz'),
+                           '-init',
+                           opj(PROCESSED, sub, ses, 'anat',
+                               '09c_2_' + sub + '_' + ses + '.mat'),
+                           '-applyxfm', '-interp', 'nearestneighbour',
+                           ]
+                for output in execute(command):
+                    print(output)
 
+    return
 
 """
 from nilearn import datasets
