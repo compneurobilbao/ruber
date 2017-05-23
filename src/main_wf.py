@@ -8,18 +8,13 @@ session_list = ['ses-presurg']
 """
 fmriprep and mriqc calls
 """
+from src.preproc import run_fmriprep, run_mriqc
+
 
 run_fmriprep(subject_list, session_list)
 
 run_mriqc(subject_list, session_list)
 
-
-from src.env import BIDS_DATA, DATA
-import shutil
-import os
-from os.path import join as opj
-import json
-import subprocess
 
 
 """
@@ -63,7 +58,7 @@ docker run -ti --rm \
 	/data /output participant --participant_label sub-001 \
 	-w /work --verbose-reports
 
-sudo chmod 777 -R $DATA
+sudo chmod 777 -R $OUTPUT_DIR
 
 
 
