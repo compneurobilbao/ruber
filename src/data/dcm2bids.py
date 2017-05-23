@@ -63,18 +63,18 @@ def normal_sesssion_processing(sub, ses):
 
             command = [
                HEUDICONV_BIN,
-               "-d",
+               '-d',
                data_dir,
-               "-s",
+               '-s',
                sub,
-               "-ss",
+               '-ss',
                ses,
-               "-f",
+               '-f',
                op.join(HEUDICONV_FOLDER, 'convertall.py'),
-               "-c",
-               "dcm2niix",
-               "-b",
-               "-o",
+               '-c',
+               'dcm2niix',
+               '-b',
+               '-o',
                op.join(RAW_DATA, 'bids')
             ]
 
@@ -108,11 +108,11 @@ if __name__ == "__main__":
     """
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-s", "--subject", nargs='+',
-                        help="subject id for heudiconv convertion",
+    parser.add_argument('-s', '--subject', nargs='+',
+                        help='subject id for heudiconv convertion',
                         required=True)
-    parser.add_argument("-ses", "--session", nargs='+',
-                        help="session id for heudiconv convertion",
+    parser.add_argument('-ses', '--session', nargs='+',
+                        help='session id for heudiconv convertion',
                         required=True)
 
     args = parser.parse_args()
