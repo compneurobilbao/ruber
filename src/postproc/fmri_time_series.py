@@ -28,7 +28,7 @@ def atlas_2_bold_space(sub, ses, atlas, preproc_data):
     resampled_atlas = resample_img(atlas_img, target_affine=fmri.affine,
                                    interpolation='nearest')
     nib.save(resampled_atlas,
-             opj(PROCESSED, 'fmriprep', sub, ses,
+             opj(PROCESSED, 'fmriprep', sub, ses, 'func',
                  sub + '_' + ses + '_' + atlas + '_bold_space.nii.gz'))
 
     return opj(PROCESSED, 'fmriprep', sub, ses,
