@@ -5,7 +5,7 @@ Created on Wed May 17 11:23:57 2017
 
 @author: asier
 """
-from src.env import DATA, ATLAS_TYPES
+from src.env import DATA, ATLAS_TYPES, NEIGHBOURS
 
 import os.path as op
 from os.path import join as opj
@@ -36,6 +36,72 @@ def scrubbing(time_series, FD, thres=0.2):
     """
     scrubbed_time_series = time_series.T[:, (FD < thres)]
     return scrubbed_time_series.T
+
+
+def atlas_to_t1(subject_list, session_list):
+    """
+    Atlas to T1w space
+    """
+    
+    sub_ses_comb = [[subject, session] for subject in subject_list
+                    for session in session_list]
+
+    for sub, ses in sub_ses_comb:
+        # TODO: CORRECT if exists
+        #  not op.exists(op.join(PROCESSED, 'fmriprep', 'sub-' + sub,
+#                                 'ses-' + ses))
+        if True:
+            print('Calculating: Subject ', sub, ' and session', ses)
+
+            # Extract brain from subject space
+            command = ['fslmaths',
+                       opj(PROCESSED, sub, ses, 'anat',
+                           sub + '_' + ses + '_T1w_preproc.nii.gz'),
+                       '-mas',
+                       opj(PROCESSED, sub, ses, 'anat',
+                           sub + '_' + ses + '_T1w_brainmask.nii.gz'),
+                       opj(PROCESSED, sub, ses, 'anat',
+                           sub + '_' + ses + '_T1w_brain.nii.gz'),
+                       ]
+            for output in execute(command):
+                print(output)
+
+            # Brain 09c -> Brain subject (save omat)
+            command = ['flirt',
+                       '-in',
+                       opj(EXTERNAL_MNI_09c,
+                           'mni_icbm152_t1_tal_nlin_asym_09c_brain.nii'),
+                       '-ref',
+                       opj(PROCESSED, sub, ses, 'anat',
+                           sub + '_' + ses + '_T1w_brain.nii.gz'),
+                       '-omat',
+                       opj(PROCESSED, sub, ses, 'anat',
+                           '09c_2_' + sub + '_' + ses + '.mat'),
+                       ]
+            for output in execute(command):
+                print(output)
+
+            for atlas in ATLAS_TYPES:
+                # Atlas 09c -> Subject space (using previous omat)
+                command = ['flirt',
+                           '-in',
+                           opj(EXTERNAL,
+                               'bha_' + atlas + '_1mm_mni09c.nii.gz'),
+                           '-ref',
+                           opj(PROCESSED, sub, ses, 'anat',
+                               sub + '_' + ses + '_T1w_brain.nii.gz'),
+                           '-out',
+                           opj(PROCESSED, sub, ses, 'anat',
+                               sub + '_' + ses + '_' + atlas + '.nii.gz'),
+                           '-init',
+                           opj(PROCESSED, sub, ses, 'anat',
+                               '09c_2_' + sub + '_' + ses + '.mat'),
+                           '-applyxfm', '-interp', 'nearestneighbour',
+                           ]
+                for output in execute(command):
+                    print(output)
+
+    return
 
 
 def atlas_with_all_rois():
@@ -113,95 +179,93 @@ def writeDict(dict, filename, sep=','):
             f.write(i + ":" + sep.join([str(x) for x in dict[i]]) + "\n")
 
 
-def locate_electrodes(elec_dict, atlas_file, neighbours=0):
+def t1w_electrodes_to_09c(subject_list):
+    
+    ses = 'electrodes'
+    
+    for sub in subject_list:
+        """
+        Extract brain from electrodes T1W -> this to BIDS
+        """
+        command = ['bet',
+                   opj(DATA, 'raw', 'bids', sub, ses, 'electrodes.nii.gz'),
+                   opj(DATA, 'raw', 'bids', sub, ses, 'electrodes_brain.nii.gz'),
+                   '-B', '-f', '0.1', '-s', '-m',
+                   ]
+
+        for output in execute(command):
+            print(output)
+
+        """
+        Atlas to subject space
+        """
+        command = ['flirt',
+                   '-in',
+                   opj(DATA, 'raw', 'bids', sub, ses,
+                       'electrodes_brain.nii.gz'),
+                   '-ref',
+                   opj(EXTERNAL_MNI_09c,
+                       'mni_icbm152_t1_tal_nlin_asym_09c_brain.nii'),
+                   '-cost', 'mutualinfo',
+                   '-out',
+                   opj(DATA, 'raw', 'bids', sub, ses,
+                       'electrodes_brain_09c.nii.gz')
+                   ]
+
+        for output in execute(command):
+            print(output)
+                                 
+
+def locate_electrodes(subject_list):
     from collections import defaultdict
 
     ###
     ### TODO
     ###
-    elec_location_mni09 = elec_dict
+    # elec_location_mni09 = elec_dict
     #elec_location_mni09 = load_elec_file(elec_file)
-    if neighbours:
-        elec_location_mni09 = extend_elec_location(elec_location_mni09)
-
-    atlas_data = nib.load(atlas_file).get_data()
-    roi_number = np.unique(atlas_data).shape[0]-1
-    roi_location_mni09 = defaultdict(set)
-
-    for elec in elec_location_mni09.keys():
-        for location in elec_location_mni09[elec]:
-            x, y, z = location
-            roi_location_mni09[elec].add(atlas_data[x, y, z].astype('int'))
-
-    writeDict(roi_location_mni09,
-              '/home/asier/Desktop/test_ruber/sub001elec_' + 
-              str(roi_number) + '_rois_' + str(neighbours) + '_neighbours.roi')
-
-
-def atlas_to_t1(subject_list, session_list):
-    """
-    Atlas to T1w space
-    """
     
-    sub_ses_comb = [[subject, session] for subject in subject_list
-                    for session in session_list]
+    
+    for sub in subject_list:    
+        elec_file = opj(DATA, 'raw', 'bids', sub, 'elec.loc')
 
-    for sub, ses in sub_ses_comb:
-        # TODO: CORRECT if exists
-        #  not op.exists(op.join(PROCESSED, 'fmriprep', 'sub-' + sub,
-#                                 'ses-' + ses))
-        if True:
-            print('Calculating: Subject ', sub, ' and session', ses)
+    ###
+    ### TODO
+    ###
+    #elec_location_mni09 = load_elec_file(elec_file)
+    
+    elec_location_mni09 = elec_dict #from elec_file
 
-            # Extract brain from subject space
-            command = ['fslmaths',
-                       opj(PROCESSED, sub, ses, 'anat',
-                           sub + '_' + ses + '_T1w_preproc.nii.gz'),
-                       '-mas',
-                       opj(PROCESSED, sub, ses, 'anat',
-                           sub + '_' + ses + '_T1w_brainmask.nii.gz'),
-                       opj(PROCESSED, sub, ses, 'anat',
-                           sub + '_' + ses + '_T1w_brain.nii.gz'),
-                       ]
-            for output in execute(command):
-                print(output)
+    
+    for atlas, neighbours in zip(ATLAS_TYPES, NEIGHBOURS):
+        
+        atlas_file = opj(EXTERNAL, 'bha_' + atlas + '_1mm_mni09c.nii.gz')
+        
+        if neighbours:
+            elec_location_mni09 = extend_elec_location(elec_location_mni09)
 
-            # Brain 09c -> Brain subject (save omat)
-            command = ['flirt',
-                       '-in',
-                       opj(EXTERNAL_MNI_09c,
-                           'mni_icbm152_t1_tal_nlin_asym_09c_brain.nii'),
-                       '-ref',
-                       opj(PROCESSED, sub, ses, 'anat',
-                           sub + '_' + ses + '_T1w_brain.nii.gz'),
-                       '-omat',
-                       opj(PROCESSED, sub, ses, 'anat',
-                           '09c_2_' + sub + '_' + ses + '.mat'),
-                       ]
-            for output in execute(command):
-                print(output)
+        atlas_data = nib.load(atlas_file).get_data()
+        roi_number = np.unique(atlas_data).shape[0]-1
+        roi_location_mni09 = defaultdict(set)
+    
+        for elec in elec_location_mni09.keys():
+            for location in elec_location_mni09[elec]:
+                x, y, z = location
+                roi_location_mni09[elec].add(atlas_data[x, y, z].astype('int'))
+    
+        writeDict(roi_location_mni09,
+                  '/home/asier/Desktop/test_ruber/sub001elec_' + 
+                  str(roi_number) + '_rois_' + str(neighbours) + '_neighbours.roi')
+    
 
-            for atlas in ATLAS_TYPES:
-                # Atlas 09c -> Subject space (using previous omat)
-                command = ['flirt',
-                           '-in',
-                           opj(EXTERNAL,
-                               'bha_' + atlas + '_1mm_mni09c.nii.gz'),
-                           '-ref',
-                           opj(PROCESSED, sub, ses, 'anat',
-                               sub + '_' + ses + '_T1w_brain.nii.gz'),
-                           '-out',
-                           opj(PROCESSED, sub, ses, 'anat',
-                               sub + '_' + ses + '_' + atlas + '.nii.gz'),
-                           '-init',
-                           opj(PROCESSED, sub, ses, 'anat',
-                               '09c_2_' + sub + '_' + ses + '.mat'),
-                           '-applyxfm', '-interp', 'nearestneighbour',
-                           ]
-                for output in execute(command):
-                    print(output)
 
-    return
+
+
+
+
+
+
+
 
 """
 from nilearn import datasets

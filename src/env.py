@@ -22,3 +22,5 @@ CONFOUNDS_ID = ['FramewiseDisplacement',
                 'RotY',
                 'RotZ',
                 ]
+
+NEIGHBOURS = [1,2]

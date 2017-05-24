@@ -10,7 +10,7 @@ from src.dmri import run_camino_tractography
 
 from src.postproc.fmri_time_series import clean_and_get_time_series
 
-from src.postproc.utils import locate_electrodes
+from src.postproc.utils import t1w_electrodes_to_09c, locate_electrodes
 
 
 subject_list = ['sub-001']
@@ -53,44 +53,18 @@ run_camino_tractography(subject_list, session_list)
 """
 fMRI pipeline postproc
 """
+# WARINING! Create elec file for each subject manually !!
+# FIRST: T1w_electrodes to 09c space
 
-clean_and_get_time_series(subject_list, session_list)
+t1w_electrodes_to_09c(subject_list)
 
-"""
-Extract brain from electrodes T1W -> this to BIDS
-"""
+clean_and_get_time_series(subject_list)
 
-T1='/home/asier/Desktop/test_ruber/t1.nii.gz'
-${FSLDIR}/bin/bet $T1 /home/asier/Desktop/test_ruber/T1_brain -B -f "0.1" -s -m 
-
-"""
-Atlas to subject space
-"""
-                         
-flirt -in /home/asier/Desktop/test_ruber/T1_brain \
--ref /home/asier/git/ruber/data/external/standard_mni_asym_09c/mni_icbm152_t1_tal_nlin_asym_09c_brain.nii \
--cost mutualinfo -out /home/asier/Desktop/test_ruber/t1_brain_09c                    
+                  
 
 # TODO: Include this in the pipeline in an organize way, preferrably following BIDS
 
-elec_file = '/home/asier/Desktop/test_ruber/sub001elec.loc'
 
-locate_electrodes(elec_file, 
-                  atlas_2514, 
-                  neighbours=0)
-
-locate_electrodes(elec_file, 
-                  atlas_2754, 
-                  neighbours=0)
-    
-locate_electrodes(elec_file, 
-                  atlas_2514, 
-                  neighbours=1)
-        
-locate_electrodes(elec_file, 
-                  atlas_2754, 
-                  neighbours=1)
-    
 
     
     
