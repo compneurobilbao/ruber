@@ -8,10 +8,9 @@ from src.dmri import run_dti_artifact_correction
 from src.dmri import run_spm_fsl_dti_preprocessing
 from src.dmri import run_camino_tractography
 
-from src.postproc.fmri_time_series import
+from src.postproc.fmri_time_series import clean_and_get_time_series
 
-
-from src.postproc.utils import scrubbing, locate_electrodes
+from src.postproc.utils import locate_electrodes
 
 
 subject_list = ['sub-001']
@@ -55,14 +54,7 @@ run_camino_tractography(subject_list, session_list)
 fMRI pipeline postproc
 """
 
-
-
-
-
-
-
-
-
+clean_and_get_time_series(subject_list, session_list)
 
 """
 Extract brain from electrodes T1W -> this to BIDS

@@ -20,12 +20,10 @@ PROCESSED = opj(DATA, 'processed')
 EXTERNAL = opj(DATA, 'external')
 
 
-# Nuisance regression
-
 def atlas_2_bold_space(sub, ses, atlas, preproc_data):
 
-    atlas = opj(EXTERNAL, 'bha_' + atlas + '_1mm_mni09c.nii.gz'),
-    atlas_img = nib.load(atlas)
+    atlas_path = opj(EXTERNAL, 'bha_' + atlas + '_1mm_mni09c.nii.gz')
+    atlas_img = nib.load(atlas_path)
     fmri = nib.load(preproc_data)
     resampled_atlas = resample_img(atlas_img, target_affine=fmri.affine,
                                    interpolation='nearest')
@@ -37,14 +35,16 @@ def atlas_2_bold_space(sub, ses, atlas, preproc_data):
                sub + '_' + ses + '_' + atlas + '_bold_space.nii.gz')
 
 
-def nuisance_removal(subject_list, session_list):
+def clean_and_get_time_series(subject_list, session_list):
 
     sub_ses_comb = [[subject, session] for subject in subject_list
                     for session in session_list]
 
     for sub, ses in sub_ses_comb:
-        if not op.exists(op.join(PROCESSED, 'fmriprep', 'sub-' + sub,
-                                 'ses-' + ses)):
+        # TODO: CORRECT if exists
+        #  not op.exists(op.join(PROCESSED, 'fmriprep', 'sub-' + sub,
+#                                 'ses-' + ses))
+        if True:
             print('Calculating: Subject ', sub, ' and session', ses)
 
             base_path = opj(PROCESSED, 'fmriprep', sub, ses, 'func')
@@ -81,6 +81,6 @@ def nuisance_removal(subject_list, session_list):
                 time_series = scrubbing(time_series, FD, thres)
 
                 # Save time series
-                np.savetxt(opj(base_path, 'time_series_' + atlas + '.txt',
-                               time_series))
+                np.savetxt(opj(base_path, 'time_series_' + atlas + '.txt'),
+                           time_series)
     return
