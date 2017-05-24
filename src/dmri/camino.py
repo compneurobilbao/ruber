@@ -180,33 +180,32 @@ def run_camino_tractography(subject_list, session_list):
     -------
     main_wf: nipype Workflow
     """
-    output_dir = opj(DATA, 'processed')     
-    working_dir = opj(DATA, 'interim') 
+    output_dir = opj(DATA, 'processed')
+    working_dir = opj(DATA, 'interim')
 
 
     # Infosource - a function free node to iterate over the list of subject names
     infosource = pe.Node(IdentityInterface(fields=['subject_id',
                                                    'session_id']),
-                  name="infosource")
+                         name="infosource")
     infosource.iterables = [('subject_id', subject_list),
                             ('session_id', session_list)]
-    
+
     # SelectFiles
-    templates = {'eddy_corr_file': 'processed/diff/_subject_id_{subject_id}/eddy_corrected_denoised.nii.gz',
-                 'bval': 'raw/bids/{subject_id}/dwi/{subject_id}_dwi.bval',
-                 'bvec_rotated': 'processed/diff/_subject_id_{subject_id}/{subject_id}_dwi_rotated.bvec',
-                 'brain_mask_diff': 'processed/diff/_subject_id_{subject_id}/r{subject_id}_T1w_brainmask.nii',
-                 'atlas_diff_2514': 'processed/diff/_subject_id_{subject_id}/r{subject_id}_atlas_2514.nii',
-                 'atlas_diff_2754': 'processed/diff/_subject_id_{subject_id}/r{subject_id}_atlas_2754.nii',
-                }
+    templates = {'eddy_corr_file': 'processed/diff/_session_id_{session_id}_subject_id_{subject_id}/eddy_corrected_denoised.nii.gz',
+                 'bval': 'raw/bids/{subject_id}/{session_id}/dwi/{subject_id}_{session_id}_dwi.bval',
+                 'bvec_rotated': 'processed/diff/_session_id_{session_id}_subject_id_{subject_id}/{subject_id}_{session_id}_dwi_rotated.bvec',
+                 'brain_mask_diff': 'processed/diff/_session_id_{session_id}_subject_id_{subject_id}/r{subject_id}_{session_id}_T1w_brainmask.nii',
+                 'atlas_diff_2514': 'processed/diff/_session_id_{session_id}_subject_id_{subject_id}/r{subject_id}_{session_id}_atlas_2514.nii',
+                 'atlas_diff_2754': 'processed/diff/_session_id_{session_id}_subject_id_{subject_id}/r{subject_id}_{session_id}_atlas_2754.nii',
+                 }
     selectfiles = pe.Node(SelectFiles(templates,
                                       base_directory=DATA),
                           name="selectfiles")
     # Datasink
     datasink = pe.Node(DataSink(base_directory=DATA,
-                             container=output_dir),
-                    name="datasink")
-
+                                container=output_dir),
+                       name="datasink")
 
     # The workflow box
     tract_wf = camino_tractography()
@@ -216,7 +215,7 @@ def run_camino_tractography(subject_list, session_list):
     # input and output diffusion MRI workflow to main workflow connections
     wf.connect([(infosource, selectfiles, [('subject_id', 'subject_id'),
                                            ('session_id', 'session_id')]),
-                
+
                 (selectfiles, tract_wf, [("bval",            "tract_input.bval"),
                                          ("brain_mask_diff", "tract_input.mask"),
                                          ("eddy_corr_file",  "tract_input.diff"),
@@ -238,5 +237,5 @@ def run_camino_tractography(subject_list, session_list):
 
     # pass the atlas if it's the case
     wf.run()
-    
+
     return
