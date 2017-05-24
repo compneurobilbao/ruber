@@ -58,9 +58,16 @@ clean_and_get_time_series(SUBJECT_LIST, SESSION_LIST)
 Electrodes location pipeline (WARNING: Some manual work)
 """
 
-# WARNING! Create elec file for each subject manually !!
 # FIRST: T1w_electrodes to 09c space
 
 t1w_electrodes_to_09c(SUBJECT_LIST)
+
+# WARNING! Create elec file for each subject manually !!
+# from src.postproc.utils import contacts_from_electrode
+# elec_name = 'OIM1'
+# contact_num = 12
+# first_contact_pos = [78, 73, 78]
+# last_contact_pos = [80, 26, 84]
+# contacts_from_electrode(first_contact_pos, last_contact_pos, contact_num, elec_name)
 
 locate_electrodes(SUBJECT_LIST)
