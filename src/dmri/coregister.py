@@ -196,7 +196,7 @@ def run_spm_fsl_dti_preprocessing(subject_list, session_list):
                             ('session_id', session_list)]
     
     # SelectFiles
-    templates = {'avg_b0': 'processed/diff/_subject_id_{subject_id}/eddy_corrected_avg_b0.nii.gz',
+    templates = {'avg_b0': 'processed/diff/_session_id_{session_id}_subject_id_{subject_id}/eddy_corrected_avg_b0.nii.gz',
                  'brain_mask': 'processed/fmriprep/{subject_id}/{session_id}/anat/{subject_id}_{session_id}_T1w_brainmask.nii.gz',
                  'anat_biascorr': 'processed/fmriprep/{subject_id}/{session_id}/anat/{subject_id}_{session_id}_T1w_preproc.nii.gz',
                  'atlas_2514': 'processed/fmriprep/{subject_id}/{session_id}/anat/{subject_id}_{session_id}_atlas_2514.nii.gz',

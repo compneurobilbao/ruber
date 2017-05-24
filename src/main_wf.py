@@ -8,6 +8,12 @@ from src.dmri import run_dti_artifact_correction
 from src.dmri import run_spm_fsl_dti_preprocessing
 from src.dmri import run_camino_tractography
 
+from src.postproc.fmri_time_series import
+
+
+from src.postproc.utils import scrubbing, locate_electrodes
+
+
 subject_list = ['sub-001']
 session_list = ['ses-presurg']
 
