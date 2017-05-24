@@ -53,18 +53,18 @@ run_camino_tractography(subject_list, session_list)
 """
 fMRI pipeline postproc
 """
+
+
+clean_and_get_time_series(subject_list)
+
+
+"""
+Electrodes location pipeline (WARNING: Some manual work)
+"""
+
 # WARINING! Create elec file for each subject manually !!
 # FIRST: T1w_electrodes to 09c space
 
 t1w_electrodes_to_09c(subject_list)
 
-clean_and_get_time_series(subject_list)
-
-                  
-
-# TODO: Include this in the pipeline in an organize way, preferrably following BIDS
-
-
-
-    
-    
+locate_electrodes(subject_list)

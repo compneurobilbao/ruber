@@ -133,11 +133,6 @@ def atlas_with_all_rois():
              opj(base_path, 'sub-001_atlas_2754_bold_space.nii.gz'))
 
 
-# TODO: 
-def load_elec_file(elec_file):
-    pass
-
-
 def extend_elec_location(elec_location):
 
     for elec_key, value in elec_location.items():
@@ -180,16 +175,17 @@ def writeDict(dict, filename, sep=','):
 
 
 def t1w_electrodes_to_09c(subject_list):
-    
+
     ses = 'electrodes'
-    
+
     for sub in subject_list:
         """
         Extract brain from electrodes T1W -> this to BIDS
         """
         command = ['bet',
                    opj(DATA, 'raw', 'bids', sub, ses, 'electrodes.nii.gz'),
-                   opj(DATA, 'raw', 'bids', sub, ses, 'electrodes_brain.nii.gz'),
+                   opj(DATA, 'raw', 'bids', sub, ses,
+                       'electrodes_brain.nii.gz'),
                    '-B', '-f', '0.1', '-s', '-m',
                    ]
 
@@ -214,57 +210,54 @@ def t1w_electrodes_to_09c(subject_list):
 
         for output in execute(command):
             print(output)
-                                 
+
+
+def load_elec_file(elec_file):
+    
+    elec = {}
+    with open(elec_file) as f:
+        content = f.readlines()
+
+    for line in content:
+        exec(line)        
+    
+    return elec
+
 
 def locate_electrodes(subject_list):
     from collections import defaultdict
 
-    ###
-    ### TODO
-    ###
-    # elec_location_mni09 = elec_dict
-    #elec_location_mni09 = load_elec_file(elec_file)
-    
-    
-    for sub in subject_list:    
-        elec_file = opj(DATA, 'raw', 'bids', sub, 'elec.loc')
+    ses = 'electrodes'
 
-    ###
-    ### TODO
-    ###
-    #elec_location_mni09 = load_elec_file(elec_file)
-    
-    elec_location_mni09 = elec_dict #from elec_file
+    for sub in subject_list:
+        elec_file = opj(DATA, 'raw', 'bids', sub, ses, 'elec.loc')
 
-    
-    for atlas, neighbours in zip(ATLAS_TYPES, NEIGHBOURS):
+        elec_location_mni09 = load_elec_file(elec_file)
         
-        atlas_file = opj(EXTERNAL, 'bha_' + atlas + '_1mm_mni09c.nii.gz')
+        atlas_neig_comb = [[atlas, neighbours] for atlas in ATLAS_TYPES
+                    for neighbours in NEIGHBOURS]
+
+        for atlas, neighbours in atlas_neig_comb:
+            
+            atlas_file = opj(EXTERNAL, 'bha_' + atlas + '_1mm_mni09c.nii.gz')
+            
+            if neighbours:
+                elec_location_mni09 = extend_elec_location(elec_location_mni09)
+    
+            atlas_data = nib.load(atlas_file).get_data()
+            roi_number = np.unique(atlas_data).shape[0]-1
+            roi_location_mni09 = defaultdict(set)
         
-        if neighbours:
-            elec_location_mni09 = extend_elec_location(elec_location_mni09)
-
-        atlas_data = nib.load(atlas_file).get_data()
-        roi_number = np.unique(atlas_data).shape[0]-1
-        roi_location_mni09 = defaultdict(set)
-    
-        for elec in elec_location_mni09.keys():
-            for location in elec_location_mni09[elec]:
-                x, y, z = location
-                roi_location_mni09[elec].add(atlas_data[x, y, z].astype('int'))
-    
-        writeDict(roi_location_mni09,
-                  '/home/asier/Desktop/test_ruber/sub001elec_' + 
-                  str(roi_number) + '_rois_' + str(neighbours) + '_neighbours.roi')
-    
-
-
-
-
-
-
-
-
+            for elec in elec_location_mni09.keys():
+                for location in elec_location_mni09[elec]:
+                    x, y, z = location
+                    roi_location_mni09[elec].add(atlas_data[x, y, z].astype('int'))
+        
+            writeDict(roi_location_mni09,
+                      opj(DATA, 'raw', 'bids', sub, ses,
+                      sub + '_elec_' + str(roi_number) + '_rois_' +
+                      str(neighbours) + '_neighbours.roi'))
+        
 
 
 """
@@ -308,5 +301,5 @@ plt.imshow(correlation_matrix, interpolation="nearest", cmap="RdBu_r",
 
 # Add labels and adjust margins
 plt.gca().yaxis.tick_right()
-plt.subplots_adjust(left=.01, bottom=.3, top=.99, right=.62)  
+plt.subplots_adjust(left=.01, bottom=.3, top=.99, right=.62)
 """
