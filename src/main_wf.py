@@ -52,7 +52,7 @@ run_camino_tractography(SUBJECT_LIST, SESSION_LIST)
 fMRI pipeline postproc
 """
 
-clean_and_get_time_series(SUBJECT_LIST)
+clean_and_get_time_series(SUBJECT_LIST, SESSION_LIST)
 
 """
 Electrodes location pipeline (WARNING: Some manual work)

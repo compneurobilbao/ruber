@@ -100,17 +100,23 @@ def atlas_to_t1(subject_list, session_list):
                            ]
                 for output in execute(command):
                     print(output)
+                atlas_with_all_rois(sub, ses, atlas, opj(PROCESSED, sub, ses,
+                                                         'anat', sub + '_' +
+                                                         ses + '_' + atlas +
+                                                         '.nii.gz'))
 
     return
 
 
-def atlas_with_all_rois():
+def atlas_with_all_rois(sub, ses, atlas, new_atlas_path):
     """
     Function to correct atlas after resampling (looses some rois),
     this function recovers those lost rois
     """
-    atlas_old = '/home/asier/git/ruber/data/external/bha_atlas_2754_1mm_mni09c.nii.gz'
-    atlas_new = opj(base_path, 'sub-001_atlas_2754_bold_space.nii.gz')
+
+    atlas_old = opj(EXTERNAL, 'bha_' + atlas + '_1mm_mni09c.nii.gz')
+    atlas_new = opj(PROCESSED, sub, ses, 'func' + sub + '_' + ses +
+                    '_' + atlas + '_bold_space.nii.gz')
 
     atlas_new_img = nib.load(atlas_new)
     m = atlas_new_img.affine[:3, :3]
@@ -130,7 +136,8 @@ def atlas_with_all_rois():
     atlas_new_data_img_corrected = nib.Nifti1Image(atlas_new_data,
                                                    affine=atlas_new_img.affine)
     nib.save(atlas_new_data_img_corrected,
-             opj(base_path, 'sub-001_atlas_2754_bold_space.nii.gz'))
+             opj(PROCESSED, sub, ses, 'func' + sub + '_' + ses +
+                 '_' + atlas + '_bold_space.nii.gz'))
 
 
 def extend_elec_location(elec_location):
@@ -213,14 +220,14 @@ def t1w_electrodes_to_09c(subject_list):
 
 
 def load_elec_file(elec_file):
-    
+
     elec = {}
     with open(elec_file) as f:
         content = f.readlines()
 
     for line in content:
-        exec(line)        
-    
+        exec(line)     
+
     return elec
 
 
@@ -233,30 +240,48 @@ def locate_electrodes(subject_list):
         elec_file = opj(DATA, 'raw', 'bids', sub, ses, 'elec.loc')
 
         elec_location_mni09 = load_elec_file(elec_file)
-        
+
         atlas_neig_comb = [[atlas, neighbours] for atlas in ATLAS_TYPES
-                    for neighbours in NEIGHBOURS]
+                           for neighbours in NEIGHBOURS]
 
         for atlas, neighbours in atlas_neig_comb:
-            
+
             atlas_file = opj(EXTERNAL, 'bha_' + atlas + '_1mm_mni09c.nii.gz')
-            
+
             if neighbours:
                 elec_location_mni09 = extend_elec_location(elec_location_mni09)
-    
+
             atlas_data = nib.load(atlas_file).get_data()
             roi_number = np.unique(atlas_data).shape[0]-1
             roi_location_mni09 = defaultdict(set)
-        
+
             for elec in elec_location_mni09.keys():
                 for location in elec_location_mni09[elec]:
                     x, y, z = location
                     roi_location_mni09[elec].add(atlas_data[x, y, z].astype('int'))
-        
+
             writeDict(roi_location_mni09,
                       opj(DATA, 'raw', 'bids', sub, ses,
-                      sub + '_elec_' + str(roi_number) + '_rois_' +
-                      str(neighbours) + '_neighbours.roi'))
+                          sub + '_elec_' + str(roi_number) + '_rois_' +
+                          str(neighbours) + '_neighbours.roi'))
+
+
+def contacts_from_electrode(first_contact_pos, last_contact_pos, contact_num,
+                            elec_name):
+
+    x1, y1, z1 = first_contact_pos
+    x2, y2, z2 = last_contact_pos
+
+    difference = np.array([x2-x1, y2-y1, z2-z1])
+
+    portion = difference / (contact_num - 1)
+
+    for num in range(contact_num):
+        point = portion * num
+        print('elec[\'' + elec_name + '\'] = [' +
+              np.array2string(np.round(first_contact_pos + point).astype(int),
+                              separator=', ') +
+              ']')
         
 
 
