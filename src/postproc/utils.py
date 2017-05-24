@@ -115,7 +115,7 @@ def atlas_with_all_rois(sub, ses, atlas, new_atlas_path):
     """
 
     atlas_old = opj(EXTERNAL, 'bha_' + atlas + '_1mm_mni09c.nii.gz')
-    atlas_new = opj(PROCESSED, sub, ses, 'func' + sub + '_' + ses +
+    atlas_new = opj(PROCESSED, sub, ses, 'func', sub + '_' + ses +
                     '_' + atlas + '_bold_space.nii.gz')
 
     atlas_new_img = nib.load(atlas_new)
@@ -136,7 +136,7 @@ def atlas_with_all_rois(sub, ses, atlas, new_atlas_path):
     atlas_new_data_img_corrected = nib.Nifti1Image(atlas_new_data,
                                                    affine=atlas_new_img.affine)
     nib.save(atlas_new_data_img_corrected,
-             opj(PROCESSED, sub, ses, 'func' + sub + '_' + ses +
+             opj(PROCESSED, sub, ses, 'func', sub + '_' + ses +
                  '_' + atlas + '_bold_space.nii.gz'))
 
 
@@ -282,7 +282,11 @@ def contacts_from_electrode(first_contact_pos, last_contact_pos, contact_num,
               np.array2string(np.round(first_contact_pos + point).astype(int),
                               separator=', ') +
               ']')
-        
+
+# elec_name = 'OIM1'
+# contact_num = 12
+# first_contact_pos = [78, 73, 78]
+# last_contact_pos = [80, 26, 84]
 
 
 """

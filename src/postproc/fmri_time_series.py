@@ -31,7 +31,7 @@ def atlas_2_bold_space(sub, ses, atlas, preproc_data):
              opj(PROCESSED, 'fmriprep', sub, ses, 'func',
                  sub + '_' + ses + '_' + atlas + '_bold_space.nii.gz'))
 
-    return opj(PROCESSED, 'fmriprep', sub, ses,
+    return opj(PROCESSED, 'fmriprep', sub, ses, 'func',
                sub + '_' + ses + '_' + atlas + '_bold_space.nii.gz')
 
 
