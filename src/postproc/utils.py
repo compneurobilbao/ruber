@@ -232,13 +232,16 @@ def load_elec_file(elec_file):
 
 
 def locate_electrodes(subject_list):
+    """
+    function to locate each electrode contact in a ROI.
+    (might be the contact not to fall down in no ROI)
+    """
     from collections import defaultdict
 
     ses = 'electrodes'
 
     for sub in subject_list:
         elec_file = opj(DATA, 'raw', 'bids', sub, ses, 'elec.loc')
-
         elec_location_mni09 = load_elec_file(elec_file)
 
         atlas_neig_comb = [[atlas, neighbours] for atlas in ATLAS_TYPES
@@ -287,6 +290,85 @@ def contacts_from_electrode(first_contact_pos, last_contact_pos, contact_num,
 # contact_num = 12
 # first_contact_pos = [78, 73, 78]
 # last_contact_pos = [80, 26, 84]
+
+
+def create_centroids(atlas):
+
+    atlas_file = opj(EXTERNAL, 'bha_' + atlas + '_1mm_mni09c.nii.gz')
+    atlas_data = nib.load(atlas_file).get_data()
+
+    roi_number = np.unique(atlas_data).shape[0]
+
+    centroids = np.zeros((roi_number, 3))
+
+    for roi_num in range(roi_number):
+        centroids[roi_num] = np.mean(np.argwhere(atlas_data == roi_num),
+                                     axis=0)
+
+    np.save(opj(EXTERNAL,
+                'bha_' + atlas + '_1mm_mni09c_roi_centroids'),
+            centroids)
+    
+
+
+def find_closest_roi(location, atlas):
+    
+    x, y, z = location
+    
+    if not op.exists(opj(EXTERNAL,
+                         'bha_' + atlas + '_1mm_mni09c_roi_centroids.npy')):
+        create_centroids(atlas)
+    else:
+        centroids = np.load(opj(EXTERNAL,
+                                    'bha_' + atlas + 
+                                    '_1mm_mni09c_roi_centroids.npy'))
+        
+        
+        
+        
+def locate_electrodes_closest_roi(subject_list):
+    """
+    function to locate each electrode contact to the closest ROI.
+    (might be the contact not to fall down in no ROI)
+    """
+    from collections import defaultdict
+    
+    ses = 'electrodes'
+
+    for sub in subject_list:
+        elec_file = opj(DATA, 'raw', 'bids', sub, ses, 'elec.loc')
+        elec_location_mni09 = load_elec_file(elec_file)
+
+        for atlas in ATLAS_TYPES:
+
+            atlas_file = opj(EXTERNAL, 'bha_' + atlas + '_1mm_mni09c.nii.gz')
+
+            atlas_data = nib.load(atlas_file).get_data()
+            roi_number = np.unique(atlas_data).shape[0]-1
+            roi_location_mni09 = defaultdict(set)
+
+            for elec in elec_location_mni09.keys():
+                for location in elec_location_mni09[elec]:
+                    x, y, z = location
+                    roi = atlas_data[x, y, z].astype('int')
+                    if roi:
+                        roi_location_mni09[elec].add(roi)
+                    else:
+                        closest_roi = find_closest_roi(location, atlas)
+                        roi_location_mni09[elec].add(closest_roi)
+
+            writeDict(roi_location_mni09,
+                      opj(DATA, 'raw', 'bids', sub, ses,
+                          sub + '_elec_' + str(roi_number) + '_closest_rois' +
+                          '.roi'))
+
+
+
+
+
+
+
+
 
 
 """
