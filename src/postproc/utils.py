@@ -42,7 +42,6 @@ def atlas_to_t1(subject_list, session_list):
     """
     Atlas to T1w space
     """
-    
     sub_ses_comb = [[subject, session] for subject in subject_list
                     for session in session_list]
 
@@ -178,7 +177,8 @@ def extend_elec_location(elec_location):
 def writeDict(dict, filename, sep=','):
     with open(filename, "a") as f:
         for i in dict.keys():
-            f.write(i + ":" + sep.join([str(x) for x in dict[i]]) + "\n")
+            f.write('elec[\'' + i + '\'] = [' +
+                    sep.join([str(x) for x in dict[i]]) + ']\n')
 
 
 def t1w_electrodes_to_09c(subject_list):
@@ -226,7 +226,7 @@ def load_elec_file(elec_file):
         content = f.readlines()
 
     for line in content:
-        exec(line)     
+        exec(line)
 
     return elec
 
