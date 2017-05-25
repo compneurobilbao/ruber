@@ -4,6 +4,7 @@ Utilities to help in the DTI pre-processing
 """
 from nipype.algorithms.rapidart import ArtifactDetect
 from src.env import DATA, ATLAS_TYPES
+import os
 from os.path import join as opj
 import nibabel as nib
 import numpy as np
@@ -231,7 +232,6 @@ def correct_dwi_space_atlas(subject_list, session_list):
 
             atlas_new_data_img_corrected = nib.Nifti1Image(atlas_new_data,
                                                            affine=atlas_new_img.affine)
+            os.remove(atlas_new)
             nib.save(atlas_new_data_img_corrected,
-                     opj(DATA, 'processed', 'diff', '_session_id_' +
-                         ses + '_subject_id_' + sub,
-                         sub + '_' + ses + '_' + atlas + '.nii'))
+                     atlas_new)
