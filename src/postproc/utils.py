@@ -308,31 +308,39 @@ def create_centroids(atlas):
     np.save(opj(EXTERNAL,
                 'bha_' + atlas + '_1mm_mni09c_roi_centroids'),
             centroids)
-    
 
 
 def find_closest_roi(location, atlas):
-    
-    x, y, z = location
-    
+
+    location = np.array(location)
+
     if not op.exists(opj(EXTERNAL,
                          'bha_' + atlas + '_1mm_mni09c_roi_centroids.npy')):
         create_centroids(atlas)
     else:
         centroids = np.load(opj(EXTERNAL,
-                                    'bha_' + atlas + 
-                                    '_1mm_mni09c_roi_centroids.npy'))
-        
-        
-        
-        
+                                'bha_' + atlas +
+                                '_1mm_mni09c_roi_centroids.npy'))
+
+    closest_roi = 0
+    min_dist = np.inf
+    for idx, centroid in enumerate(centroids):
+        if idx:  # jump ROI == 0 (ROI == 0 is nothing)
+            dist = np.linalg.norm(location - centroid)
+            if min_dist > dist:
+                min_dist = dist
+                closest_roi = idx
+
+    return closest_roi
+
+
 def locate_electrodes_closest_roi(subject_list):
     """
     function to locate each electrode contact to the closest ROI.
     (might be the contact not to fall down in no ROI)
     """
     from collections import defaultdict
-    
+
     ses = 'electrodes'
 
     for sub in subject_list:
