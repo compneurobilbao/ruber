@@ -23,4 +23,4 @@ CONFOUNDS_ID = ['FramewiseDisplacement',
                 'RotZ',
                 ]
 
-NEIGHBOURS = [1,2]
+NEIGHBOURS = [0, 1]
