@@ -24,5 +24,10 @@ if __name__ == "__main__":
 
             # load struct
             
+            
             # load function (conn matrix?)
-            struct_file = opj(EXTERNAL, 'bha_' + atlas + '_1mm_mni09c.nii.gz')
+            struct_file = opj(DATA, 'processed', 'tract', '_session_id_' +
+                              ses + '_subject_id_' + sub,
+                              'conmat_' + atlas + '_sc.csv')
+            
+            struct_mat = np.loadtxt(struct_file, delimiter = ',', skiprows=1)
