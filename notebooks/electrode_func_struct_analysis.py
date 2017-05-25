@@ -22,10 +22,10 @@ if __name__ == "__main__":
                             'sub-001_elec_2514_closest_rois.roi')
             elec_location_mni09 = load_elec_file(elec_file)
 
-            # load struct
-            
-            
             # load function (conn matrix?)
+            
+            
+            # load struct
             struct_file = opj(DATA, 'processed', 'tract', '_session_id_' +
                               ses + '_subject_id_' + sub,
                               'conmat_' + atlas + '_sc.csv')
