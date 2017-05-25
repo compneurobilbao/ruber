@@ -85,8 +85,8 @@ def camino_tractography(wf_name="camino_tract"):
 
     track_2514  = pe.Node(Track(inputmodel="dt", out_file="tracts.Bfloat_2514"), name="track_2514")
     track_2754  = pe.Node(Track(inputmodel="dt", out_file="tracts.Bfloatk_2754"), name="track_2754")
-    conmat_2514 = pe.Node(Conmat(output_root="conmat_2514_"), name="conmat_2514")
-    conmat_2754 = pe.Node(Conmat(output_root="conmat_2754_"), name="conmat_2754")
+    conmat_2514 = pe.Node(Conmat(output_root="conmat_atlas_2514_"), name="conmat_2514")
+    conmat_2754 = pe.Node(Conmat(output_root="conmat_atlas_2754_"), name="conmat_2754")
 
 
     tract_output = pe.Node(IdentityInterface(fields=out_fields),
