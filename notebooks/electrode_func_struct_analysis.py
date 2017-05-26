@@ -5,6 +5,8 @@ from src.env import DATA, ATLAS_TYPES
 #import os.path as op
 from os.path import join as opj
 import numpy as np
+from matplotlib import pyplot as plt
+from nilearn.connectome import ConnectivityMeasure
 
 
 SUBJECT_LIST = ['sub-001']
@@ -22,6 +24,20 @@ def order_dict(dictionary):
                    key=lambda t: my_fun(*re.match(r'([a-zA-Z]+)(\d+)',
                                                   t[0]).groups())))
     return ordered
+
+
+def plot_matrix(matrix, idx, elec_tags):
+    plt.figure(figsize=(10, 10))
+    # Mask the main diagonal for visualization:
+
+    plt.imshow(matrix[idx], interpolation="nearest", cmap="RdBu_r")
+    # vmax=0.8, vmin=-0.8)
+
+    # Add labels and adjust margins
+    plt.xticks(range(len(elec_tags)), elec_tags, rotation=90)
+    plt.yticks(range(len(elec_tags)), elec_tags)
+    plt.gca().yaxis.tick_right()
+    plt.subplots_adjust(left=.01, bottom=.3, top=.99, right=.62)
 
 
 if __name__ == "__main__":
@@ -49,7 +65,6 @@ if __name__ == "__main__":
 
             func_mat = np.loadtxt(func_file)
             
-            from nilearn.connectome import ConnectivityMeasure
             correlation_measure = ConnectivityMeasure(kind='correlation')
             correlation_matrix = correlation_measure.fit_transform([func_mat])[0]
 
@@ -60,48 +75,6 @@ if __name__ == "__main__":
 
             struct_mat = np.loadtxt(struct_file, delimiter=',', skiprows=1)
 
-            struct_mat[idx]
+            plot_matrix(correlation_matrix, idx, elec_tags)
+            plot_matrix(struct_mat, idx, elec_tags)
 
-
-
-from matplotlib import pyplot as plt
-
-plt.figure(figsize=(10, 10))
-# Mask the main diagonal for visualization:
-
-plt.imshow(struct_mat[idx], interpolation="nearest", cmap="RdBu_r")
-           #vmax=0.8, vmin=-0.8)
-
-# Add labels and adjust margins
-x_ticks = plt.xticks(range(len(elec_tags)), elec_tags, rotation=90)
-y_ticks = plt.yticks(range(len(elec_tags)), elec_tags)
-plt.gca().yaxis.tick_right()
-plt.subplots_adjust(left=.01, bottom=.3, top=.99, right=.62)
-
-
-plt.figure(figsize=(10, 10))
-# Mask the main diagonal for visualization:
-
-plt.imshow(correlation_matrix[idx], interpolation="nearest", cmap="RdBu_r")
-           #vmax=0.8, vmin=-0.8)
-
-# Add labels and adjust margins
-x_ticks = plt.xticks(range(len(elec_tags)), elec_tags, rotation=90)
-y_ticks = plt.yticks(range(len(elec_tags)), elec_tags)
-plt.gca().yaxis.tick_right()
-plt.subplots_adjust(left=.01, bottom=.3, top=.99, right=.62)
-
-
-
-
-
-
-
-
-
-
-
-import nibabel as nib
-
-a = nib.load('/home/asier/git/ruber/data/processed/fmriprep/sub-001/ses-presurg/func/sub-001_ses-presurg_atlas_2754_bold_space.nii.gz').get_data()
-np.unique(a).shape
