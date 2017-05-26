@@ -64,9 +64,9 @@ if __name__ == "__main__":
                             'time_series_' + atlas + '.txt')
 
             func_mat = np.loadtxt(func_file)
-            
+
             correlation_measure = ConnectivityMeasure(kind='correlation')
-            correlation_matrix = correlation_measure.fit_transform([func_mat])[0]
+            corr_mat = correlation_measure.fit_transform([func_mat])[0]
 
             # load struct
             struct_file = opj(DATA, 'processed', 'tract', '_session_id_' +
@@ -75,6 +75,5 @@ if __name__ == "__main__":
 
             struct_mat = np.loadtxt(struct_file, delimiter=',', skiprows=1)
 
-            plot_matrix(correlation_matrix, idx, elec_tags)
+            plot_matrix(corr_mat, idx, elec_tags)
             plot_matrix(struct_mat, idx, elec_tags)
-
