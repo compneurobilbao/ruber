@@ -107,15 +107,15 @@ def atlas_to_t1(subject_list, session_list):
     return
 
 
-def atlas_with_all_rois(sub, ses, atlas, new_atlas_path):
+def atlas_with_all_rois(sub, ses, atlas, atlas_new):
     """
     Function to correct atlas after resampling (looses some rois),
     this function recovers those lost rois
     """
 
     atlas_old = opj(EXTERNAL, 'bha_' + atlas + '_1mm_mni09c.nii.gz')
-    atlas_new = opj(PROCESSED, sub, ses, 'func', sub + '_' + ses +
-                    '_' + atlas + '_bold_space.nii.gz')
+#    atlas_new = opj(PROCESSED, sub, ses, 'func', sub + '_' + ses +
+#                    '_' + atlas + '_bold_space.nii.gz')
 
     atlas_new_img = nib.load(atlas_new)
     m = atlas_new_img.affine[:3, :3]
@@ -134,9 +134,12 @@ def atlas_with_all_rois(sub, ses, atlas, new_atlas_path):
 
     atlas_new_data_img_corrected = nib.Nifti1Image(atlas_new_data,
                                                    affine=atlas_new_img.affine)
+
     nib.save(atlas_new_data_img_corrected,
-             opj(PROCESSED, sub, ses, 'func', sub + '_' + ses +
-                 '_' + atlas + '_bold_space.nii.gz'))
+             atlas_new)
+#    nib.save(atlas_new_data_img_corrected,
+#             opj(PROCESSED, sub, ses, 'func', sub + '_' + ses +
+#                 '_' + atlas + '_bold_space.nii.gz'))
 
 
 def extend_elec_location(elec_location):

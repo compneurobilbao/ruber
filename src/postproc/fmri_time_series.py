@@ -6,6 +6,7 @@ Created on Wed May 17 11:34:08 2017
 @author: asier
 """
 from src.env import DATA, ATLAS_TYPES, CONFOUNDS_ID
+from .utils import atlas_with_all_rois
 import os.path as op
 from os.path import join as opj
 
@@ -30,6 +31,11 @@ def atlas_2_bold_space(sub, ses, atlas, preproc_data):
     nib.save(resampled_atlas,
              opj(PROCESSED, 'fmriprep', sub, ses, 'func',
                  sub + '_' + ses + '_' + atlas + '_bold_space.nii.gz'))
+
+    atlas_with_all_rois(sub, ses, atlas, opj(PROCESSED, 'fmriprep', sub, ses,
+                                             'func',
+                                             sub + '_' + ses + '_' +
+                                             atlas + '_bold_space.nii.gz'))
 
     return opj(PROCESSED, 'fmriprep', sub, ses, 'func',
                sub + '_' + ses + '_' + atlas + '_bold_space.nii.gz')

@@ -37,21 +37,28 @@ if __name__ == "__main__":
             elec_location_mni09 = load_elec_file(elec_file)
 
             ordered_elec = order_dict(elec_location_mni09)
-    
+
             elec_tags = list(ordered_elec.keys())
-            elec_rois = np.array(list(ordered_elec.values()))[:,0]
+            elec_rois = np.array(list(ordered_elec.values()))[:, 0]
 
             idx = np.ix_(elec_rois, elec_rois)
-            
+
             # load function (conn matrix?)
+            func_file = opj(DATA, 'processed', 'fmriprep', sub, ses, 'func',
+                            'time_series_' + atlas + '.txt')
+
+            func_mat = np.loadtxt(func_file)
             
-            
+            from nilearn.connectome import ConnectivityMeasure
+            correlation_measure = ConnectivityMeasure(kind='correlation')
+            correlation_matrix = correlation_measure.fit_transform([func_mat])[0]
+
             # load struct
             struct_file = opj(DATA, 'processed', 'tract', '_session_id_' +
                               ses + '_subject_id_' + sub,
                               'conmat_' + atlas + '_sc.csv')
-            
-            struct_mat = np.loadtxt(struct_file, delimiter = ',', skiprows=1)
+
+            struct_mat = np.loadtxt(struct_file, delimiter=',', skiprows=1)
 
             struct_mat[idx]
 
@@ -72,3 +79,7 @@ plt.gca().yaxis.tick_right()
 plt.subplots_adjust(left=.01, bottom=.3, top=.99, right=.62)
 
 
+import nibabel as nib
+
+a = nib.load('/home/asier/git/ruber/data/processed/fmriprep/sub-001/ses-presurg/func/sub-001_ses-presurg_atlas_2754_bold_space.nii.gz').get_data()
+np.unique(a).shape
