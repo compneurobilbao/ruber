@@ -79,6 +79,28 @@ plt.gca().yaxis.tick_right()
 plt.subplots_adjust(left=.01, bottom=.3, top=.99, right=.62)
 
 
+plt.figure(figsize=(10, 10))
+# Mask the main diagonal for visualization:
+
+plt.imshow(correlation_matrix[idx], interpolation="nearest", cmap="RdBu_r")
+           #vmax=0.8, vmin=-0.8)
+
+# Add labels and adjust margins
+x_ticks = plt.xticks(range(len(elec_tags)), elec_tags, rotation=90)
+y_ticks = plt.yticks(range(len(elec_tags)), elec_tags)
+plt.gca().yaxis.tick_right()
+plt.subplots_adjust(left=.01, bottom=.3, top=.99, right=.62)
+
+
+
+
+
+
+
+
+
+
+
 import nibabel as nib
 
 a = nib.load('/home/asier/git/ruber/data/processed/fmriprep/sub-001/ses-presurg/func/sub-001_ses-presurg_atlas_2754_bold_space.nii.gz').get_data()
