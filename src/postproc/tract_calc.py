@@ -32,9 +32,12 @@ fslmaths eddy_corrected_denoised_DT_FA.nii -mul 0 -add 1 -roi 63 1 47 1 36 1 0 1
 fslmaths ACCpoint -kernel sphere 5 -fmean ACCsphere -odt float
 fslmaths ACCsphere.nii.gz -bin ACCsphere_bin.nii.gz
 
-cat tracts.Bfloat_2514 | procstreamlines -waypointfile ACCsphere_bin.nii.gz -endpointfile rsub-001_ses-presurg_atlas_2514.nii > processed_tracts
-cat processed_tracts | conmat -targetfile rsub-001_ses-presurg_atlas_2514.nii 
+## transform to dwi space! either with an omat from brain09c to dwi_brain or trying to find transform matrix 09c to dwi
+
+cat tracts.Bfloat_2514 | procstreamlines -waypointfile ACCsphere_bin.nii.gz -endpointfile rsub-001_ses-presurg_atlas_2514.nii | conmat -targetfile rsub-001_ses-presurg_atlas_2514.nii 
 
 struct_file = '/home/asier/Desktop/test_track/conmat_sc.csv'
+
 struct_mat = np.loadtxt(struct_file, delimiter=',', skiprows=1)
+
 np.count_nonzero(struct_mat)
