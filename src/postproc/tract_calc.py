@@ -36,6 +36,16 @@ fslmaths ACCsphere.nii.gz -bin ACCsphere_bin.nii.gz
 
 cat tracts.Bfloat_2514 | procstreamlines -waypointfile ACCsphere_bin.nii.gz -endpointfile rsub-001_ses-presurg_atlas_2514.nii | conmat -targetfile rsub-001_ses-presurg_atlas_2514.nii 
 
+cat tracts.Bfloat | counttracts
+cat A_oneDT_1.Bfloat | procstreamlines -outputroot A_twoROI_ -outputtracts -waypointfile subA2ROI -regionindex 1
+vtkstreamlines < streamlines.Bfloat > streamlines.vtk
+
+
+
+
+
+
+
 struct_file = '/home/asier/Desktop/test_track/conmat_sc.csv'
 
 struct_mat = np.loadtxt(struct_file, delimiter=',', skiprows=1)
