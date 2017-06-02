@@ -24,3 +24,4 @@ CONFOUNDS_ID = ['FramewiseDisplacement',
                 ]
 
 NEIGHBOURS = [0, 1]
+ELECTRODE_SPHERE_SIZE = 3

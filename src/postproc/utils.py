@@ -385,9 +385,9 @@ def order_dict(dictionary):
     return ordered
 
 
-def create_electrode_rois(ses, sub, atlas, vxl_loc, roi):
+def create_electrode_rois(sub, ses, atlas, vxl_loc, roi):
     
-    create_folder_elec_atlas
+    create_folder_elec_atlas_ses
     
     for idx, key in enumerate(roi.keys(), start=1):
         
@@ -396,7 +396,7 @@ def create_electrode_rois(ses, sub, atlas, vxl_loc, roi):
             
             # Create point
             command = ['fslmaths',
-                   opj(DATA, 'external', 'standard_mni_asym_09c',
+                   opj(EXTERNAL_MNI_09c,
                        'mni_icbm152_t1_tal_nlin_asym_09c_brain.nii'),
                    '-mul', '0', '-add', '1',
                    '-roi', str(x), '1', str(y), '1', str(z), '1', '0', '1',
@@ -415,22 +415,32 @@ def create_electrode_rois(ses, sub, atlas, vxl_loc, roi):
                    '-odt', 'float',
                    ]
             for output in execute(command):
-                print(output)   
+                print(output) 
                 
+            # Give value
             command = ['fslmaths',
                     opj(DATA, 'interim', 'test'),
                    '-bin', '-mul', str(idx),
-                   opj(DATA, 'interim', 'test'),
+                   opj(DATA, 'raw', 'bids', sub, 'electrodes', ses, atlas,
+                       'roi_' + key + '.nii.gz'),
                    '-odt', 'float',
                    ]
             for output in execute(command):
                 print(output)
-            
-            
-            
-            fslmaths create
         else:
-            extract roi/s (can be several) and create ROI
+            img_atlas = nib.load(opj(DATA, 'processed', 'diff', '_session_id_' +
+                                 ses + '_subject_id_' + sub,
+                                 'r' + sub + '_' + ses + '_' + atlas + '.nii'))
+            atlas_data = img_atlas.get_data()
+            new_roi = np.zeros(atlas_data.shape)
+            new_roi[np.where(atlas_data == roi[key])] = idx
+            new_roi_img = nib.Nifti1Image(new_roi, img_atlas.affine)       
+              
+            nib.save(new_roi_img, opj(DATA, 'raw', 'bids', sub, 'electrodes',
+                                      ses, atlas, 'roi_' + key + '.nii.gz'))
+
+                
+            # TODO!! (can be several)
 
 
 def calc_streamlines_btw_rois(roi1, roi2):
@@ -450,15 +460,16 @@ def calc_streamlines_btw_rois(roi1, roi2):
     cat tracts.Bfloat_2514 | procstreamlines -waypointfile ROI.nii.gz  | counttracts
     
 
-def calc_con_mat_electrodes(subject_list):
+def calc_con_mat_electrodes(subject_list, session_list):
     import itertools
-
-    ses = 'electrodes'
     
-    for sub in subject_list:
+    sub_ses_comb = [[subject, session] for subject in subject_list
+                    for session in session_list]
+
+    for sub, ses in sub_ses_comb:
         for atlas in ATLAS_TYPES:
             # load ROI location of each contact
-            elec_file_vxl = opj(DATA, 'raw', 'bids', sub, ses, 'elec.loc')
+            elec_file_vxl = opj(DATA, 'raw', 'bids', sub, 'electrodes', 'elec.loc')
             elec_location_mni09_vxl = load_elec_file(elec_file_vxl)
             
             elec_file_roi = opj(DATA, 'raw', 'bids', sub, 'electrodes',
@@ -471,7 +482,7 @@ def calc_con_mat_electrodes(subject_list):
             range_elec_num = range(elec_num)
             con_mat = np.zeros((elec_num, elec_num))
             
-            create_electrode_rois(ses, sub, atlas,
+            create_electrode_rois(sub, ses, atlas,
                                   elec_location_mni09_vxl,
                                   elec_location_mni09_roi)
 
