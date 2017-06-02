@@ -5,7 +5,7 @@ Created on Wed May 17 11:23:57 2017
 
 @author: asier
 """
-from src.env import DATA, ATLAS_TYPES, NEIGHBOURS
+from src.env import DATA, ATLAS_TYPES, NEIGHBOURS, ELECTRODE_SPHERE_SIZE
 
 import os.path as op
 from os.path import join as opj
@@ -385,13 +385,49 @@ def order_dict(dictionary):
     return ordered
 
 
-def create_electrode_rois(atlas, vxl_loc, roi):
+def create_electrode_rois(ses, sub, atlas, vxl_loc, roi):
     
     create_folder_elec_atlas
     
-    for key in roi.keys():
+    for idx, key in enumerate(roi.keys(), start=1):
         
         if roi[key] == 0:
+            x, y, z = vxl_loc[key][0]
+            
+            # Create point
+            command = ['fslmaths',
+                   opj(DATA, 'external', 'standard_mni_asym_09c',
+                       'mni_icbm152_t1_tal_nlin_asym_09c_brain.nii'),
+                   '-mul', '0', '-add', '1',
+                   '-roi', str(x), '1', str(y), '1', str(z), '1', '0', '1',
+                   opj(DATA, 'interim', 'test'),
+                   '-odt', 'float',
+                   ]
+            for output in execute(command):
+                print(output)
+
+            # Expand to sphere    
+            command = ['fslmaths',
+                    opj(DATA, 'interim', 'test'),
+                   '-kernel', 'sphere', str(ELECTRODE_SPHERE_SIZE),
+                   '-fmean',
+                   opj(DATA, 'interim', 'test'),
+                   '-odt', 'float',
+                   ]
+            for output in execute(command):
+                print(output)   
+                
+            command = ['fslmaths',
+                    opj(DATA, 'interim', 'test'),
+                   '-bin', '-mul', str(idx),
+                   opj(DATA, 'interim', 'test'),
+                   '-odt', 'float',
+                   ]
+            for output in execute(command):
+                print(output)
+            
+            
+            
             fslmaths create
         else:
             extract roi/s (can be several) and create ROI
@@ -435,7 +471,7 @@ def calc_con_mat_electrodes(subject_list):
             range_elec_num = range(elec_num)
             con_mat = np.zeros((elec_num, elec_num))
             
-            create_electrode_rois(atlas,
+            create_electrode_rois(ses, sub, atlas,
                                   elec_location_mni09_vxl,
                                   elec_location_mni09_roi)
 
