@@ -391,7 +391,7 @@ def create_electrode_rois(sub, ses, atlas, vxl_loc, roi):
     
     for idx, key in enumerate(roi.keys(), start=1):
         
-        if roi[key] == 0:
+        if roi[key] == 0: # CORRECT THIS!!
             x, y, z = vxl_loc[key][0]
             
             # Create point
