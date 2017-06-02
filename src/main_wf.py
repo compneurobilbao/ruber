@@ -80,4 +80,4 @@ locate_electrodes(SUBJECT_LIST)
 
 # or
 
-locate_electrodes_closest_roi(SUBJECT_LIST)
+#locate_electrodes_closest_roi(SUBJECT_LIST)

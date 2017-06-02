@@ -13,17 +13,7 @@ SUBJECT_LIST = ['sub-001']
 SESSION_LIST = ['ses-presurg']
 
 
-def order_dict(dictionary):
-    import collections
-    import re
 
-    my_fun = lambda k, v: [k, int(v)]
-
-    ordered = collections.OrderedDict(
-            sorted(dictionary.items(),
-                   key=lambda t: my_fun(*re.match(r'([a-zA-Z]+)(\d+)',
-                                                  t[0]).groups())))
-    return ordered
 
 
 def plot_matrix(matrix, idx, elec_tags):
@@ -69,11 +59,11 @@ if __name__ == "__main__":
             corr_mat = correlation_measure.fit_transform([func_mat])[0]
 
             # load struct
-            struct_file = opj(DATA, 'processed', 'tract', '_session_id_' +
-                              ses + '_subject_id_' + sub,
-                              'conmat_' + atlas + '_sc.csv')
-
-            struct_mat = np.loadtxt(struct_file, delimiter=',', skiprows=1)
+#            struct_file = opj(DATA, 'processed', 'tract', '_session_id_' +
+#                              ses + '_subject_id_' + sub,
+#                              'conmat_' + atlas + '_sc.csv')
+#
+#            struct_mat = np.loadtxt(struct_file, delimiter=',', skiprows=1)
 
             plot_matrix(corr_mat, idx, elec_tags)
-            plot_matrix(struct_mat, idx, elec_tags)
+#            plot_matrix(struct_mat, idx, elec_tags)

@@ -337,44 +337,75 @@ def find_closest_roi(location, atlas):
     return closest_roi
 
 
-def locate_electrodes_closest_roi(subject_list):
-    """
-    function to locate each electrode contact to the closest ROI.
-    (might be the contact not to fall down in no ROI)
-    """
-    from collections import defaultdict
+#def locate_electrodes_closest_roi(subject_list):
+#    """
+#    function to locate each electrode contact to the closest ROI.
+#    (might be the contact not to fall down in no ROI)
+#    """
+#    from collections import defaultdict
+#
+#    ses = 'electrodes'
+#
+#    for sub in subject_list:
+#        elec_file = opj(DATA, 'raw', 'bids', sub, ses, 'elec.loc')
+#        elec_location_mni09 = load_elec_file(elec_file)
+#
+#        for atlas in ATLAS_TYPES:
+#
+#            atlas_file = opj(EXTERNAL, 'bha_' + atlas + '_1mm_mni09c.nii.gz')
+#
+#            atlas_data = nib.load(atlas_file).get_data()
+#            roi_number = np.unique(atlas_data).shape[0]-1
+#            roi_location_mni09 = defaultdict(set)
+#
+#            for elec in elec_location_mni09.keys():
+#                for location in elec_location_mni09[elec]:
+#                    x, y, z = location
+#                    roi = atlas_data[x, y, z].astype('int')
+#                    if roi:
+#                        roi_location_mni09[elec].add(roi)
+#                    else:
+#                        closest_roi = find_closest_roi(location, atlas)
+#                        roi_location_mni09[elec].add(closest_roi)
+#
+#            writeDict(roi_location_mni09,
+#                      opj(DATA, 'raw', 'bids', sub, ses,
+#                          sub + '_' + atlas + '_closest_rois' +
+#                          '.roi'))
+def order_dict(dictionary):
+    import collections
+    import re
+
+    my_fun = lambda k, v: [k, int(v)]
+
+    ordered = collections.OrderedDict(
+            sorted(dictionary.items(),
+                   key=lambda t: my_fun(*re.match(r'([a-zA-Z]+)(\d+)',
+                                                  t[0]).groups())))
+    return ordered
+
+
+def calc_con_mat_electrodes(subject_list):
+    import itertools
 
     ses = 'electrodes'
-
+    
     for sub in subject_list:
-        elec_file = opj(DATA, 'raw', 'bids', sub, ses, 'elec.loc')
-        elec_location_mni09 = load_elec_file(elec_file)
-
         for atlas in ATLAS_TYPES:
+            # load ROI location of each contact
+            elec_file_vxl = opj(DATA, 'raw', 'bids', sub, ses, 'elec.loc')
+            elec_location_mni09_vxl = load_elec_file(elec_file_vxl)
+            
+            elec_file_roi = opj(DATA, 'raw', 'bids', sub, 'electrodes',
+                            'sub-001_atlas_2514_0_neighbours.roi')
+            elec_location_mni09_roi = load_elec_file(elec_file_roi)
+            elec_location_mni09_roi = order_dict(elec_location_mni09)
 
-            atlas_file = opj(EXTERNAL, 'bha_' + atlas + '_1mm_mni09c.nii.gz')
+            elec_tags = list(ordered_elec.keys())
+            elec_num = len(elec_tags)
 
-            atlas_data = nib.load(atlas_file).get_data()
-            roi_number = np.unique(atlas_data).shape[0]-1
-            roi_location_mni09 = defaultdict(set)
-
-            for elec in elec_location_mni09.keys():
-                for location in elec_location_mni09[elec]:
-                    x, y, z = location
-                    roi = atlas_data[x, y, z].astype('int')
-                    if roi:
-                        roi_location_mni09[elec].add(roi)
-                    else:
-                        closest_roi = find_closest_roi(location, atlas)
-                        roi_location_mni09[elec].add(closest_roi)
-
-            writeDict(roi_location_mni09,
-                      opj(DATA, 'raw', 'bids', sub, ses,
-                          sub + '_' + atlas + '_closest_rois' +
-                          '.roi'))
-
-
-
+            for tag1, tag2 in itertools.product(range(elec_num)):
+                print(tag1, tag2)
 
 
 
