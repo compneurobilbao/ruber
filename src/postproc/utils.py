@@ -268,7 +268,7 @@ def locate_electrodes(subject_list):
 
             writeDict(roi_location_mni09,
                       opj(DATA, 'raw', 'bids', sub, ses,
-                          sub + '_' + atlas +
+                          sub + '_' + atlas + '_' +
                           str(neighbours) + '_neighbours.roi'))
 
 
