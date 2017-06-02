@@ -385,6 +385,35 @@ def order_dict(dictionary):
     return ordered
 
 
+def create_electrode_rois(atlas, vxl_loc, roi):
+    
+    create_folder_elec_atlas
+    
+    for key in roi.keys():
+        
+        if roi[key] == 0:
+            fslmaths create
+        else:
+            extract roi/s (can be several) and create ROI
+
+
+def calc_streamlines_btw_rois(roi1, roi2):
+    
+    
+
+    fslmaths eddy_corrected_denoised_DT_FA.nii -mul 0 -add 1 -roi 63 1 43 1 47 1 0 1 ACCpoint -odt float
+    fslmaths ACCpoint -kernel sphere 3 -fmean ACCsphere -odt float
+    fslmaths ACCsphere.nii.gz -bin ROI1.nii.gz
+    
+    fslmaths eddy_corrected_denoised_DT_FA.nii -mul 0 -add 1 -roi 63 1 62 1 33 1 0 1 ACCpoint -odt float
+    fslmaths ACCpoint -kernel sphere 3 -fmean ACCsphere -odt float
+    fslmaths ACCsphere.nii.gz -bin -mul 2 ROI2.nii.gz
+    fslmaths ROI2.nii.gz -add ROI1.nii.gz ROI.nii.gz
+
+
+    cat tracts.Bfloat_2514 | procstreamlines -waypointfile ROI.nii.gz  | counttracts
+    
+
 def calc_con_mat_electrodes(subject_list):
     import itertools
 
@@ -403,10 +432,19 @@ def calc_con_mat_electrodes(subject_list):
 
             elec_tags = list(ordered_elec.keys())
             elec_num = len(elec_tags)
+            range_elec_num = range(elec_num)
+            con_mat = np.zeros((elec_num, elec_num))
+            
+            create_electrode_rois(atlas,
+                                  elec_location_mni09_vxl,
+                                  elec_location_mni09_roi)
 
-            for tag1, tag2 in itertools.product(range(elec_num)):
-                print(tag1, tag2)
+            for tag1_pos, tag2_pos in itertools.product(range_elec_num,
+                                                        range_elec_num):
 
+                num_streamlines = calc_streamlines_btw_rois(tag1, tag2)
+                con_mat[tag1_pos, tag2_pos] = num_streamlines
+                con_mat[tag2_pos, tag1_pos] = num_streamlines
 
 
 
