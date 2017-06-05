@@ -487,23 +487,39 @@ def create_electrode_rois(sub, ses, atlas, vxl_loc, roi):
                                       ses, atlas, 'roi_' + key + '.nii.gz'))
 
 
+def calc_streamlines_elec(sub, ses, atlas, elec1, elec2):
 
-def calc_streamlines_btw_rois(roi1, roi2):
-    
-    
+    elec1_path = opj(DATA, 'raw', 'bids', sub, 'electrodes',
+                     ses, atlas, 'roi_' + elec1 + '.nii.gz')
+    elec2_path = opj(DATA, 'raw', 'bids', sub, 'electrodes',
+                     ses, atlas, 'roi_' + elec2 + '.nii.gz')
 
-    fslmaths eddy_corrected_denoised_DT_FA.nii -mul 0 -add 1 -roi 63 1 43 1 47 1 0 1 ACCpoint -odt float
-    fslmaths ACCpoint -kernel sphere 3 -fmean ACCsphere -odt float
-    fslmaths ACCsphere.nii.gz -bin ROI1.nii.gz
-    
-    fslmaths eddy_corrected_denoised_DT_FA.nii -mul 0 -add 1 -roi 63 1 62 1 33 1 0 1 ACCpoint -odt float
-    fslmaths ACCpoint -kernel sphere 3 -fmean ACCsphere -odt float
-    fslmaths ACCsphere.nii.gz -bin -mul 2 ROI2.nii.gz
-    fslmaths ROI2.nii.gz -add ROI1.nii.gz ROI.nii.gz
+    atlas_num = atlas.split('_')[1]
+    tracts_file = opj(DATA, 'processed', 'tract',
+                      '_session_id_' + ses + '_subject_id_' +
+                      sub, 'tracts.Bfloat_' + atlas_num)
 
+    command = ['fslmaths',
+               elec1_path,
+               '-add',
+               elec2_path,
+               '-bin',
+               '-add',
+               elec2_path,
+               opj(DATA, 'interim', 'test3'),
+               ]
+    for output in execute(command):
+        print(output)
 
-    cat tracts.Bfloat_2514 | procstreamlines -waypointfile ROI.nii.gz  | counttracts
-    
+    command = ['cat ' + tracts_file +
+               ' | procstreamlines  -waypointfile ' +
+               opj(DATA, 'interim', 'test3.nii.gz') +
+               '  | counttracts']
+    streams = subprocess.check_output(command,
+                                      shell=True)
+
+    return int(streams)
+
 
 def calc_con_mat_electrodes(subject_list, session_list):
     import itertools
@@ -537,7 +553,10 @@ def calc_con_mat_electrodes(subject_list, session_list):
             for tag1_pos, tag2_pos in itertools.product(range_elec_num,
                                                         range_elec_num):
 
-                num_streamlines = calc_streamlines_btw_rois(tag1, tag2)
+                num_streamlines = calc_streamlines_elec(sub, ses, atlas,
+                                                        elec_tags[tag1_pos],
+                                                        elec_tags[tag2_pos])
+                
                 con_mat[tag1_pos, tag2_pos] = num_streamlines
                 con_mat[tag2_pos, tag1_pos] = num_streamlines
 
