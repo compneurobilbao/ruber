@@ -7,6 +7,7 @@ Created on Wed May 17 11:23:57 2017
 """
 from src.env import DATA, ATLAS_TYPES, NEIGHBOURS, ELECTRODE_SPHERE_SIZE
 
+import os
 import os.path as op
 from os.path import join as opj
 import numpy as np
@@ -488,11 +489,13 @@ def create_electrode_rois(sub, ses, atlas, vxl_loc, roi):
 
 
 def calc_streamlines_elec(sub, ses, atlas, elec1, elec2):
+    import tempfile
 
     elec1_path = opj(DATA, 'raw', 'bids', sub, 'electrodes',
                      ses, atlas, 'roi_' + elec1 + '.nii.gz')
     elec2_path = opj(DATA, 'raw', 'bids', sub, 'electrodes',
                      ses, atlas, 'roi_' + elec2 + '.nii.gz')
+    temp_file = tempfile.mkstemp()
 
     atlas_num = atlas.split('_')[1]
     tracts_file = opj(DATA, 'processed', 'tract',
@@ -506,14 +509,14 @@ def calc_streamlines_elec(sub, ses, atlas, elec1, elec2):
                '-bin',
                '-add',
                elec2_path,
-               opj(DATA, 'interim', 'test3'),
+               temp_file,
                ]
     for output in execute(command):
         print(output)
 
     command = ['cat ' + tracts_file +
                ' | procstreamlines  -waypointfile ' +
-               opj(DATA, 'interim', 'test3.nii.gz') +
+               temp_file +
                '  | counttracts']
     streams = subprocess.check_output(command,
                                       shell=True)
@@ -550,17 +553,27 @@ def calc_con_mat_electrodes(subject_list, session_list):
                                   elec_location_mni09_vxl,
                                   elec_location_mni09_roi)
 
-            for tag1_pos, tag2_pos in itertools.combinations(range_elec_num,
-                                                             range_elec_num):
+            for tag1, tag2 in itertools.combinations(range_elec_num, 2):
 
                 num_streamlines = calc_streamlines_elec(sub, ses, atlas,
-                                                        elec_tags[tag1_pos],
-                                                        elec_tags[tag2_pos])
-                
-                con_mat[tag1_pos, tag2_pos] = num_streamlines
-                con_mat[tag2_pos, tag1_pos] = num_streamlines
+                                                        elec_tags[tag1],
+                                                        elec_tags[tag2])
+
+                con_mat[tag1, tag2] = num_streamlines
+                con_mat[tag2, tag1] = num_streamlines
 
 
+
+from multiprocessing import Pool
+
+def multi_run_wrapper(args):
+   return calc_streamlines_elec(*args)
+
+args = [tuple([sub] + [ses] + [atlas] + list(element)) for element in itertools.combinations(elec_tags, 2)]
+
+pool = Pool(8)
+results = pool.map(multi_run_wrapper, args)
+print(results)
 
 
 
