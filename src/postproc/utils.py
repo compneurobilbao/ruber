@@ -550,8 +550,8 @@ def calc_con_mat_electrodes(subject_list, session_list):
                                   elec_location_mni09_vxl,
                                   elec_location_mni09_roi)
 
-            for tag1_pos, tag2_pos in itertools.product(range_elec_num,
-                                                        range_elec_num):
+            for tag1_pos, tag2_pos in itertools.combinations(range_elec_num,
+                                                             range_elec_num):
 
                 num_streamlines = calc_streamlines_elec(sub, ses, atlas,
                                                         elec_tags[tag1_pos],
