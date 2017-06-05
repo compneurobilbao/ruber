@@ -5,7 +5,7 @@ Created on Wed May 17 11:23:57 2017
 
 @author: asier
 """
-from src.env import DATA, ATLAS_TYPES, NEIGHBOURS, ELECTRODE_SPHERE_SIZE
+from src.env import DATA, ATLAS_TYPES, NEIGHBOURS, ELECTRODE_KERNEL_SIZE
 
 import os
 import os.path as op
@@ -450,7 +450,7 @@ def create_electrode_rois(sub, ses, atlas, vxl_loc, roi):
             # Expand to sphere
             command = ['fslmaths',
                        opj(DATA, 'interim', 'test'),
-                       '-kernel', 'gauss', str(ELECTRODE_SPHERE_SIZE),
+                       '-kernel', 'gauss', str(ELECTRODE_KERNEL_SIZE),
                        '-fmean',
                        opj(DATA, 'interim', 'test2'),
                        ]
@@ -488,8 +488,10 @@ def create_electrode_rois(sub, ses, atlas, vxl_loc, roi):
                                       ses, atlas, 'roi_' + key + '.nii.gz'))
 
 
-def calc_streamlines_elec(sub, ses, atlas, elec1, elec2):
+def calc_streamlines_elec(args):
     import tempfile
+
+    sub, ses, atlas, elec1, elec2 = args
 
     elec1_path = opj(DATA, 'raw', 'bids', sub, 'electrodes',
                      ses, atlas, 'roi_' + elec1 + '.nii.gz')
@@ -509,14 +511,14 @@ def calc_streamlines_elec(sub, ses, atlas, elec1, elec2):
                '-bin',
                '-add',
                elec2_path,
-               temp_file,
+               temp_file[1],
                ]
     for output in execute(command):
         print(output)
 
     command = ['cat ' + tracts_file +
                ' | procstreamlines  -waypointfile ' +
-               temp_file +
+               temp_file[1] +
                '  | counttracts']
     streams = subprocess.check_output(command,
                                       shell=True)
@@ -566,16 +568,13 @@ def calc_con_mat_electrodes(subject_list, session_list):
 
 from multiprocessing import Pool
 
-def multi_run_wrapper(args):
-   return calc_streamlines_elec(*args)
-
-args = [tuple([sub] + [ses] + [atlas] + list(element)) for element in itertools.combinations(elec_tags, 2)]
+args = [tuple([sub] + [ses] + [atlas] + list(element))
+        for element in itertools.combinations(elec_tags, 2)]
+args = args[700:799]
 
 pool = Pool(8)
-results = pool.map(multi_run_wrapper, args)
+results = pool.map(calc_streamlines_elec, args)
 print(results)
-
-
 
 
 """
