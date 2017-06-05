@@ -24,4 +24,4 @@ CONFOUNDS_ID = ['FramewiseDisplacement',
                 ]
 
 NEIGHBOURS = [0, 1]
-ELECTRODE_SPHERE_SIZE = 3
+ELECTRODE_KERNEL_SIZE = 1  # Gaussian kernel (sigma in mm, not voxels)

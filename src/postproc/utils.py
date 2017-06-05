@@ -385,49 +385,90 @@ def order_dict(dictionary):
     return ordered
 
 
+def transform_roi_to_dwi_space(sub, ses, output_roi_path):
+    
+    omat = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
+               'elec2dwi.omat')
+    
+    if not os.path.exists(omat):
+        command = ['flirt',
+                   '-in',
+                   opj(DATA, 'raw', 'bids', sub, 'electrodes',
+                   'electrodes_brain_09c.nii.gz'),
+                   '-ref',
+                   opj(DATA, 'processed', 'diff',
+                      '_session_id_' + ses + '_subject_id_' + sub,
+                      'eddy_corrected_avg_b0.nii.gz'),
+                   '-omat',
+                   omat,
+                   ]
+        for output in execute(command):
+            print(output)
+
+    command = ['flirt',
+               '-in',
+               output_roi_path,
+               '-ref',
+               opj(DATA, 'processed', 'diff',
+                   '_session_id_' + ses + '_subject_id_' + sub,
+                   'eddy_corrected_avg_b0.nii.gz'),
+               '-out',
+               output_roi_path,
+               '-init',
+               omat,
+               '-applyxfm', '-interp', 'nearestneighbour',
+               ]
+    for output in execute(command):
+        print(output)
+
+
 def create_electrode_rois(sub, ses, atlas, vxl_loc, roi):
     
     create_folder_elec_atlas_ses
     
     for idx, key in enumerate(roi.keys(), start=1):
         
-        if roi[key] == 0: # CORRECT THIS!!
+        if roi[key][0] == 0 and len(roi[key]) == 1:
             x, y, z = vxl_loc[key][0]
             
             # Create point
             command = ['fslmaths',
-                   opj(EXTERNAL_MNI_09c,
-                       'mni_icbm152_t1_tal_nlin_asym_09c_brain.nii'),
-                   '-mul', '0', '-add', '1',
-                   '-roi', str(x), '1', str(y), '1', str(z), '1', '0', '1',
-                   opj(DATA, 'interim', 'test'),
-                   '-odt', 'float',
-                   ]
+                       opj(EXTERNAL_MNI_09c,
+                           'mni_icbm152_t1_tal_nlin_asym_09c_brain.nii'),
+                       '-mul', '0', '-add', '1',
+                       '-roi', str(x), '1', str(y), '1', str(z), '1', '0', '1',
+                       opj(DATA, 'interim', 'test'),
+                       '-odt', 'float',
+                       ]
             for output in execute(command):
                 print(output)
 
-            # Expand to sphere    
+            # Expand to sphere                
             command = ['fslmaths',
-                    opj(DATA, 'interim', 'test'),
-                   '-kernel', 'sphere', str(ELECTRODE_SPHERE_SIZE),
-                   '-fmean',
-                   opj(DATA, 'interim', 'test'),
-                   '-odt', 'float',
-                   ]
+                       opj(DATA, 'interim', 'test'),
+                       '-kernel', 'gauss', str(ELECTRODE_SPHERE_SIZE),
+                       '-fmean',
+                       opj(DATA, 'interim', 'test2'),
+                       ]
             for output in execute(command):
-                print(output) 
+                print(output)     
                 
             # Give value
+            output_roi_path = opj(DATA, 'raw', 'bids', sub, 'electrodes',
+                                  ses, atlas, 'roi_' + key + '.nii.gz')
             command = ['fslmaths',
-                    opj(DATA, 'interim', 'test'),
+                    opj(DATA, 'interim', 'test2'),
                    '-bin', '-mul', str(idx),
-                   opj(DATA, 'raw', 'bids', sub, 'electrodes', ses, atlas,
-                       'roi_' + key + '.nii.gz'),
+                   output_roi_path,
                    '-odt', 'float',
                    ]
             for output in execute(command):
                 print(output)
-        else:
+ 
+            transform_roi_to_dwi_space(sub, ses, output_roi_path)    
+               
+                
+        else: # TODO!! (can be several)
             img_atlas = nib.load(opj(DATA, 'processed', 'diff', '_session_id_' +
                                  ses + '_subject_id_' + sub,
                                  'r' + sub + '_' + ses + '_' + atlas + '.nii'))
@@ -439,8 +480,6 @@ def create_electrode_rois(sub, ses, atlas, vxl_loc, roi):
             nib.save(new_roi_img, opj(DATA, 'raw', 'bids', sub, 'electrodes',
                                       ses, atlas, 'roi_' + key + '.nii.gz'))
 
-                
-            # TODO!! (can be several)
 
 
 def calc_streamlines_btw_rois(roi1, roi2):
@@ -475,7 +514,7 @@ def calc_con_mat_electrodes(subject_list, session_list):
             elec_file_roi = opj(DATA, 'raw', 'bids', sub, 'electrodes',
                             'sub-001_atlas_2514_0_neighbours.roi')
             elec_location_mni09_roi = load_elec_file(elec_file_roi)
-            elec_location_mni09_roi = order_dict(elec_location_mni09)
+            elec_location_mni09_roi = order_dict(elec_location_mni09_roi)
 
             elec_tags = list(ordered_elec.keys())
             elec_num = len(elec_tags)
