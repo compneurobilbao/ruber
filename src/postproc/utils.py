@@ -424,7 +424,10 @@ def transform_roi_to_dwi_space(sub, ses, output_roi_path):
 
 def create_electrode_rois(sub, ses, atlas, vxl_loc, roi):
     
-    create_folder_elec_atlas_ses
+    directory = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses, atlas)
+    
+    if not os.path.exists(directory):
+        os.makedirs(directory)
     
     for idx, key in enumerate(roi.keys(), start=1):
         
@@ -510,13 +513,19 @@ def calc_con_mat_electrodes(subject_list, session_list):
             # load ROI location of each contact
             elec_file_vxl = opj(DATA, 'raw', 'bids', sub, 'electrodes', 'elec.loc')
             elec_location_mni09_vxl = load_elec_file(elec_file_vxl)
+           
             
+            ## Handle this !!!
             elec_file_roi = opj(DATA, 'raw', 'bids', sub, 'electrodes',
-                            'sub-001_atlas_2514_0_neighbours.roi')
+                            'sub-001_'+ atlas + '_0_neighbours.roi')
+            
+            
+            
+            
             elec_location_mni09_roi = load_elec_file(elec_file_roi)
             elec_location_mni09_roi = order_dict(elec_location_mni09_roi)
 
-            elec_tags = list(ordered_elec.keys())
+            elec_tags = list(elec_location_mni09_roi.keys())
             elec_num = len(elec_tags)
             range_elec_num = range(elec_num)
             con_mat = np.zeros((elec_num, elec_num))
