@@ -423,17 +423,17 @@ def transform_roi_to_dwi_space(sub, ses, output_roi_path):
 
 
 def create_electrode_rois(sub, ses, atlas, vxl_loc, roi):
-    
+
     directory = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses, atlas)
-    
+
     if not os.path.exists(directory):
         os.makedirs(directory)
-    
+
     for idx, key in enumerate(roi.keys(), start=1):
-        
+
         if roi[key][0] == 0 and len(roi[key]) == 1:
             x, y, z = vxl_loc[key][0]
-            
+
             # Create point
             command = ['fslmaths',
                        opj(EXTERNAL_MNI_09c,
@@ -446,7 +446,7 @@ def create_electrode_rois(sub, ses, atlas, vxl_loc, roi):
             for output in execute(command):
                 print(output)
 
-            # Expand to sphere                
+            # Expand to sphere
             command = ['fslmaths',
                        opj(DATA, 'interim', 'test'),
                        '-kernel', 'gauss', str(ELECTRODE_SPHERE_SIZE),
@@ -454,32 +454,35 @@ def create_electrode_rois(sub, ses, atlas, vxl_loc, roi):
                        opj(DATA, 'interim', 'test2'),
                        ]
             for output in execute(command):
-                print(output)     
-                
+                print(output)
+
             # Give value
             output_roi_path = opj(DATA, 'raw', 'bids', sub, 'electrodes',
                                   ses, atlas, 'roi_' + key + '.nii.gz')
             command = ['fslmaths',
-                    opj(DATA, 'interim', 'test2'),
-                   '-bin', '-mul', str(idx),
-                   output_roi_path,
-                   '-odt', 'float',
-                   ]
+                       opj(DATA, 'interim', 'test2'),
+                       '-bin', '-mul', str(idx),
+                       output_roi_path,
+                       '-odt', 'float',
+                       ]
             for output in execute(command):
                 print(output)
- 
-            transform_roi_to_dwi_space(sub, ses, output_roi_path)    
-               
-                
-        else: # TODO!! (can be several)
-            img_atlas = nib.load(opj(DATA, 'processed', 'diff', '_session_id_' +
-                                 ses + '_subject_id_' + sub,
-                                 'r' + sub + '_' + ses + '_' + atlas + '.nii'))
+
+            transform_roi_to_dwi_space(sub, ses, output_roi_path)
+
+        else:
+            img_atlas = nib.load(opj(DATA, 'processed', 'diff',
+                                     '_session_id_' + ses + '_subject_id_' +
+                                     sub, 'r' + sub + '_' + ses + '_' +
+                                     atlas + '.nii'))
             atlas_data = img_atlas.get_data()
             new_roi = np.zeros(atlas_data.shape)
-            new_roi[np.where(atlas_data == roi[key])] = idx
-            new_roi_img = nib.Nifti1Image(new_roi, img_atlas.affine)       
-              
+
+            for single_roi in roi[key]:
+                if single_roi != 0:
+                    new_roi[np.where(atlas_data == single_roi)] = idx
+
+            new_roi_img = nib.Nifti1Image(new_roi, img_atlas.affine)
             nib.save(new_roi_img, opj(DATA, 'raw', 'bids', sub, 'electrodes',
                                       ses, atlas, 'roi_' + key + '.nii.gz'))
 
@@ -504,24 +507,21 @@ def calc_streamlines_btw_rois(roi1, roi2):
 
 def calc_con_mat_electrodes(subject_list, session_list):
     import itertools
-    
+
     sub_ses_comb = [[subject, session] for subject in subject_list
                     for session in session_list]
 
     for sub, ses in sub_ses_comb:
         for atlas in ATLAS_TYPES:
             # load ROI location of each contact
-            elec_file_vxl = opj(DATA, 'raw', 'bids', sub, 'electrodes', 'elec.loc')
+            elec_file_vxl = opj(DATA, 'raw', 'bids', sub, 'electrodes',
+                                'elec.loc')
             elec_location_mni09_vxl = load_elec_file(elec_file_vxl)
-           
-            
-            ## Handle this !!!
+
+            # Always, neighbours == 1
             elec_file_roi = opj(DATA, 'raw', 'bids', sub, 'electrodes',
-                            'sub-001_'+ atlas + '_0_neighbours.roi')
-            
-            
-            
-            
+                                'sub-001_' + atlas + '_1_neighbours.roi')
+
             elec_location_mni09_roi = load_elec_file(elec_file_roi)
             elec_location_mni09_roi = order_dict(elec_location_mni09_roi)
 
@@ -529,7 +529,7 @@ def calc_con_mat_electrodes(subject_list, session_list):
             elec_num = len(elec_tags)
             range_elec_num = range(elec_num)
             con_mat = np.zeros((elec_num, elec_num))
-            
+
             create_electrode_rois(sub, ses, atlas,
                                   elec_location_mni09_vxl,
                                   elec_location_mni09_roi)
