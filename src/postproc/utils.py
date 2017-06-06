@@ -504,21 +504,21 @@ def calc_streamlines_elec(args):
                       '_session_id_' + ses + '_subject_id_' +
                       sub, 'tracts.Bfloat_' + atlas_num)
 
-    command = ['fslmaths',
-               elec1_path,
-               '-add',
-               elec2_path,
-               '-bin',
-               '-add',
-               elec2_path,
-               temp_file[1],
-               ]
-    for output in execute(command):
-        print(output)
+    elec1_img = nib.load(elec1_path)
+    elec1_data = elec1_img.get_data()
+    elec2_data = nib.load(elec2_path).get_data()
+
+    roi_overlap = np.where((elec1_data + elec2_data) > 0, 1, 0) + elec2_data
+
+    roi_overlap_img = nib.Nifti1Image(roi_overlap,
+                                      affine=elec1_img.affine)
+
+    nib.save(roi_overlap_img,
+             temp_file[1] + '.nii.gz')
 
     command = ['cat ' + tracts_file +
                ' | procstreamlines  -waypointfile ' +
-               temp_file[1] +
+               temp_file[1] + '.nii.gz' +
                '  | counttracts']
     streams = subprocess.check_output(command,
                                       shell=True)
@@ -557,9 +557,7 @@ def calc_con_mat_electrodes(subject_list, session_list):
 
             for tag1, tag2 in itertools.combinations(range_elec_num, 2):
 
-                num_streamlines = calc_streamlines_elec(sub, ses, atlas,
-                                                        elec_tags[tag1],
-                                                        elec_tags[tag2])
+                num_streamlines = calc_streamlines_elec(('sub-001', 'ses-presurg', 'atlas_2754', 'TI1', 'OSM3'))
 
                 con_mat[tag1, tag2] = num_streamlines
                 con_mat[tag2, tag1] = num_streamlines
@@ -570,12 +568,40 @@ from multiprocessing import Pool
 
 args = [tuple([sub] + [ses] + [atlas] + list(element))
         for element in itertools.combinations(elec_tags, 2)]
-args = args[700:799]
+args = args[:9]
 
 pool = Pool(8)
 results = pool.map(calc_streamlines_elec, args)
 print(results)
 
+tic()
+elec1_img = nib.load(elec1_path)
+elec1_data = elec1_img.get_data()
+elec2_data = nib.load(elec2_path).get_data()
+
+roi_overlap = np.where((elec1_data + elec2_data) > 0, 1, 0) + elec2_data
+
+roi_overlap_img = nib.Nifti1Image(roi_overlap,
+                                  affine=elec1_img.affine)
+
+nib.save(roi_overlap_img,
+         temp_file[1] + '.nii.gz')
+toc()
+
+tic()
+
+command = ['fslmaths',
+           elec1_path,
+           '-add',
+           elec2_path,
+           '-bin',
+           '-add',
+           elec2_path,
+           temp_file[1],
+           ]
+for output in execute(command):
+    print(output)
+toc()
 
 """
 from nilearn import datasets
