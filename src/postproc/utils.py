@@ -528,6 +528,7 @@ def calc_streamlines_elec(args):
 
 def calc_con_mat_electrodes(subject_list, session_list):
     import itertools
+    from multiprocessing import Pool
 
     sub_ses_comb = [[subject, session] for subject in subject_list
                     for session in session_list]
@@ -554,25 +555,20 @@ def calc_con_mat_electrodes(subject_list, session_list):
             create_electrode_rois(sub, ses, atlas,
                                   elec_location_mni09_vxl,
                                   elec_location_mni09_roi)
+            
+            args = [tuple([sub] + [ses] + [atlas] + list(element))
+                    for element in itertools.combinations(elec_tags, 2)]
+            indexes = list(itertools.combinations(range_elec_num, 2))
 
-            for tag1, tag2 in itertools.combinations(range_elec_num, 2):
+            # This takes around 20 mins with 8 cores 
+            pool = Pool()
+            results = pool.map(calc_streamlines_elec, args)
+            for idx, (tag1, tag2) in enumerate(indexes):
+                con_mat[tag1, tag2] = results[idx]
+                con_mat[tag2, tag1] = results[idx]
 
-                num_streamlines = calc_streamlines_elec(('sub-001', 'ses-presurg', 'atlas_2754', 'TI1', 'OSM3'))
-
-                con_mat[tag1, tag2] = num_streamlines
-                con_mat[tag2, tag1] = num_streamlines
-
-
-
-from multiprocessing import Pool
-
-args = [tuple([sub] + [ses] + [atlas] + list(element))
-        for element in itertools.combinations(elec_tags, 2)]
-args = args[:9]
-
-pool = Pool(8)
-results = pool.map(calc_streamlines_elec, args)
-print(results)
+            np.save(opj(DATA, 'raw', 'bids', sub, 'electrodes', ses, 
+                        'con_mat_' + atlas), con_mat)
 
 
 """
