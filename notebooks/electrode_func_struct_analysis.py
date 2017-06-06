@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from src.postproc.utils import load_elec_file
+from src.postproc.utils import load_elec_file, order_dict
 from src.env import DATA, ATLAS_TYPES
 #import os.path as op
 from os.path import join as opj
@@ -11,9 +11,6 @@ from nilearn.connectome import ConnectivityMeasure
 
 SUBJECT_LIST = ['sub-001']
 SESSION_LIST = ['ses-presurg']
-
-
-
 
 
 def plot_matrix(matrix, idx, elec_tags):
@@ -39,7 +36,7 @@ if __name__ == "__main__":
         for atlas in ATLAS_TYPES:
             # load ROI location of each contact
             elec_file = opj(DATA, 'raw', 'bids', sub, 'electrodes',
-                            'sub-001_elec_2514_closest_rois.roi')
+                            'sub-001_' + atlas + '_1_neighbours.roi')
             elec_location_mni09 = load_elec_file(elec_file)
 
             ordered_elec = order_dict(elec_location_mni09)
@@ -63,7 +60,8 @@ if __name__ == "__main__":
 #                              ses + '_subject_id_' + sub,
 #                              'conmat_' + atlas + '_sc.csv')
 #
-#            struct_mat = np.loadtxt(struct_file, delimiter=',', skiprows=1)
+            struct_mat = np.load(opj(DATA, 'raw', 'bids', sub, 'electrodes',
+                                     ses, 'con_mat_' + atlas + '.npy'))
 
             plot_matrix(corr_mat, idx, elec_tags)
-#            plot_matrix(struct_mat, idx, elec_tags)
+            plot_matrix(struct_mat, idx, elec_tags)
