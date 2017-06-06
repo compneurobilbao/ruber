@@ -13,11 +13,11 @@ SUBJECT_LIST = ['sub-001']
 SESSION_LIST = ['ses-presurg']
 
 
-def plot_matrix(matrix, idx, elec_tags):
+def plot_matrix(matrix, elec_tags):
     plt.figure(figsize=(10, 10))
     # Mask the main diagonal for visualization:
 
-    plt.imshow(matrix[idx], interpolation="nearest", cmap="RdBu_r")
+    plt.imshow(matrix, interpolation="nearest", cmap="RdBu_r")
     # vmax=0.8, vmin=-0.8)
 
     # Add labels and adjust margins
@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
     for sub, ses in sub_ses_comb:
         for atlas in ATLAS_TYPES:
-            # load ROI location of each contact
+            # FUNCTION MATRIX
             elec_file = opj(DATA, 'raw', 'bids', sub, 'electrodes',
                             'sub-001_' + atlas + '_1_neighbours.roi')
             elec_location_mni09 = load_elec_file(elec_file)
@@ -54,14 +54,20 @@ if __name__ == "__main__":
 
             correlation_measure = ConnectivityMeasure(kind='correlation')
             corr_mat = correlation_measure.fit_transform([func_mat])[0]
+            plot_matrix(corr_mat[idx], elec_tags)
 
-            # load struct
-#            struct_file = opj(DATA, 'processed', 'tract', '_session_id_' +
-#                              ses + '_subject_id_' + sub,
-#                              'conmat_' + atlas + '_sc.csv')
-#
+            # STRUCT MATRIX
+            elec_file = opj(DATA, 'raw', 'bids', sub, 'electrodes',
+                            'sub-001_' + atlas + '_1_neighbours.roi')
+            elec_location_mni09 = load_elec_file(elec_file)
+
+            ordered_elec = order_dict(elec_location_mni09)
+
+            elec_tags = list(ordered_elec.keys())
+            elec_rois = np.array(list(ordered_elec.values()))[:, 0]
+
+            idx = np.ix_(elec_rois, elec_rois)
             struct_mat = np.load(opj(DATA, 'raw', 'bids', sub, 'electrodes',
                                      ses, 'con_mat_' + atlas + '.npy'))
 
-            plot_matrix(corr_mat, idx, elec_tags)
-            plot_matrix(struct_mat, idx, elec_tags)
+            plot_matrix(struct_mat, elec_tags)
