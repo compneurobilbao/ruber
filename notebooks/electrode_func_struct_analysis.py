@@ -61,3 +61,10 @@ if __name__ == "__main__":
                                      ses, 'con_mat_' + atlas + '.npy'))
 
             plot_matrix(struct_mat, elec_tags)
+
+
+sc_camino = '/home/asier/git/ruber/data/processed/tract/_session_id_ses-presurg_subject_id_sub-001/conmat_atlas_2514_sc.csv'
+sc_matlab = '/home/asier/Desktop/test_track/fiber_number.txt'
+
+camino = np.loadtxt(sc_camino, delimiter=',', skiprows=1)
+matlab = np.loadtxt(sc_matlab)
