@@ -36,7 +36,7 @@ if __name__ == "__main__":
         for atlas in ATLAS_TYPES:
             # FUNCTION MATRIX
             elec_file = opj(DATA, 'raw', 'bids', sub, 'electrodes',
-                            'sub-001_' + atlas + '_1_neighbours.roi')
+                            'sub-001_' + atlas + '_closest_rois.roi')
             elec_location_mni09 = load_elec_file(elec_file)
 
             ordered_elec = order_dict(elec_location_mni09)
@@ -57,16 +57,6 @@ if __name__ == "__main__":
             plot_matrix(corr_mat[idx], elec_tags)
 
             # STRUCT MATRIX
-            elec_file = opj(DATA, 'raw', 'bids', sub, 'electrodes',
-                            'sub-001_' + atlas + '_1_neighbours.roi')
-            elec_location_mni09 = load_elec_file(elec_file)
-
-            ordered_elec = order_dict(elec_location_mni09)
-
-            elec_tags = list(ordered_elec.keys())
-            elec_rois = np.array(list(ordered_elec.values()))[:, 0]
-
-            idx = np.ix_(elec_rois, elec_rois)
             struct_mat = np.load(opj(DATA, 'raw', 'bids', sub, 'electrodes',
                                      ses, 'con_mat_' + atlas + '.npy'))
 
