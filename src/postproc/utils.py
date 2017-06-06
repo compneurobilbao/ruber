@@ -504,17 +504,17 @@ def calc_streamlines_elec(args):
                       '_session_id_' + ses + '_subject_id_' +
                       sub, 'tracts.Bfloat_' + atlas_num)
 
-    elec1_img = nib.load(elec1_path)
-    elec1_data = elec1_img.get_data()
-    elec2_data = nib.load(elec2_path).get_data()
-
-    roi_overlap = np.where((elec1_data + elec2_data) > 0, 1, 0) + elec2_data
-
-    roi_overlap_img = nib.Nifti1Image(roi_overlap,
-                                      affine=elec1_img.affine)
-
-    nib.save(roi_overlap_img,
-             temp_file[1] + '.nii.gz')
+    command = ['fslmaths',
+               elec1_path,
+               '-add',
+               elec2_path,
+               '-bin',
+               '-add',
+               elec2_path,
+               temp_file[1],
+               ]
+    for output in execute(command):
+        print(output)
 
     command = ['cat ' + tracts_file +
                ' | procstreamlines  -waypointfile ' +
@@ -574,34 +574,6 @@ pool = Pool(8)
 results = pool.map(calc_streamlines_elec, args)
 print(results)
 
-tic()
-elec1_img = nib.load(elec1_path)
-elec1_data = elec1_img.get_data()
-elec2_data = nib.load(elec2_path).get_data()
-
-roi_overlap = np.where((elec1_data + elec2_data) > 0, 1, 0) + elec2_data
-
-roi_overlap_img = nib.Nifti1Image(roi_overlap,
-                                  affine=elec1_img.affine)
-
-nib.save(roi_overlap_img,
-         temp_file[1] + '.nii.gz')
-toc()
-
-tic()
-
-command = ['fslmaths',
-           elec1_path,
-           '-add',
-           elec2_path,
-           '-bin',
-           '-add',
-           elec2_path,
-           temp_file[1],
-           ]
-for output in execute(command):
-    print(output)
-toc()
 
 """
 from nilearn import datasets
