@@ -580,50 +580,53 @@ APROACH 2: NO ATLAS
 """
 
 
-def create_electrode_rois_noatlas(sub, ses, vxl_loc):
+def create_electrode_roi_noatlas(args):
+    import tempfile
+
+    sub, ses, vxl_loc, idx = args
+    key = list(vxl_loc.keys())[idx]
+    x, y, z = vxl_loc[key][0]
 
     output_dir = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses, 'noatlas')
+    temp_file = tempfile.mkstemp()
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    for idx, key in enumerate(vxl_loc.keys(), start=1):
-        x, y, z = vxl_loc[key][0]
+    # Create point
+    command = ['fslmaths',
+               opj(EXTERNAL_MNI_09c,
+                   'mni_icbm152_t1_tal_nlin_asym_09c_brain.nii'),
+               '-mul', '0', '-add', '1',
+               '-roi', str(x), '1', str(y), '1', str(z), '1', '0', '1',
+               temp_file[1],
+               '-odt', 'float',
+               ]
+    for output in execute(command):
+        print(output)
 
-        # Create point
-        command = ['fslmaths',
-                   opj(EXTERNAL_MNI_09c,
-                       'mni_icbm152_t1_tal_nlin_asym_09c_brain.nii'),
-                   '-mul', '0', '-add', '1',
-                   '-roi', str(x), '1', str(y), '1', str(z), '1', '0', '1',
-                   opj(DATA, 'interim', 'test'),
-                   '-odt', 'float',
-                   ]
-        for output in execute(command):
-            print(output)
+    # Expand to sphere
+    command = ['fslmaths',
+               temp_file[1],
+               '-kernel', 'gauss', str(ELECTRODE_KERNEL_SIZE),
+               '-fmean',
+               temp_file[1],
+               ]
+    for output in execute(command):
+        print(output)
 
-        # Expand to sphere
-        command = ['fslmaths',
-                   opj(DATA, 'interim', 'test'),
-                   '-kernel', 'gauss', str(ELECTRODE_KERNEL_SIZE),
-                   '-fmean',
-                   opj(DATA, 'interim', 'test2'),
-                   ]
-        for output in execute(command):
-            print(output)
+    # Give value
+    output_roi_path = opj(output_dir, 'roi_' + key + '.nii.gz')
+    command = ['fslmaths',
+               temp_file[1],
+               '-bin', '-mul', str(idx + 1),
+               output_roi_path,
+               '-odt', 'float',
+               ]
+    for output in execute(command):
+        print(output)
 
-        # Give value
-        output_roi_path = opj(output_dir, 'roi_' + key + '.nii.gz')
-        command = ['fslmaths',
-                   opj(DATA, 'interim', 'test2'),
-                   '-bin', '-mul', str(idx),
-                   output_roi_path,
-                   '-odt', 'float',
-                   ]
-        for output in execute(command):
-            print(output)
-
-        transform_roi_to_dwi_space(sub, ses, output_roi_path)
+    transform_roi_to_dwi_space(sub, ses, output_roi_path)
 
 
 def calc_streamlines_elec_noatlas(args):
@@ -682,13 +685,18 @@ def calc_con_mat_electrodes_noatlas(subject_list, session_list):
         range_elec_num = range(elec_num)
         con_mat = np.zeros((elec_num, elec_num))
 
-        create_electrode_rois_noatlas(sub, ses, elec_location_mni09_vxl)
+        # Creation of ROIS multiproc
+        args = [tuple([sub] + [ses] + [elec_location_mni09_vxl] + [idx])
+                for idx in range(elec_num)]
+        pool = Pool()
+        results = pool.map(create_electrode_roi_noatlas, args)
 
+        # Calc of ROIS waypoints pairwise
+        # This takes around 20 mins with 8 cores
         args = [tuple([sub] + [ses] + list(element))
                 for element in itertools.combinations(elec_tags, 2)]
-        indexes = list(itertools.combinations(range_elec_num, 2))
 
-        # This takes around 20 mins with 8 cores
+        indexes = list(itertools.combinations(range_elec_num, 2))
         pool = Pool()
         results = pool.map(calc_streamlines_elec_noatlas, args)
         for idx, (tag1, tag2) in enumerate(indexes):
