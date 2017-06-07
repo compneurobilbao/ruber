@@ -14,6 +14,7 @@ from src.postproc.fmri_time_series import clean_and_get_time_series
 from src.postproc.utils import (t1w_electrodes_to_09c,
                                 locate_electrodes,
                                 locate_electrodes_closest_roi,
+                                calc_con_mat_electrodes_noatlas
                                 )
 
 SUBJECT_LIST = ['sub-001']
@@ -76,8 +77,16 @@ t1w_electrodes_to_09c(SUBJECT_LIST)
 # last_contact_pos = [80, 26, 84]
 # contacts_from_electrode(first_contact_pos, last_contact_pos, contact_num, elec_name)
 
+"""
+APPROACH 1: ATLAS
+"""
 locate_electrodes(SUBJECT_LIST)
 
 # or
 
 #locate_electrodes_closest_roi(SUBJECT_LIST)
+
+"""
+APPROACH 2: NOATLAS
+"""
+calc_con_mat_electrodes_noatlas(SUBJECT_LIST, SESSION_LIST)

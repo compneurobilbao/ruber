@@ -579,6 +579,7 @@ def calc_con_mat_electrodes(subject_list, session_list):
 APROACH 2: NO ATLAS
 """
 
+
 def create_electrode_rois_noatlas(sub, ses, vxl_loc):
 
     output_dir = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses, 'noatlas')
@@ -588,7 +589,7 @@ def create_electrode_rois_noatlas(sub, ses, vxl_loc):
 
     for idx, key in enumerate(vxl_loc.keys(), start=1):
         x, y, z = vxl_loc[key]
-    
+
         # Create point
         command = ['fslmaths',
                    opj(EXTERNAL_MNI_09c,
@@ -625,22 +626,20 @@ def create_electrode_rois_noatlas(sub, ses, vxl_loc):
         transform_roi_to_dwi_space(sub, ses, output_roi_path)
 
 
-
 def calc_streamlines_elec_noatlas(args):
     import tempfile
 
-    sub, ses, atlas, elec1, elec2 = args
+    sub, ses, elec1, elec2 = args
 
     elec1_path = opj(DATA, 'raw', 'bids', sub, 'electrodes',
-                     ses, atlas, 'roi_' + elec1 + '.nii.gz')
+                     ses, 'noatlas', 'roi_' + elec1 + '.nii.gz')
     elec2_path = opj(DATA, 'raw', 'bids', sub, 'electrodes',
-                     ses, atlas, 'roi_' + elec2 + '.nii.gz')
+                     ses, 'noatlas', 'roi_' + elec2 + '.nii.gz')
     temp_file = tempfile.mkstemp()
 
-    atlas_num = atlas.split('_')[1]
     tracts_file = opj(DATA, 'processed', 'tract',
                       '_session_id_' + ses + '_subject_id_' +
-                      sub, 'tracts.Bfloat_' + atlas_num)
+                      sub, 'tracts.Bfloat_2514')
 
     command = ['fslmaths',
                elec1_path,
@@ -684,20 +683,20 @@ def calc_con_mat_electrodes_noatlas(subject_list, session_list):
         con_mat = np.zeros((elec_num, elec_num))
 
         create_electrode_rois_noatlas(sub, ses, elec_location_mni09_vxl)
-        
+
         args = [tuple([sub] + [ses] + list(element))
                 for element in itertools.combinations(elec_tags, 2)]
         indexes = list(itertools.combinations(range_elec_num, 2))
 
-        # This takes around 20 mins with 8 cores 
+        # This takes around 20 mins with 8 cores
         pool = Pool()
         results = pool.map(calc_streamlines_elec_noatlas, args)
         for idx, (tag1, tag2) in enumerate(indexes):
             con_mat[tag1, tag2] = results[idx]
             con_mat[tag2, tag1] = results[idx]
 
-        np.save(opj(DATA, 'raw', 'bids', sub, 'electrodes', ses, 
-                    'con_mat_noatlas' ), con_mat)
+        np.save(opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
+                    'con_mat_noatlas'), con_mat)
 
 
 """
