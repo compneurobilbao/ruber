@@ -588,7 +588,7 @@ def create_electrode_rois_noatlas(sub, ses, vxl_loc):
         os.makedirs(output_dir)
 
     for idx, key in enumerate(vxl_loc.keys(), start=1):
-        x, y, z = vxl_loc[key]
+        x, y, z = vxl_loc[key][0]
 
         # Create point
         command = ['fslmaths',
