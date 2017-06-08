@@ -68,3 +68,33 @@ sc_matlab = '/home/asier/Desktop/test_track/fiber_number.txt'
 
 camino = np.loadtxt(sc_camino, delimiter=',', skiprows=1)
 matlab = np.loadtxt(sc_matlab)
+
+
+"""
+test area
+"""
+
+import h5py
+import numpy as np
+
+file1 = '/home/asier/git/ruber/data/raw/elec_record/sub-001/rec_2_export_all_selectedChannels_1_53_63_64.mat'
+f = h5py.File(file1)
+for k, v in f.items():
+    elec1 = np.array(v, dtype=float16)
+
+file2 = '/home/asier/git/ruber/data/raw/elec_record/sub-001/rec_2_export_all_selectedChannels_54_56.mat'
+f = h5py.File(file2)
+for k, v in f.items():
+    elec2 = np.array(v, dtype=float16)
+
+elec_data = np.concatenate((elec1, elec2))
+np.save('/home/asier/git/ruber/data/raw/elec_record/sub-001/elec_data',
+        elec_data)
+
+ordered_data[:10] = elec_data[-11:].shape
+
+
+ordered_data[:10].shape
+elec_data[-11:].shape
+
+
