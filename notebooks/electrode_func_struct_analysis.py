@@ -80,21 +80,50 @@ import numpy as np
 file1 = '/home/asier/git/ruber/data/raw/elec_record/sub-001/rec_2_export_all_selectedChannels_1_53_63_64.mat'
 f = h5py.File(file1)
 for k, v in f.items():
-    elec1 = np.array(v, dtype=float16)
+    elec1 = np.array(v, dtype='float16')
 
 file2 = '/home/asier/git/ruber/data/raw/elec_record/sub-001/rec_2_export_all_selectedChannels_54_56.mat'
 f = h5py.File(file2)
 for k, v in f.items():
-    elec2 = np.array(v, dtype=float16)
+    elec2 = np.array(v, dtype='float16')
 
-elec_data = np.concatenate((elec1, elec2))
-np.save('/home/asier/git/ruber/data/raw/elec_record/sub-001/elec_data',
-        elec_data)
+elec_data = np.concatenate((elec1[:-2], elec2)) # from elec1 2 last electrodes are EKG
+# np.save('/home/asier/git/ruber/data/raw/elec_record/sub-001/elec_data',
+#         elec_data)
 
-ordered_data[:10] = elec_data[-11:].shape
+elec_conn_mat = np.zeros((57, 57))
+elec_conn_mat[:56,:56] = np.corrcoef(elec_data[:,:25611761])
+
+np.save('/home/asier/git/ruber/data/raw/elec_record/sub-001/elec_con_mat',
+         elec_conn_mat)
+
+elec_data.shape
+elec_conn_mat.shape
+
+# Reorder elec tags
+sc_mat = np.zeros((57, 57))
+el_tags = []
+# OIM
+el_tags[:12] = elec_tags[24:36]
+sc_mat[24:36, 24:36] = struct_mat[24:36, 24:36]
+# OIL
+el_tags.extend(elec_tags[12:24])
+sc_mat[12:24, 12:24] = struct_mat[12:24, 12:24]
+# OSM 
+el_tags.extend(elec_tags[41:49])
+sc_mat[41:49, 41:49] = struct_mat[41:49, 41:49]
+# OSL
+el_tags.extend(elec_tags[36:41])
+sc_mat[36:41, 36:41] = struct_mat[36:41, 36:41]
+# TI
+el_tags.extend(elec_tags[49:57])
+sc_mat[49:57, 49:57] = struct_mat[49:57, 49:57]
+# A
+el_tags.extend(elec_tags[:12])
+sc_mat[:12, :12] = struct_mat[:12, :12]
 
 
-ordered_data[:10].shape
-elec_data[-11:].shape
+plot_matrix(sc_mat, el_tags)
+plot_matrix(elec_conn_mat, el_tags)
 
 
