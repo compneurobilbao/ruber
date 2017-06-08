@@ -121,7 +121,7 @@ elec_data_ordered[:11, :] = elec_data[45:57, :]
 
 
 elec_conn_mat = np.zeros((57, 57))
-elec_conn_mat = np.corrcoef(elec_data_ordered[:, 35601761:35611761])
+elec_conn_mat = np.corrcoef(elec_data_ordered[:, 13352000:13367000])
 
 np.save('/home/asier/git/ruber/data/raw/elec_record/sub-001/elec_con_mat',
         elec_conn_mat)
