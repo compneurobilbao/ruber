@@ -13,9 +13,23 @@ SUBJECT_LIST = ['sub-001']
 SESSION_LIST = ['ses-presurg']
 
 
-def plot_matrix(matrix, elec_tags):
+def log_transform(im):
+    '''returns log(image) scaled to the interval [0,1]'''
+    try:
+        (min, max) = (im[im > 0].min(), im.max())
+        if (max > min) and (max > 0):
+            return (np.log(im.clip(min, max)) - np.log(min)) / (np.log(max) - np.log(min))
+    except:
+        pass
+    return im
+
+
+def plot_matrix(matrix, elec_tags, log=False):
     plt.figure(figsize=(10, 10))
     # Mask the main diagonal for visualization:
+
+    if log:
+        matrix = log_transform(matrix)
 
     plt.imshow(matrix, interpolation="nearest", cmap="RdBu_r")
     # vmax=0.8, vmin=-0.8)
@@ -58,7 +72,7 @@ if __name__ == "__main__":
 
             # STRUCT MATRIX
             struct_mat = np.load(opj(DATA, 'raw', 'bids', sub, 'electrodes',
-                                     ses, 'con_mat_' + atlas + '.npy'))
+                                     ses, 'con_mat_noatlas.npy'))
 
             plot_matrix(struct_mat, elec_tags)
 
@@ -90,40 +104,31 @@ for k, v in f.items():
 elec_data = np.concatenate((elec1[:-2], elec2)) # from elec1 2 last electrodes are EKG
 # np.save('/home/asier/git/ruber/data/raw/elec_record/sub-001/elec_data',
 #         elec_data)
+elec_data_ordered = np.zeros((57, elec_data.shape[1]), dtype='float16')
+
+# OIM
+elec_data_ordered[24:36, :] = elec_data[:12, :]
+# OIL
+elec_data_ordered[12:24, :] = elec_data[12:24, :]
+# OSM
+elec_data_ordered[41:49, :] = elec_data[24:32, :]
+# OSL
+elec_data_ordered[36:41, :] = elec_data[32:37, :]
+# TI
+elec_data_ordered[49:57, :] = elec_data[37:45, :]
+# A
+elec_data_ordered[:11, :] = elec_data[45:57, :]
+
 
 elec_conn_mat = np.zeros((57, 57))
-elec_conn_mat[:56,:56] = np.corrcoef(elec_data[:,:25611761])
+elec_conn_mat = np.corrcoef(elec_data_ordered[:, 35601761:35611761])
 
 np.save('/home/asier/git/ruber/data/raw/elec_record/sub-001/elec_con_mat',
-         elec_conn_mat)
+        elec_conn_mat)
 
-elec_data.shape
-elec_conn_mat.shape
+plot_matrix(struct_mat, elec_tags)
+plot_matrix(elec_conn_mat, elec_tags, log=True)
 
-# Reorder elec tags
-sc_mat = np.zeros((57, 57))
-el_tags = []
-# OIM
-el_tags[:12] = elec_tags[24:36]
-sc_mat[24:36, 24:36] = struct_mat[24:36, 24:36]
-# OIL
-el_tags.extend(elec_tags[12:24])
-sc_mat[12:24, 12:24] = struct_mat[12:24, 12:24]
-# OSM 
-el_tags.extend(elec_tags[41:49])
-sc_mat[41:49, 41:49] = struct_mat[41:49, 41:49]
-# OSL
-el_tags.extend(elec_tags[36:41])
-sc_mat[36:41, 36:41] = struct_mat[36:41, 36:41]
-# TI
-el_tags.extend(elec_tags[49:57])
-sc_mat[49:57, 49:57] = struct_mat[49:57, 49:57]
-# A
-el_tags.extend(elec_tags[:12])
-sc_mat[:12, :12] = struct_mat[:12, :12]
-
-
-plot_matrix(sc_mat, el_tags)
-plot_matrix(elec_conn_mat, el_tags)
+plot_matrix(struct_mat, elec_tags)
 
 
