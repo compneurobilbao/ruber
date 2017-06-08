@@ -126,9 +126,5 @@ elec_conn_mat = np.corrcoef(elec_data_ordered[:, 35601761:35611761])
 np.save('/home/asier/git/ruber/data/raw/elec_record/sub-001/elec_con_mat',
         elec_conn_mat)
 
-plot_matrix(struct_mat, elec_tags)
-plot_matrix(elec_conn_mat, elec_tags, log=True)
-
-plot_matrix(struct_mat, elec_tags)
-
-
+plot_matrix(struct_mat, elec_tags, log=True)
+plot_matrix(elec_conn_mat, elec_tags)
