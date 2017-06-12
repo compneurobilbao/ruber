@@ -32,7 +32,6 @@ run_mriqc(SUBJECT_LIST, SESSION_LIST)
 # sudo chmod d------rwx -R $OUTPUT_DIR
 # sudo chmod 777 -R $OUTPUT_DIR
 
-
 """
 Atlas to T1w space
 """
