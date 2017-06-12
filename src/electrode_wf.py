@@ -53,13 +53,6 @@ run_camino_tractography(SUBJECT_LIST, SESSION_LIST)
 # Visualization
 # http://web4.cs.ucl.ac.uk/research/medic/camino/pmwiki/pmwiki.php?n=Tutorials.TrackingTutorial
 
-
-"""
-fMRI pipeline postproc
-"""
-
-clean_and_get_time_series(SUBJECT_LIST, SESSION_LIST)
-
 """
 Electrodes location pipeline (WARNING: Some manual work)
 """
@@ -77,15 +70,11 @@ t1w_electrodes_to_09c(SUBJECT_LIST)
 # contacts_from_electrode(first_contact_pos, last_contact_pos, contact_num, elec_name)
 
 """
-APPROACH 1: ATLAS
-"""
-locate_electrodes(SUBJECT_LIST)
-
-# or
-
-#locate_electrodes_closest_roi(SUBJECT_LIST)
-
-"""
 APPROACH 2: NOATLAS
 """
 calc_con_mat_electrodes_noatlas(SUBJECT_LIST, SESSION_LIST)
+
+"""
+fMRI pipeline postproc
+"""
+clean_and_get_time_series_noatlas(SUBJECT_LIST, SESSION_LIST)

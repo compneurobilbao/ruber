@@ -44,22 +44,18 @@ def atlas_2_bold_space(sub, ses, atlas, preproc_data):
 
 def atlas_2_bold_space_noatlas(sub, ses, preproc_data):
 
-    atlas_path = opj(EXTERNAL, 'bha_' + atlas + '_1mm_mni09c.nii.gz')
+    atlas_path = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
+                     'electrodes_atlas.nii.gz')
     atlas_img = nib.load(atlas_path)
     fmri = nib.load(preproc_data)
     resampled_atlas = resample_img(atlas_img, target_affine=fmri.affine,
                                    interpolation='nearest')
     nib.save(resampled_atlas,
              opj(PROCESSED, 'fmriprep', sub, ses, 'func',
-                 sub + '_' + ses + '_' + atlas + '_bold_space.nii.gz'))
-
-    atlas_with_all_rois(sub, ses, atlas, opj(PROCESSED, 'fmriprep', sub, ses,
-                                             'func',
-                                             sub + '_' + ses + '_' +
-                                             atlas + '_bold_space.nii.gz'))
+                 sub + '_' + ses + '_electrodes_atlas_bold_space.nii.gz'))
 
     return opj(PROCESSED, 'fmriprep', sub, ses, 'func',
-               sub + '_' + ses + '_' + atlas + '_bold_space.nii.gz')    
+               sub + '_' + ses + '_electrodes_atlas_bold_space.nii.gz'))
 
 
 def create_atlas_from_elec_rois(sub, ses):
