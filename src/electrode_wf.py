@@ -9,7 +9,7 @@ from src.dmri import run_spm_fsl_dti_preprocessing
 from src.dmri import run_camino_tractography
 from src.dmri.utils import correct_dwi_space_atlas
 
-from src.postproc.fmri_time_series import clean_and_get_time_series
+from src.postproc.fmri_time_series import clean_and_get_time_series_noatlas
 
 from src.postproc.utils import (t1w_electrodes_to_09c,
                                 locate_electrodes,
