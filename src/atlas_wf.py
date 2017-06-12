@@ -85,8 +85,3 @@ locate_electrodes(SUBJECT_LIST)
 # or
 
 #locate_electrodes_closest_roi(SUBJECT_LIST)
-
-"""
-APPROACH 2: NOATLAS
-"""
-calc_con_mat_electrodes_noatlas(SUBJECT_LIST, SESSION_LIST)
