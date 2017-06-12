@@ -55,7 +55,7 @@ def atlas_2_bold_space_noatlas(sub, ses, preproc_data):
                  sub + '_' + ses + '_electrodes_atlas_bold_space.nii.gz'))
 
     return opj(PROCESSED, 'fmriprep', sub, ses, 'func',
-               sub + '_' + ses + '_electrodes_atlas_bold_space.nii.gz'))
+               sub + '_' + ses + '_electrodes_atlas_bold_space.nii.gz')
 
 
 def create_atlas_from_elec_rois(sub, ses):

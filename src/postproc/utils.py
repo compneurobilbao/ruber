@@ -388,20 +388,20 @@ def order_dict(dictionary):
     return ordered
 
 
-def transform_roi_to_dwi_space(sub, ses, output_roi_path):
-    
+def transform_roi_to_dwi_space(sub, ses, input_roi_path, output_roi_path):
+
     omat = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
                'elec2dwi.omat')
-    
+
     if not os.path.exists(omat):
         command = ['flirt',
                    '-in',
                    opj(DATA, 'raw', 'bids', sub, 'electrodes',
-                   'electrodes_brain_09c.nii.gz'),
+                       'electrodes_brain_09c.nii.gz'),
                    '-ref',
                    opj(DATA, 'processed', 'diff',
-                      '_session_id_' + ses + '_subject_id_' + sub,
-                      'eddy_corrected_avg_b0.nii.gz'),
+                       '_session_id_' + ses + '_subject_id_' + sub,
+                       'eddy_corrected_avg_b0.nii.gz'),
                    '-omat',
                    omat,
                    ]
@@ -410,7 +410,7 @@ def transform_roi_to_dwi_space(sub, ses, output_roi_path):
 
     command = ['flirt',
                '-in',
-               output_roi_path,
+               input_roi_path,
                '-ref',
                opj(DATA, 'processed', 'diff',
                    '_session_id_' + ses + '_subject_id_' + sub,
@@ -433,9 +433,14 @@ APROACH 1: COMMON ATLAS
 def create_electrode_rois(sub, ses, atlas, vxl_loc, roi):
 
     output_dir = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses, atlas)
+    output_dir_dwi = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
+                         atlas + '_dwi')
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
+
+    if not os.path.exists(output_dir_dwi):
+        os.makedirs(output_dir_dwi)
 
     for idx, key in enumerate(roi.keys(), start=1):
 
@@ -475,7 +480,12 @@ def create_electrode_rois(sub, ses, atlas, vxl_loc, roi):
             for output in execute(command):
                 print(output)
 
-            transform_roi_to_dwi_space(sub, ses, output_roi_path)
+            input_roi_path = output_roi_path
+            output_roi_path = opj(output_dir_dwi,  'roi_' + key + '.nii.gz')
+
+            transform_roi_to_dwi_space(sub, ses,
+                                       input_roi_path,
+                                       output_roi_path)
 
         else:
             img_atlas = nib.load(opj(DATA, 'processed', 'diff',
@@ -586,12 +596,17 @@ def create_electrode_roi_noatlas(args):
     sub, ses, vxl_loc, idx = args
     key = list(vxl_loc.keys())[idx]
     x, y, z = vxl_loc[key][0]
-
-    output_dir = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses, 'noatlas')
     temp_file = tempfile.mkstemp()
+
+    output_dir = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
+                     'noatlas')
+    output_dir_dwi = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
+                         'noatlas_dwi')
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
+    if not os.path.exists(output_dir_dwi):
+        os.makedirs(output_dir_dwi)
 
     # Create point
     command = ['fslmaths',
@@ -626,7 +641,12 @@ def create_electrode_roi_noatlas(args):
     for output in execute(command):
         print(output)
 
-    transform_roi_to_dwi_space(sub, ses, output_roi_path)
+    input_roi_path = output_roi_path
+    output_roi_path = opj(output_dir_dwi,  'roi_' + key + '.nii.gz')
+
+    transform_roi_to_dwi_space(sub, ses,
+                               input_roi_path,
+                               output_roi_path)
 
 
 def calc_streamlines_elec_noatlas(args):
@@ -635,9 +655,9 @@ def calc_streamlines_elec_noatlas(args):
     sub, ses, elec1, elec2 = args
 
     elec1_path = opj(DATA, 'raw', 'bids', sub, 'electrodes',
-                     ses, 'noatlas', 'roi_' + elec1 + '.nii.gz')
+                     ses, 'noatlas_dwi', 'roi_' + elec1 + '.nii.gz')
     elec2_path = opj(DATA, 'raw', 'bids', sub, 'electrodes',
-                     ses, 'noatlas', 'roi_' + elec2 + '.nii.gz')
+                     ses, 'noatlas_dwi', 'roi_' + elec2 + '.nii.gz')
     temp_file = tempfile.mkstemp()
 
     tracts_file = opj(DATA, 'processed', 'tract',
