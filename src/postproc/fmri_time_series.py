@@ -143,7 +143,7 @@ def get_timeseries(args):
     time_series = scrubbing(time_series, FD, FRAMEWISE_DISP_THRES)
 
     # Save time series
-    return time_series
+    return time_series[:, 0]
 
 
 def clean_and_get_time_series_noatlas(subject_list, session_list):
