@@ -64,20 +64,34 @@ if __name__ == "__main__":
 
         correlation_measure = ConnectivityMeasure(kind='correlation')
         corr_mat = correlation_measure.fit_transform([func_mat])[0]
-        plot_matrix(corr_mat, elec_tags)
 
         # STRUCT MATRIX
         struct_mat = np.load(opj(DATA, 'raw', 'bids', sub, 'electrodes',
                                  ses, 'con_mat_noatlas.npy'))
 
-        plot_matrix(struct_mat, elec_tags, log=True)
-        plt.scatter(struct_mat, corr_mat)
-        plt.scatter(np.log(struct_mat), corr_mat)
+        
         
         elec_mat = np.load('/home/asier/git/ruber/data/raw/elec_record/sub-001/elec_con_mat.npy')
+        
+        plot_matrix(corr_mat, elec_tags)
+        plt.title('fMRI connectivity matrix')
+        plt.savefig(opj('/home/asier/git/ruber/reports/figures/', sub, 'fMRI_conmat'))
+
+        plot_matrix(struct_mat, elec_tags, log=True)
+        plt.title('DWI connectivity matrix')
+        plt.savefig(opj('/home/asier/git/ruber/reports/figures/', sub, 'DWI_conmat'))
+
         plot_matrix(elec_mat, elec_tags)
+        plt.title('deep electrode connectivity matrix')
+        plt.savefig(opj('/home/asier/git/ruber/reports/figures/', sub, 'deep_conmat'))
 
-
+        plt.figure()
+        plt.scatter(log_transform(struct_mat), corr_mat)
+        plt.title('#Streamlines vs fMRI corr values')
+        plt.xlabel('log(#streamlines)')
+        plt.ylabel('correlation values')
+        plt.savefig(opj('/home/asier/git/ruber/reports/figures/', sub, 'scatter_DWI_fMRI'))
+        plt.close("all")
 """
 test area
 """
