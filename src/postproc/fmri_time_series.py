@@ -13,7 +13,12 @@ from os.path import join as opj
 from nilearn.input_data import NiftiLabelsMasker
 from nilearn.image import resample_img
 import nibabel as nib
-from src.postproc.utils import scrubbing, atlas_with_all_rois
+from src.postproc.utils import (scrubbing,
+                                atlas_with_all_rois,
+                                load_elec_file,
+                                order_dict,
+                                )
+
 import pandas as pd
 import numpy as np
 import nibabel as nib
@@ -55,13 +60,11 @@ def rois_2_bold_space_noatlas(sub, ses, preproc_data):
     if not os.path.exists(output_dir_fmri):
         os.makedirs(output_dir_fmri)
 
-    for idx, file in enumerate(os.listdir(output_dir)):
+    for file in os.listdir(output_dir):
         roi_img = nib.load(opj(output_dir, file))
         resampled_roi = resample_img(roi_img, target_affine=fmri.affine,
                                      interpolation='nearest')
-
-        new_roi_img = nib.Nifti1Image(resampled_roi, fmri.affine)
-        nib.save(new_roi_img, opj(output_dir_fmri, file))
+        nib.save(resampled_roi, opj(output_dir_fmri, file))
 
 
 def clean_and_get_time_series(subject_list, session_list):
@@ -115,6 +118,34 @@ def clean_and_get_time_series(subject_list, session_list):
     return
 
 
+def get_timeseries(args):
+
+    sub, ses, preproc_data, confounds, vxl_loc, idx = args
+    key = list(vxl_loc.keys())[idx]
+    confounds_matrix = confounds[CONFOUNDS_ID].as_matrix()
+
+    atlas_path = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
+                     'noatlas_fmri', 'roi_' + key + '.nii.gz')
+    # atlas_2514
+    masker = NiftiLabelsMasker(labels_img=atlas_path,
+                               background_label=0, verbose=5,
+                               detrend=True, standardize=True,
+                               t_r=2.72, smoothing_fwhm=6,
+                               # TR should not be a variable
+                               low_pass=0.1, high_pass=0.01)
+    # 1.- Confound regression
+    time_series = masker.fit_transform(preproc_data,
+                                       confounds=confounds_matrix)
+
+    # 2.- Scrubbing
+    # extract FramewiseDisplacement
+    FD = confounds.iloc[:, 5].as_matrix()
+    time_series = scrubbing(time_series, FD, FRAMEWISE_DISP_THRES)
+
+    # Save time series
+    return time_series
+
+
 def clean_and_get_time_series_noatlas(subject_list, session_list):
 
     sub_ses_comb = [[subject, session] for subject in subject_list
@@ -123,7 +154,7 @@ def clean_and_get_time_series_noatlas(subject_list, session_list):
     for sub, ses in sub_ses_comb:
         # TODO: CORRECT if exists
         #  not op.exists(op.join(PROCESSED, 'fmriprep', 'sub-' + sub,
-#                                 'ses-' + ses))
+        #                                 'ses-' + ses))
         if True:
             print('Calculating: Subject ', sub, ' and session', ses)
 
@@ -135,30 +166,25 @@ def clean_and_get_time_series_noatlas(subject_list, session_list):
 
             confounds = pd.read_csv(confounds_path,
                                     delimiter='\t', na_values='n/a').fillna(0)
-            confounds_matrix = confounds[CONFOUNDS_ID].as_matrix()
 
             rois_2_bold_space_noatlas(sub, ses, preproc_data)
 
+            elec_file_vxl = opj(DATA, 'raw', 'bids', sub, 'electrodes',
+                                'elec.loc')
+            elec_location_mni09_vxl = load_elec_file(elec_file_vxl)
+            elec_location_mni09_vxl = order_dict(elec_location_mni09_vxl)
 
-            # atlas_2514
-            masker = NiftiLabelsMasker(labels_img=atlas_path,
-                                       background_label=0, verbose=5,
-                                       detrend=True, standardize=True,
-                                       t_r=2.72, smoothing_fwhm=6,
-                                       # TR should not be a variable
-                                       low_pass=0.1, high_pass=0.01)
-            # 1.- Confound regression
-            confounds_matrix = confounds[CONFOUNDS_ID].as_matrix()
+            elec_tags = list(elec_location_mni09_vxl.keys())
+            elec_num = len(elec_tags)
 
-            time_series = masker.fit_transform(preproc_data,
-                                               confounds=confounds_matrix)
+            args = [tuple([sub] + [ses] + [preproc_data] + [confounds] +
+                          [elec_location_mni09_vxl] + [idx])
+                    for idx in range(elec_num)]
 
-            # 2.- Scrubbing
-            # extract FramewiseDisplacement
-            FD = confounds.iloc[:, 5].as_matrix()
-            time_series = scrubbing(time_series, FD, FRAMEWISE_DISP_THRES)
+            get_timeseries(args)
+            
+            
+                np.savetxt(opj(base_path, 'time_series_noatlas.txt'),
+               time_series)
 
-            # Save time series
-            np.savetxt(opj(base_path, 'time_series_noatlas.txt'),
-                       time_series)
     return
