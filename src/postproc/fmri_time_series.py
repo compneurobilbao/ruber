@@ -5,7 +5,7 @@ Created on Wed May 17 11:34:08 2017
 
 @author: asier
 """
-from src.env import DATA, ATLAS_TYPES, CONFOUNDS_ID
+from src.env import DATA, ATLAS_TYPES, CONFOUNDS_ID, FRAMEWISE_DISP_THRES
 import os
 import os.path as op
 from os.path import join as opj
@@ -173,8 +173,7 @@ def clean_and_get_time_series_noatlas(subject_list, session_list):
             # 2.- Scrubbing
             # extract FramewiseDisplacement
             FD = confounds.iloc[:, 5].as_matrix()
-            thres = 0.2
-            time_series = scrubbing(time_series, FD, thres)
+            time_series = scrubbing(time_series, FD, FRAMEWISE_DISP_THRES)
 
             # Save time series
             np.savetxt(opj(base_path, 'time_series_noatlas.txt'),

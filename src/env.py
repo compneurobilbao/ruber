@@ -25,3 +25,4 @@ CONFOUNDS_ID = ['FramewiseDisplacement',
 
 NEIGHBOURS = [0, 1]
 ELECTRODE_KERNEL_SIZE = 1  # Gaussian kernel (sigma in mm, not voxels)
+FRAMEWISE_DISP_THRES = 0.2  # For scrubbing
