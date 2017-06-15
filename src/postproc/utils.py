@@ -709,7 +709,7 @@ def calc_con_mat_electrodes_noatlas(subject_list, session_list):
         args = [tuple([sub] + [ses] + [elec_location_mni09_vxl] + [idx])
                 for idx in range(elec_num)]
         pool = Pool()
-        results = pool.map(create_electrode_roi_noatlas, args)
+        pool.map(create_electrode_roi_noatlas, args)
 
         # Calc of ROIS waypoints pairwise
         # This takes around 20 mins with 8 cores
