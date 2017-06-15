@@ -710,7 +710,7 @@ def calc_con_mat_electrodes_noatlas(subject_list, session_list):
                 for idx in range(elec_num)]
         pool = Pool()
         pool.map(create_electrode_roi_noatlas, args)
-
+        pool.close()
         # Calc of ROIS waypoints pairwise
         # This takes around 20 mins with 8 cores
         args = [tuple([sub] + [ses] + list(element))
@@ -719,6 +719,7 @@ def calc_con_mat_electrodes_noatlas(subject_list, session_list):
         indexes = list(itertools.combinations(range_elec_num, 2))
         pool = Pool()
         results = pool.map(calc_streamlines_elec_noatlas, args)
+        pool.close()
         for idx, (tag1, tag2) in enumerate(indexes):
             con_mat[tag1, tag2] = results[idx]
             con_mat[tag2, tag1] = results[idx]

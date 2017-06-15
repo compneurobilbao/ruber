@@ -184,11 +184,12 @@ def clean_and_get_time_series_noatlas(subject_list, session_list):
 
             pool = Pool()
             results = pool.map(get_timeseries, args)
+            pool.close()
             time_series = np.zeros((results[0].shape[0], elec_num))
 
             for idx in range(elec_num):
                 time_series[:, idx] = results[idx]
-                           
+
             np.savetxt(opj(base_path, 'time_series_noatlas.txt'),
                        time_series)
 
