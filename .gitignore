@@ -75,3 +75,4 @@ target/
 
 # Crash files
 crash*
+reports/figures/*
