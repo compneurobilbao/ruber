@@ -147,6 +147,7 @@ def get_timeseries(args):
 
 
 def clean_and_get_time_series_noatlas(subject_list, session_list):
+    from multiprocessing import Pool
 
     sub_ses_comb = [[subject, session] for subject in subject_list
                     for session in session_list]
@@ -181,10 +182,14 @@ def clean_and_get_time_series_noatlas(subject_list, session_list):
                           [elec_location_mni09_vxl] + [idx])
                     for idx in range(elec_num)]
 
-            get_timeseries(args)
-            
-            
-                np.savetxt(opj(base_path, 'time_series_noatlas.txt'),
-               time_series)
+            pool = Pool()
+            results = pool.map(get_timeseries, args)
+            time_series = np.zeros((results[0].shape[0], elec_num))
+
+            for idx in range(elec_num):
+                time_series[:, idx] = results[idx]
+                           
+            np.savetxt(opj(base_path, 'time_series_noatlas.txt'),
+                       time_series)
 
     return
