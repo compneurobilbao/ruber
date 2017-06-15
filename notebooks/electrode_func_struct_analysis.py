@@ -47,41 +47,35 @@ if __name__ == "__main__":
                     for session in SESSION_LIST]
 
     for sub, ses in sub_ses_comb:
-        for atlas in ATLAS_TYPES:
-            # FUNCTION MATRIX
-            elec_file = opj(DATA, 'raw', 'bids', sub, 'electrodes',
-                            'sub-001_' + atlas + '_closest_rois.roi')
-            elec_location_mni09 = load_elec_file(elec_file)
+        # FUNCTION MATRIX
+        elec_file = opj(DATA, 'raw', 'bids', sub, 'electrodes',
+                        'elec.loc')
+        elec_location_mni09 = load_elec_file(elec_file)
 
-            ordered_elec = order_dict(elec_location_mni09)
+        ordered_elec = order_dict(elec_location_mni09)
 
-            elec_tags = list(ordered_elec.keys())
-            elec_rois = np.array(list(ordered_elec.values()))[:, 0]
+        elec_tags = list(ordered_elec.keys())
 
-            idx = np.ix_(elec_rois, elec_rois)
+        # load function (conn matrix?)
+        func_file = opj(DATA, 'processed', 'fmriprep', sub, ses, 'func',
+                        'time_series_noatlas.txt')
 
-            # load function (conn matrix?)
-            func_file = opj(DATA, 'processed', 'fmriprep', sub, ses, 'func',
-                            'time_series_' + atlas + '.txt')
+        func_mat = np.loadtxt(func_file)
 
-            func_mat = np.loadtxt(func_file)
+        correlation_measure = ConnectivityMeasure(kind='correlation')
+        corr_mat = correlation_measure.fit_transform([func_mat])[0]
+        plot_matrix(corr_mat, elec_tags)
 
-            correlation_measure = ConnectivityMeasure(kind='correlation')
-            corr_mat = correlation_measure.fit_transform([func_mat])[0]
-            plot_matrix(corr_mat[idx], elec_tags)
+        # STRUCT MATRIX
+        struct_mat = np.load(opj(DATA, 'raw', 'bids', sub, 'electrodes',
+                                 ses, 'con_mat_noatlas.npy'))
 
-            # STRUCT MATRIX
-            struct_mat = np.load(opj(DATA, 'raw', 'bids', sub, 'electrodes',
-                                     ses, 'con_mat_noatlas.npy'))
-
-            plot_matrix(struct_mat, elec_tags)
-
-
-sc_camino = '/home/asier/git/ruber/data/processed/tract/_session_id_ses-presurg_subject_id_sub-001/conmat_atlas_2514_sc.csv'
-sc_matlab = '/home/asier/Desktop/test_track/fiber_number.txt'
-
-camino = np.loadtxt(sc_camino, delimiter=',', skiprows=1)
-matlab = np.loadtxt(sc_matlab)
+        plot_matrix(struct_mat, elec_tags, log=True)
+        plt.scatter(struct_mat, corr_mat)
+        plt.scatter(np.log(struct_mat), corr_mat)
+        
+        elec_mat = np.load('/home/asier/git/ruber/data/raw/elec_record/sub-001/elec_con_mat.npy')
+        plot_matrix(elec_mat, elec_tags)
 
 
 """
