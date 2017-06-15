@@ -42,43 +42,28 @@ def atlas_2_bold_space(sub, ses, atlas, preproc_data):
                sub + '_' + ses + '_' + atlas + '_bold_space.nii.gz')
 
 
-def atlas_2_bold_space_noatlas(sub, ses, preproc_data):
+def rois_2_bold_space_noatlas(sub, ses, preproc_data):
 
-    atlas_path = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
-                     'electrodes_atlas.nii.gz')
-    atlas_img = nib.load(atlas_path)
+    output_dir = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
+                     'noatlas')
+    output_dir_fmri = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
+                          'noatlas_fmri')
     fmri = nib.load(preproc_data)
-    resampled_atlas = resample_img(atlas_img, target_affine=fmri.affine,
-                                   interpolation='nearest')
-    nib.save(resampled_atlas,
-             opj(PROCESSED, 'fmriprep', sub, ses, 'func',
-                 sub + '_' + ses + '_electrodes_atlas_bold_space.nii.gz'))
 
-    return opj(PROCESSED, 'fmriprep', sub, ses, 'func',
-               sub + '_' + ses + '_electrodes_atlas_bold_space.nii.gz')
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    if not os.path.exists(output_dir_fmri):
+        os.makedirs(output_dir_fmri)
 
+    for idx, file in enumerate(os.listdir(output_dir)):
+        roi_img = nib.load(opj(output_dir, file))
+        resampled_roi = resample_img(roi_img, target_affine=fmri.affine,
+                                     interpolation='nearest')
 
-def create_atlas_from_elec_rois(sub, ses):
-    
-    path = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses, 'noatlas')
-        
-    for idx, file in enumerate(os.listdir(path)):
-        roi_img = nib.load(opj(path, file))
-        roi_data = roi_img.get_data()
-        
-        if idx == 0:
-            # just the first iteration
-            atlas_data = np.zeros((roi_data.shape))
-            affine = roi_img.affine
-            
-        atlas_data[np.where(roi_data > 0)] = roi_data[np.where(roi_data > 0)][0]
-    
-    atlas_img = nib.Nifti1Image(atlas_data, affine)
-    nib.save(atlas_img, opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
-                            'electrodes_atlas.nii.gz'))
+        new_roi_img = nib.Nifti1Image(resampled_roi, fmri.affine)
+        nib.save(new_roi_img, opj(output_dir_fmri, file))
 
 
-    
 def clean_and_get_time_series(subject_list, session_list):
 
     sub_ses_comb = [[subject, session] for subject in subject_list
@@ -150,12 +135,10 @@ def clean_and_get_time_series_noatlas(subject_list, session_list):
 
             confounds = pd.read_csv(confounds_path,
                                     delimiter='\t', na_values='n/a').fillna(0)
-
-            create_atlas_from_elec_rois(sub, ses)
-
-            atlas_path = atlas_2_bold_space_noatlas(sub, ses, preproc_data)
-
             confounds_matrix = confounds[CONFOUNDS_ID].as_matrix()
+
+            rois_2_bold_space_noatlas(sub, ses, preproc_data)
+
 
             # atlas_2514
             masker = NiftiLabelsMasker(labels_img=atlas_path,
