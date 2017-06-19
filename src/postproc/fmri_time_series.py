@@ -146,7 +146,7 @@ def get_timeseries(args):
     time_series = scrubbing(time_series, FD, FRAMEWISE_DISP_THRES)
 
     # Save time series
-    return time_series[:, 0]
+    return time_series
 
 
 def clean_and_get_time_series_noatlas(subject_list, session_list):
@@ -185,15 +185,19 @@ def clean_and_get_time_series_noatlas(subject_list, session_list):
                 args = [tuple([sub] + [ses] + [preproc_data] + [confounds] +
                               [elec_location_mni09_vxl] + [idx] + [sphere_size])
                         for idx in range(elec_num)]
-    
+
                 pool = Pool()
                 results = pool.map(get_timeseries, args)
                 pool.close()
                 time_series = np.zeros((results[0].shape[0], elec_num))
-    
+
                 for idx in range(elec_num):
-                    time_series[:, idx] = results[idx]
-    
+                    try:
+                        time_series[:, idx] = results[idx].ravel()
+                    except ValueError:
+                        print('fMRI signal extraction unsucccesful')
+                            
+
                 np.savetxt(opj(base_path, 'time_series_noatlas_' + str(sphere_size) + '.txt'),
                            time_series)
 
