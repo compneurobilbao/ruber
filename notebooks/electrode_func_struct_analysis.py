@@ -45,6 +45,7 @@ if __name__ == "__main__":
 
     sub_ses_comb = [[subject, session] for subject in SUBJECT_LIST
                     for session in SESSION_LIST]
+    SPHERE_SIZE = 3
 
     for sub, ses in sub_ses_comb:
         # FUNCTION MATRIX
@@ -58,7 +59,7 @@ if __name__ == "__main__":
 
         # load function (conn matrix?)
         func_file = opj(DATA, 'processed', 'fmriprep', sub, ses, 'func',
-                        'time_series_noatlas.txt')
+                        'time_series_noatlas_' + str(sphere_size) + '.txt')
 
         func_mat = np.loadtxt(func_file)
 
@@ -66,8 +67,8 @@ if __name__ == "__main__":
         corr_mat = correlation_measure.fit_transform([func_mat])[0]
 
         # STRUCT MATRIX
-        struct_mat = np.load(opj(DATA, 'raw', 'bids', sub, 'electrodes',
-                                 ses, 'con_mat_noatlas.npy'))
+        struct_mat = np.load(opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
+                                 'con_mat_noatlas_' + str(sphere_size) + '.npy'))
 
         
         
