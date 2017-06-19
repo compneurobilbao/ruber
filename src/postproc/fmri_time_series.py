@@ -5,9 +5,12 @@ Created on Wed May 17 11:34:08 2017
 
 @author: asier
 """
-from src.env import DATA, ATLAS_TYPES, CONFOUNDS_ID, FRAMEWISE_DISP_THRES
+from src.env import (DATA,
+                     ATLAS_TYPES,
+                     CONFOUNDS_ID,
+                     FRAMEWISE_DISP_THRES,
+                     ELECTRODE_SPHERE_SIZE)
 import os
-import os.path as op
 from os.path import join as opj
 
 from nilearn.input_data import NiftiLabelsMasker
@@ -18,10 +21,8 @@ from src.postproc.utils import (scrubbing,
                                 load_elec_file,
                                 order_dict,
                                 )
-
 import pandas as pd
 import numpy as np
-import nibabel as nib
 
 PROCESSED = opj(DATA, 'processed')
 EXTERNAL = opj(DATA, 'external')
@@ -49,22 +50,24 @@ def atlas_2_bold_space(sub, ses, atlas, preproc_data):
 
 def rois_2_bold_space_noatlas(sub, ses, preproc_data):
 
-    output_dir = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
-                     'noatlas')
-    output_dir_fmri = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
-                          'noatlas_fmri')
-    fmri = nib.load(preproc_data)
+    for sphere_size in ELECTRODE_SPHERE_SIZE:
 
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    if not os.path.exists(output_dir_fmri):
-        os.makedirs(output_dir_fmri)
+        output_dir = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
+                         'noatlas_' + str(sphere_size))
+        output_dir_fmri = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
+                              'noatlas_fmri_' + str(sphere_size))
+        fmri = nib.load(preproc_data)
 
-    for file in os.listdir(output_dir):
-        roi_img = nib.load(opj(output_dir, file))
-        resampled_roi = resample_img(roi_img, target_affine=fmri.affine,
-                                     interpolation='nearest')
-        nib.save(resampled_roi, opj(output_dir_fmri, file))
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        if not os.path.exists(output_dir_fmri):
+            os.makedirs(output_dir_fmri)
+
+        for file in os.listdir(output_dir):
+            roi_img = nib.load(opj(output_dir, file))
+            resampled_roi = resample_img(roi_img, target_affine=fmri.affine,
+                                         interpolation='nearest')
+            nib.save(resampled_roi, opj(output_dir_fmri, file))
 
 
 def clean_and_get_time_series(subject_list, session_list):
@@ -120,12 +123,12 @@ def clean_and_get_time_series(subject_list, session_list):
 
 def get_timeseries(args):
 
-    sub, ses, preproc_data, confounds, vxl_loc, idx = args
+    sub, ses, preproc_data, confounds, vxl_loc, idx, sphere_size = args
     key = list(vxl_loc.keys())[idx]
     confounds_matrix = confounds[CONFOUNDS_ID].as_matrix()
 
     atlas_path = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
-                     'noatlas_fmri', 'roi_' + key + '.nii.gz')
+                     'noatlas_fmri_' + str(sphere_size), 'roi_' + key + '.nii.gz')
     # atlas_2514
     masker = NiftiLabelsMasker(labels_img=atlas_path,
                                background_label=0, verbose=5,
@@ -143,7 +146,7 @@ def get_timeseries(args):
     time_series = scrubbing(time_series, FD, FRAMEWISE_DISP_THRES)
 
     # Save time series
-    return time_series[:, 0]
+    return time_series
 
 
 def clean_and_get_time_series_noatlas(subject_list, session_list):
@@ -178,19 +181,24 @@ def clean_and_get_time_series_noatlas(subject_list, session_list):
             elec_tags = list(elec_location_mni09_vxl.keys())
             elec_num = len(elec_tags)
 
-            args = [tuple([sub] + [ses] + [preproc_data] + [confounds] +
-                          [elec_location_mni09_vxl] + [idx])
-                    for idx in range(elec_num)]
+            for sphere_size in ELECTRODE_SPHERE_SIZE:
+                args = [tuple([sub] + [ses] + [preproc_data] + [confounds] +
+                              [elec_location_mni09_vxl] + [idx] + [sphere_size])
+                        for idx in range(elec_num)]
 
-            pool = Pool()
-            results = pool.map(get_timeseries, args)
-            pool.close()
-            time_series = np.zeros((results[0].shape[0], elec_num))
+                pool = Pool()
+                results = pool.map(get_timeseries, args)
+                pool.close()
+                time_series = np.zeros((results[0].shape[0], elec_num))
 
-            for idx in range(elec_num):
-                time_series[:, idx] = results[idx]
+                for idx in range(elec_num):
+                    try:
+                        time_series[:, idx] = results[idx].ravel()
+                    except ValueError:
+                        print('fMRI signal extraction unsucccesful')
+                            
 
-            np.savetxt(opj(base_path, 'time_series_noatlas.txt'),
-                       time_series)
+                np.savetxt(opj(base_path, 'time_series_noatlas_' + str(sphere_size) + '.txt'),
+                           time_series)
 
     return

@@ -5,7 +5,7 @@ Created on Wed May 17 11:23:57 2017
 
 @author: asier
 """
-from src.env import DATA, ATLAS_TYPES, NEIGHBOURS, ELECTRODE_KERNEL_SIZE
+from src.env import DATA, ATLAS_TYPES, NEIGHBOURS, ELECTRODE_SPHERE_SIZE
 
 import os
 import os.path as op
@@ -431,6 +431,7 @@ APROACH 1: COMMON ATLAS
 
 
 def create_electrode_rois(sub, ses, atlas, vxl_loc, roi):
+    import tempfile
 
     output_dir = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses, atlas)
     output_dir_dwi = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
@@ -447,13 +448,15 @@ def create_electrode_rois(sub, ses, atlas, vxl_loc, roi):
         if roi[key][0] == 0 and len(roi[key]) == 1:
             x, y, z = vxl_loc[key][0]
 
+            temp_file = tempfile.mkstemp()
+
             # Create point
             command = ['fslmaths',
                        opj(EXTERNAL_MNI_09c,
                            'mni_icbm152_t1_tal_nlin_asym_09c_brain.nii'),
                        '-mul', '0', '-add', '1',
                        '-roi', str(x), '1', str(y), '1', str(z), '1', '0', '1',
-                       opj(DATA, 'interim', 'test'),
+                       temp_file[1],
                        '-odt', 'float',
                        ]
             for output in execute(command):
@@ -461,10 +464,10 @@ def create_electrode_rois(sub, ses, atlas, vxl_loc, roi):
 
             # Expand to sphere
             command = ['fslmaths',
-                       opj(DATA, 'interim', 'test'),
+                       temp_file[1],
                        '-kernel', 'gauss', str(ELECTRODE_KERNEL_SIZE),
                        '-fmean',
-                       opj(DATA, 'interim', 'test2'),
+                       temp_file[1],
                        ]
             for output in execute(command):
                 print(output)
@@ -472,7 +475,7 @@ def create_electrode_rois(sub, ses, atlas, vxl_loc, roi):
             # Give value
             output_roi_path = opj(output_dir, 'roi_' + key + '.nii.gz')
             command = ['fslmaths',
-                       opj(DATA, 'interim', 'test2'),
+                       temp_file[1],
                        '-bin', '-mul', str(idx),
                        output_roi_path,
                        '-odt', 'float',
@@ -598,16 +601,6 @@ def create_electrode_roi_noatlas(args):
     x, y, z = vxl_loc[key][0]
     temp_file = tempfile.mkstemp()
 
-    output_dir = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
-                     'noatlas')
-    output_dir_dwi = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
-                         'noatlas_dwi')
-
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    if not os.path.exists(output_dir_dwi):
-        os.makedirs(output_dir_dwi)
-
     # Create point
     command = ['fslmaths',
                opj(EXTERNAL_MNI_09c,
@@ -620,44 +613,56 @@ def create_electrode_roi_noatlas(args):
     for output in execute(command):
         print(output)
 
-    # Expand to sphere
-    command = ['fslmaths',
-               temp_file[1],
-               '-kernel', 'gauss', str(ELECTRODE_KERNEL_SIZE),
-               '-fmean',
-               temp_file[1],
-               ]
-    for output in execute(command):
-        print(output)
+    for sphere_size in ELECTRODE_SPHERE_SIZE:
 
-    # Give value
-    output_roi_path = opj(output_dir, 'roi_' + key + '.nii.gz')
-    command = ['fslmaths',
-               temp_file[1],
-               '-bin', '-mul', str(idx + 1),
-               output_roi_path,
-               '-odt', 'float',
-               ]
-    for output in execute(command):
-        print(output)
+        output_dir = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
+                         'noatlas_' + str(sphere_size))
+        output_dir_dwi = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
+                             'noatlas_dwi_' + str(sphere_size))
 
-    input_roi_path = output_roi_path
-    output_roi_path = opj(output_dir_dwi,  'roi_' + key + '.nii.gz')
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        if not os.path.exists(output_dir_dwi):
+            os.makedirs(output_dir_dwi)
 
-    transform_roi_to_dwi_space(sub, ses,
-                               input_roi_path,
-                               output_roi_path)
+        # Expand to sphere
+        command = ['fslmaths',
+                   temp_file[1],
+                   '-kernel', 'sphere', str(sphere_size),
+                   '-fmean',
+                   temp_file[1],
+                   ]
+        for output in execute(command):
+            print(output)
+
+        # Give value
+        output_roi_path = opj(output_dir, 'roi_' + key + '.nii.gz')
+        command = ['fslmaths',
+                   temp_file[1],
+                   '-bin', '-mul', str(idx + 1),
+                   output_roi_path,
+                   '-odt', 'float',
+                   ]
+        for output in execute(command):
+            print(output)
+
+        input_roi_path = output_roi_path
+        output_roi_path = opj(output_dir_dwi,  'roi_' + key + '.nii.gz')
+
+        transform_roi_to_dwi_space(sub, ses,
+                                   input_roi_path,
+                                   output_roi_path)
 
 
 def calc_streamlines_elec_noatlas(args):
     import tempfile
 
-    sub, ses, elec1, elec2 = args
+    sub, ses, elec1, elec2, sphere = args
 
     elec1_path = opj(DATA, 'raw', 'bids', sub, 'electrodes',
-                     ses, 'noatlas_dwi', 'roi_' + elec1 + '.nii.gz')
+                     ses, 'noatlas_dwi_' + str(sphere), 'roi_' + elec1 + '.nii.gz')
     elec2_path = opj(DATA, 'raw', 'bids', sub, 'electrodes',
-                     ses, 'noatlas_dwi', 'roi_' + elec2 + '.nii.gz')
+                     ses, 'noatlas_dwi_' + str(sphere), 'roi_' + elec2 + '.nii.gz')
     temp_file = tempfile.mkstemp()
 
     tracts_file = opj(DATA, 'processed', 'tract',
@@ -713,19 +718,21 @@ def calc_con_mat_electrodes_noatlas(subject_list, session_list):
         pool.close()
         # Calc of ROIS waypoints pairwise
         # This takes around 20 mins with 8 cores
-        args = [tuple([sub] + [ses] + list(element))
-                for element in itertools.combinations(elec_tags, 2)]
+        for sphere_size in ELECTRODE_SPHERE_SIZE:
 
-        indexes = list(itertools.combinations(range_elec_num, 2))
-        pool = Pool()
-        results = pool.map(calc_streamlines_elec_noatlas, args)
-        pool.close()
-        for idx, (tag1, tag2) in enumerate(indexes):
-            con_mat[tag1, tag2] = results[idx]
-            con_mat[tag2, tag1] = results[idx]
+            args = [tuple([sub] + [ses] + list(element) + [sphere_size])
+                    for element in itertools.combinations(elec_tags, 2)]
 
-        np.save(opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
-                    'con_mat_noatlas'), con_mat)
+            indexes = list(itertools.combinations(range_elec_num, 2))
+            pool = Pool()
+            results = pool.map(calc_streamlines_elec_noatlas, args)
+            pool.close()
+            for idx, (tag1, tag2) in enumerate(indexes):
+                con_mat[tag1, tag2] = results[idx]
+                con_mat[tag2, tag1] = results[idx]
+
+            np.save(opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
+                        'con_mat_noatlas_' + str(sphere_size)), con_mat)
 
 
 """
