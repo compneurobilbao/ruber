@@ -431,6 +431,7 @@ APROACH 1: COMMON ATLAS
 
 
 def create_electrode_rois(sub, ses, atlas, vxl_loc, roi):
+    import tempfile
 
     output_dir = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses, atlas)
     output_dir_dwi = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
@@ -447,13 +448,15 @@ def create_electrode_rois(sub, ses, atlas, vxl_loc, roi):
         if roi[key][0] == 0 and len(roi[key]) == 1:
             x, y, z = vxl_loc[key][0]
 
+            temp_file = tempfile.mkstemp()
+
             # Create point
             command = ['fslmaths',
                        opj(EXTERNAL_MNI_09c,
                            'mni_icbm152_t1_tal_nlin_asym_09c_brain.nii'),
                        '-mul', '0', '-add', '1',
                        '-roi', str(x), '1', str(y), '1', str(z), '1', '0', '1',
-                       opj(DATA, 'interim', 'test'),
+                       temp_file[1],
                        '-odt', 'float',
                        ]
             for output in execute(command):
@@ -461,10 +464,10 @@ def create_electrode_rois(sub, ses, atlas, vxl_loc, roi):
 
             # Expand to sphere
             command = ['fslmaths',
-                       opj(DATA, 'interim', 'test'),
+                       temp_file[1],
                        '-kernel', 'gauss', str(ELECTRODE_KERNEL_SIZE),
                        '-fmean',
-                       opj(DATA, 'interim', 'test2'),
+                       temp_file[1],
                        ]
             for output in execute(command):
                 print(output)
@@ -472,7 +475,7 @@ def create_electrode_rois(sub, ses, atlas, vxl_loc, roi):
             # Give value
             output_roi_path = opj(output_dir, 'roi_' + key + '.nii.gz')
             command = ['fslmaths',
-                       opj(DATA, 'interim', 'test2'),
+                       temp_file[1],
                        '-bin', '-mul', str(idx),
                        output_roi_path,
                        '-odt', 'float',
