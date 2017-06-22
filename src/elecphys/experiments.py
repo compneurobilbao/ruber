@@ -67,8 +67,8 @@ contact_num = np.loadtxt(test,
                          delimiter='\t',
                          usecols=range(3, 60))
 
-fs = 2000
-lowcut = 0.5
+fs = 500
+lowcut = 0.05
 highcut = 70
 
 
@@ -82,15 +82,16 @@ for i in [0, 3]:
 
 filtered = np.zeros((contact_num.shape))
 for i in range(57):
-    filtered[:, i] = butter_bandpass_filter(contact_num[:, i], lowcut, highcut, fs, order=6)
+    filtered[:, i] = butter_bandpass_filter(contact_num[:, i], lowcut, highcut, fs, order=1)
 
 
 
-plt.plot(filtered[:, 0]-filtered[:, 1])
+plt.plot(filtered[:, 0][1000:]-filtered[:, 1][1000:])
+plt.plot(filtered[:, 25][1000:]-filtered[:, 26][1000:])
+
 plt.plot(contact_num[:, 1]-contact_num[:, 2])
-plt.plot(contact_num[:, 0]-contact_num[:, 1])
+plt.plot(contact_num[:, 23]-contact_num[:, 24])
 
 
-plt.plot(contact_num[:, 1])
 
-signal = contact_num[:, 1]-contact_num[:, 2]
+plt.plot(filtered[:, 31][1000:])
