@@ -24,15 +24,18 @@ def clean_file(file_path):
     shutil.move(temp_file, file_path)
 
 
-for filename in os.listdir(INTERICTAL_DATA):
-    file = opj(INTERICTAL_DATA, filename)
-    if filename.endswith(".txt"):
-        clean_file(file)
-        with open(file, 'r') as f:
-            ncols = len(f.readline().split('\t'))
+def clean_all_files_and_convert_to_npy():
 
-        numpy_matrix = np.loadtxt(file,
-                                  dtype='float32',
-                                  delimiter='\t',
-                                  usecols=range(3, ncols-1))
-        np.save(file[:-4], numpy_matrix)
+    for filename in os.listdir(INTERICTAL_DATA):
+        file = opj(INTERICTAL_DATA, filename)
+        if filename.endswith(".txt"):
+            clean_file(file)
+            with open(file, 'r') as f:
+                ncols = len(f.readline().split('\t'))
+
+            numpy_matrix = np.loadtxt(file,
+                                      dtype='float32',
+                                      delimiter='\t',
+                                      usecols=range(3, ncols-1))
+            np.save(file[:-4], numpy_matrix)
+
