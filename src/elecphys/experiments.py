@@ -87,10 +87,10 @@ for i in range(57):
 
 
 plt.plot(filtered[:, 0][1000:]-filtered[:, 1][1000:])
-plt.plot(filtered[:, 25][1000:]-filtered[:, 26][1000:])
+plt.plot(filtered[:, 32][1000:]-filtered[:, 33][1000:], linewidth=0.1)
 
 plt.plot(contact_num[:, 1]-contact_num[:, 2])
-plt.plot(contact_num[:, 23]-contact_num[:, 24])
+plt.plot(contact_num[:, 31]-contact_num[:, 32], linewidth=0.1)
 
 
 
