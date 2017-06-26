@@ -41,11 +41,9 @@ def clean_all_files_and_convert_to_npy():
                                       usecols=range(3, ncols-1))
             np.save(file[:-4], numpy_matrix)
 
-from scipy.signal import butter, lfilter
-
-
 
 from scipy.signal import butter, lfilter
+
 
 def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
     nyq = 0.5 * fs
@@ -55,7 +53,6 @@ def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
     b, a = butter(order, [low, high], btype='band')
     y = lfilter(b, a, data)
     return y
-
 
 
 
@@ -91,7 +88,5 @@ plt.plot(filtered[:, 32][1000:]-filtered[:, 33][1000:], linewidth=0.1)
 
 plt.plot(contact_num[:, 1]-contact_num[:, 2])
 plt.plot(contact_num[:, 31]-contact_num[:, 32], linewidth=0.1)
-
-
 
 plt.plot(filtered[:, 31][1000:])
