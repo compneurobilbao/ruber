@@ -62,8 +62,8 @@ def bandpass_filter(data, fs, lowcut, highcut):
     Wstop2 = 10
     dens = 20
 
-    b = remez(order, 
-              bands=np.array([0, Fstop1, Fpass1, Fpass2, Fstop2, fs]),
+    b = remez(order+1, 
+              bands=np.array([0, Fstop1, Fpass1, Fpass2, Fstop2, fs/2]),
               desired=[0, 1, 0],
               Hz=fs,
               weight=[Wstop1, Wpass, Wstop2],
