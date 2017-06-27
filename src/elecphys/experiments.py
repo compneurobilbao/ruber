@@ -42,19 +42,44 @@ def clean_all_files_and_convert_to_npy():
             np.save(file[:-4], numpy_matrix)
 
 
-from scipy.signal import butter, lfilter
+from scipy.signal import butter, lfilter, remez
 
 
-def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
-    nyq = 0.5 * fs
-    low = lowcut / nyq
-    high = highcut / nyq
+def bandpass_filter(data, fs, lowcut, highcut):
+
+    order = 1000
+    ns, num_channels = np.shape(data)
+    if ns < 3 * order:
+        order = np.floor(ns/3)
+
+    Fstop1 =fmin- 0.001
+    Fpass1 = fmin
+    
+    Fpass2 = fmax
+    Fstop2 = fmax + 0.005
+    Wstop1 = 10
+    Wpass = 1
+    Wstop2 = 10
+    dens = 20
 
     b, a = butter(order, [low, high], btype='band')
     y = lfilter(b, a, data)
     return y
 
+def bandpass_remez(x, lowcut, highcut, fs, width = 10):
+    
+    order = 1000
+    ns, num_channels = np.shape(data)
+    if ns < 3 * order:
+        order = np.floor(ns/3)
+        
+    delta = 0.5 * width
+    edges = [0, lowcut - delta, lowcut + delta,
+             highcut - delta, highcut + delta, 0.5*fs]
+    taps = remez(order, edges, [0, 1, 0], Hz=fs)
+    filtered_x = lfilter(taps, 1.0, x)
 
+    return filtered_x
 
 test = '/media/asier/DISK_IMG/test.txt'
 clean_file(test)
@@ -64,6 +89,8 @@ contact_num = np.loadtxt(test,
                          delimiter='\t',
                          usecols=range(3, 60))
 
+
+contac_num = np.load(file[:-4] + '.npy')
 fs = 500
 lowcut = 0.05
 highcut = 70
