@@ -8,6 +8,7 @@ import numpy as np
 import tempfile
 import shutil
 import matplotlib.pyplot as plt
+from scipy.signal import remez, filtfilt
 
 
 INTERICTAL_DATA = opj(DATA, 'raw', 'elec_record', 'sub-001', 'interictal')
@@ -42,9 +43,6 @@ def clean_all_files_and_convert_to_npy():
             np.save(file[:-4], numpy_matrix)
 
 
-from scipy.signal import butter, lfilter, remez, filtfilt
-
-
 def bandpass_filter(data, fs, lowcut, highcut):
 
     order = 1000
@@ -62,20 +60,16 @@ def bandpass_filter(data, fs, lowcut, highcut):
     Wstop2 = 10
     dens = 20
 
-    b = remez(order+1, 
+    b = remez(order+1,
               bands=np.array([0, Fstop1, Fpass1, Fpass2, Fstop2, fs/2]),
               desired=[0, 1, 0],
               Hz=fs,
               weight=[Wstop1, Wpass, Wstop2],
               grid_density=dens)
-    
+
     y = filtfilt(b, 1, data[:, 0])
     return y
 
-
-plt.plot(data[:, 0])
-plt.figure()
-plt.plot(y)
 
 test = '/media/asier/DISK_IMG/test.txt'
 clean_file(test)
@@ -102,7 +96,7 @@ for i in [0, 3]:
 
 filtered = np.zeros((contact_num.shape))
 for i in range(57):
-    filtered[:, i] = butter_bandpass_filter(contact_num[:, i], lowcut, highcut, fs, order=1)
+    filtered[:, i] = bandpass_filter(contact_num[:, i], lowcut, highcut, fs, order=1)
 
 
 
