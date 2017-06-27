@@ -42,7 +42,7 @@ def clean_all_files_and_convert_to_npy():
             np.save(file[:-4], numpy_matrix)
 
 
-from scipy.signal import butter, lfilter, remez
+from scipy.signal import butter, lfilter, remez, filtfilt
 
 
 def bandpass_filter(data, fs, lowcut, highcut):
@@ -69,29 +69,13 @@ def bandpass_filter(data, fs, lowcut, highcut):
               weight=[Wstop1, Wpass, Wstop2],
               grid_density=dens)
     
-    y = lfilter(b, 1, data)
+    y = filtfilt(b, 1, data[:, 0])
     return y
 
 
 plt.plot(data[:, 0])
 plt.figure()
-plt.plot(y[:, 0])
-
-
-def bandpass_remez(x, lowcut, highcut, fs, width = 10):
-    
-    order = 1000
-    ns, num_channels = np.shape(data)
-    if ns < 3 * order:
-        order = np.floor(ns/3)
-        
-    delta = 0.5 * width
-    edges = [0, lowcut - delta, lowcut + delta,
-             highcut - delta, highcut + delta, 0.5*fs]
-    taps = remez(order, edges, [0, 1, 0], Hz=fs)
-    filtered_x = lfilter(taps, 1.0, x)
-
-    return filtered_x
+plt.plot(y)
 
 test = '/media/asier/DISK_IMG/test.txt'
 clean_file(test)
