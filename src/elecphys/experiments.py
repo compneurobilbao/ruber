@@ -52,19 +52,31 @@ def bandpass_filter(data, fs, lowcut, highcut):
     if ns < 3 * order:
         order = np.floor(ns/3)
 
-    Fstop1 =fmin- 0.001
-    Fpass1 = fmin
-    
-    Fpass2 = fmax
-    Fstop2 = fmax + 0.005
+    Fstop1 = lowcut - 0.001
+    Fpass1 = lowcut
+
+    Fpass2 = highcut
+    Fstop2 = highcut + 0.005
     Wstop1 = 10
     Wpass = 1
     Wstop2 = 10
     dens = 20
 
-    b, a = butter(order, [low, high], btype='band')
-    y = lfilter(b, a, data)
+    b = remez(order, 
+              bands=np.array([0, Fstop1, Fpass1, Fpass2, Fstop2, fs]),
+              desired=[0, 1, 0],
+              Hz=fs,
+              weight=[Wstop1, Wpass, Wstop2],
+              grid_density=dens)
+    
+    y = lfilter(b, 1, data)
     return y
+
+
+plt.plot(data[:, 0])
+plt.figure()
+plt.plot(y[:, 0])
+
 
 def bandpass_remez(x, lowcut, highcut, fs, width = 10):
     
