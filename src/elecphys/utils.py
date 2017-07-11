@@ -2,17 +2,13 @@
 """
 Utilities to help in the deep electrode signals pre-processing
 """
-from src.env import DATA
-
 import os
 import os.path as op
 from os.path import join as opj
 import numpy as np
 import tempfile
 import shutil
-import matplotlib.pyplot as plt
 from scipy.signal import remez, filtfilt
-
 
 
 def clean_file(file_path):
@@ -28,10 +24,10 @@ def clean_file(file_path):
     shutil.move(temp_file, file_path)
 
 
-def clean_all_files_and_convert_to_npy():
+def clean_all_files_and_convert_to_npy(data_path):
 
-    for filename in os.listdir(INTERICTAL_DATA):
-        file = opj(INTERICTAL_DATA, filename)
+    for filename in os.listdir(data_path):
+        file = opj(data_path, filename)
         if filename.endswith(".txt"):
             clean_file(file)
             with open(file, 'r') as f:
