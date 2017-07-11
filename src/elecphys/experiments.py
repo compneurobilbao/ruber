@@ -28,11 +28,13 @@ contact_num = np.loadtxt(test,
                          usecols=range(3, 60))
 
 
-contac_num = np.load(file[:-4] + '.npy')
+contact_num = np.load(file[:-4] + '.npy')
 fs = 500
 lowcut = 0.05
 highcut = 70
 
+file = '/home/asier/git/ruber/data/raw/elec_record/sub-001/interictal/chunck_1.npy'
+contact_num = np.load(file)
 
 
 for i in range(57):
@@ -44,8 +46,7 @@ for i in [0, 3]:
 
 filtered = np.zeros((contact_num.shape))
 for i in range(57):
-    filtered[:, i] = bandpass_filter(contact_num[:, i], lowcut, highcut, fs, order=1)
-
+    filtered[:, i] = bandpass_filter(contact_num[:, i], lowcut, highcut, fs)
 
 
 plt.plot(filtered[:, 0][1000:]-filtered[:, 1][1000:])

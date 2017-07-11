@@ -41,7 +41,7 @@ def clean_all_files_and_convert_to_npy(data_path):
             np.save(file[:-4], numpy_matrix)
 
 
-def bandpass_filter(data, fs, lowcut, highcut):
+def bandpass_filter(data, lowcut, highcut, fs):
 
     order = 1000
     ns = np.shape(data)[0]
@@ -65,5 +65,5 @@ def bandpass_filter(data, fs, lowcut, highcut):
               weight=[Wstop1, Wpass, Wstop2],
               grid_density=dens)
 
-    y = filtfilt(b, 1, data[:, 0])
+    y = filtfilt(b, 1, data)
     return y
