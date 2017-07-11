@@ -16,7 +16,8 @@ def clean_file(file_path):
     wrong_word = 'BREAK'
     temp_file = tempfile.mkstemp()[1]
 
-    with open(file_path) as oldfile, open(temp_file, 'w') as newfile:
+    with open(file_path, encoding='utf-16') as oldfile, \
+            open(temp_file, 'w') as newfile:
         for line in oldfile:
             if wrong_word not in line:
                 newfile.write(line)
@@ -43,7 +44,7 @@ def clean_all_files_and_convert_to_npy(data_path):
 def bandpass_filter(data, fs, lowcut, highcut):
 
     order = 1000
-    ns, num_channels = np.shape(data)
+    ns = np.shape(data)[0]
     if ns < 3 * order:
         order = np.floor(ns/3)
 
