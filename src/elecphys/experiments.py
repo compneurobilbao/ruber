@@ -55,10 +55,6 @@ for i in range(57):
 
 plt.plot(filtered[:, 32]-filtered[:, 33], linewidth=0.1)
 
-
-
-
-
 plt.plot(filtered[:, 0][1000:]-filtered[:, 1][1000:])
 plt.plot(filtered[:, 32][1000:]-filtered[:, 33][1000:], linewidth=0.1)
 
@@ -69,13 +65,39 @@ plt.plot(filtered[:, 31][1000:])
 
 
 
-INTERICTAL_DATA = opj(DATA, 'raw', 'elec_record', 'sub-001', 'interictal', 'exported')
+
+
+
+sub = 'sub-004'
+INTERICTAL_DATA = opj(DATA, 'raw', 'elec_record', sub, 'chuncks')
 clean_all_files_and_convert_to_npy(INTERICTAL_DATA)
 
-file = '/home/asier/git/ruber/data/raw/elec_record/sub-001/interictal/chunck_3.npy'
+
+
+chunck = str(2)
+file = opj(INTERICTAL_DATA, 'chunck_' + chunck + '.npy')
 contact_num = np.load(file)
 plt.plot(contact_num)
 
-interictal_12 = contact_num[1120000:1240000, :]
-np.save('/home/asier/git/ruber/data/raw/elec_record/sub-001/interictal/interictal_12.npy',interictal_12)
+interictal = str(5)
+interictal_1 = contact_num[30000:60000, :]
+np.save('/home/asier/git/ruber/data/raw/elec_record/'+sub+'/interictal/interictal_'+interictal+'.npy',interictal_1)
+
+
+
+interictal = str(6)
+interictal_1 = contact_num[200000:230000, :]
+np.save('/home/asier/git/ruber/data/raw/elec_record/'+sub+'/interictal/interictal_'+interictal+'.npy',interictal_1)
+
+
+
+interictal = str(7)
+interictal_1 = contact_num[400000:430000, :]
+np.save('/home/asier/git/ruber/data/raw/elec_record/'+sub+'/interictal/interictal_'+interictal+'.npy',interictal_1)
+
+
+
+interictal = str(8)
+interictal_1 = contact_num[600000:630000, :]
+np.save('/home/asier/git/ruber/data/raw/elec_record/'+sub+'/interictal/interictal_'+interictal+'.npy',interictal_1)
 
