@@ -48,6 +48,16 @@ filtered = np.zeros((contact_num.shape))
 for i in range(57):
     filtered[:, i] = bandpass_filter(contact_num[:, i], lowcut, highcut, fs)
 
+for i in range(57):
+    plt.plot(filtered[:, i])  # /max(abs(matrix(:,i)))+1*(i-1))
+    
+
+
+plt.plot(filtered[:, 32]-filtered[:, 33], linewidth=0.1)
+
+
+
+
 
 plt.plot(filtered[:, 0][1000:]-filtered[:, 1][1000:])
 plt.plot(filtered[:, 32][1000:]-filtered[:, 33][1000:], linewidth=0.1)
@@ -56,3 +66,16 @@ plt.plot(contact_num[:, 1]-contact_num[:, 2])
 plt.plot(contact_num[:, 31]-contact_num[:, 32], linewidth=0.1)
 
 plt.plot(filtered[:, 31][1000:])
+
+
+
+INTERICTAL_DATA = opj(DATA, 'raw', 'elec_record', 'sub-001', 'interictal', 'exported')
+clean_all_files_and_convert_to_npy(INTERICTAL_DATA)
+
+file = '/home/asier/git/ruber/data/raw/elec_record/sub-001/interictal/chunck_3.npy'
+contact_num = np.load(file)
+plt.plot(contact_num)
+
+interictal_12 = contact_num[1120000:1240000, :]
+np.save('/home/asier/git/ruber/data/raw/elec_record/sub-001/interictal/interictal_12.npy',interictal_12)
+
