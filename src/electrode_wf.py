@@ -17,7 +17,7 @@ from src.postproc.utils import (t1w_electrodes_to_09c,
                                 calc_con_mat_electrodes_noatlas
                                 )
 
-SUBJECT_LIST = ['sub-002', 'sub-003', 'sub-004']
+SUBJECT_LIST = ['sub-004']
 SESSION_LIST = ['ses-presurg']
 
 """
@@ -63,11 +63,11 @@ t1w_electrodes_to_09c(SUBJECT_LIST)
 
 # WARNING! Create elec file for each subject manually !!
 # from src.postproc.utils import contacts_from_electrode
-# elec_name = 'OIM1'
-# contact_num = 12
-# first_contact_pos = [78, 73, 78]
-# last_contact_pos = [80, 26, 84]
-# contacts_from_electrode(first_contact_pos, last_contact_pos, contact_num, elec_name)
+#elec_name = ''
+#contact_num = 
+#first_contact_pos = [,,]
+#last_contact_pos = [,,]
+#contacts_from_electrode(first_contact_pos, last_contact_pos, contact_num, elec_name)
 
 """
 APPROACH 2: NOATLAS
