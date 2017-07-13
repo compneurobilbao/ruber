@@ -285,7 +285,7 @@ def contacts_from_electrode(first_contact_pos, last_contact_pos, contact_num,
 
     for num in range(contact_num):
         point = portion * num
-        print('elec[\'' + elec_name + '\'] = [' +
+        print('elec[\'' + elec_name + str(num+1) + '\'] = [' +
               np.array2string(np.round(first_contact_pos + point).astype(int),
                               separator=', ') +
               ']')
