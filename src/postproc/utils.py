@@ -197,7 +197,7 @@ def t1w_electrodes_to_09c(subject_list):
                    opj(DATA, 'raw', 'bids', sub, ses, 'electrodes.nii.gz'),
                    opj(DATA, 'raw', 'bids', sub, ses,
                        'electrodes_brain.nii.gz'),
-                   '-B', '-f', '0.1', '-s', '-m',
+                   '-B', '-f', '0.25', '-s', '-m',
                    ]
 
         for output in execute(command):

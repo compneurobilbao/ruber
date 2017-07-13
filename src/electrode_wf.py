@@ -17,7 +17,7 @@ from src.postproc.utils import (t1w_electrodes_to_09c,
                                 calc_con_mat_electrodes_noatlas
                                 )
 
-SUBJECT_LIST = ['sub-001']
+SUBJECT_LIST = ['sub-002', 'sub-003', 'sub-004']
 SESSION_LIST = ['ses-presurg']
 
 """
@@ -58,7 +58,7 @@ Electrodes location pipeline (WARNING: Some manual work)
 """
 
 # FIRST: T1w_electrodes to 09c space
-
+# TODO: This part to nipype
 t1w_electrodes_to_09c(SUBJECT_LIST)
 
 # WARNING! Create elec file for each subject manually !!
