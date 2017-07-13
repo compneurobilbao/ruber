@@ -101,3 +101,57 @@ interictal = str(8)
 interictal_1 = contact_num[600000:630000, :]
 np.save('/home/asier/git/ruber/data/raw/elec_record/'+sub+'/interictal/interictal_'+interictal+'.npy',interictal_1)
 
+
+
+
+bet /home/asier/git/ruber/data/raw/bids/sub-004/electrodes/electrodes.nii.gz /home/asier/git/ruber/data/raw/bids/sub-004/electrodes/test1.nii.gz -B -f 0.5 
+
+
+
+elec_name = 'A'
+contact_num = 8
+first_contact_pos = [,,]
+last_contact_pos = [,,]
+contacts_from_electrode(first_contact_pos, last_contact_pos, contact_num, elec_name)
+
+elec_name = 'C'
+contact_num = 8
+first_contact_pos = [,,]
+last_contact_pos = [,,]
+contacts_from_electrode(first_contact_pos, last_contact_pos, contact_num, elec_name)
+
+elec_name = 'D'
+contact_num = 10
+first_contact_pos = [,,]
+last_contact_pos = [,,]
+contacts_from_electrode(first_contact_pos, last_contact_pos, contact_num, elec_name)
+
+elec_name = 'E'
+contact_num = 10
+first_contact_pos = [,,]
+last_contact_pos = [,,]
+contacts_from_electrode(first_contact_pos, last_contact_pos, contact_num, elec_name)
+
+elec_name = 'F'
+contact_num = 10
+first_contact_pos = [,,]
+last_contact_pos = [,,]
+contacts_from_electrode(first_contact_pos, last_contact_pos, contact_num, elec_name)
+
+elec_name = 'G'
+contact_num = 8
+first_contact_pos = [,,]
+last_contact_pos = [,,]
+contacts_from_electrode(first_contact_pos, last_contact_pos, contact_num, elec_name)
+
+elec_name = 'J'
+contact_num = 5
+first_contact_pos = [,,]
+last_contact_pos = [,,]
+contacts_from_electrode(first_contact_pos, last_contact_pos, contact_num, elec_name)
+
+elec_name = 'K'
+contact_num = 5
+first_contact_pos = [,,]
+last_contact_pos = [,,]
+contacts_from_electrode(first_contact_pos, last_contact_pos, contact_num, elec_name)
