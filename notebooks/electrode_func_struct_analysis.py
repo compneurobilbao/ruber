@@ -110,7 +110,7 @@ if __name__ == "__main__":
                       [fig1, fig2, fig3],
                       dpi=250)
 
-#            plt.close("all")
+            plt.close("all")
 """
 test area
 """
