@@ -175,7 +175,7 @@ def clean_and_get_time_series_noatlas(subject_list, session_list):
 
             confounds = pd.read_csv(confounds_path,
                                     delimiter='\t', na_values='n/a').fillna(0)
-
+            
             rois_2_bold_space_noatlas(sub, ses, preproc_data)
 
             elec_file_vxl = opj(DATA, 'raw', 'bids', sub, 'electrodes',
@@ -203,7 +203,7 @@ def clean_and_get_time_series_noatlas(subject_list, session_list):
                         print('fMRI signal extraction unsucccesful')
                             
 
-                np.savetxt(opj(base_path, 'time_series_noatlas_' + str(sphere_size) + '.txt'),
+                np.savetxt(opj(base_path, 'time_series_noatlas_nogsr_' + str(sphere_size) + '.txt'),
                            time_series)
 
     return

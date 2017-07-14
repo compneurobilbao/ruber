@@ -9,8 +9,12 @@ SESSION_TYPES = ['presurg', 'postsurg1', 'postsurg2']
 ATLAS_TYPES = ['atlas_2514', 'atlas_2754']
 
 CONFOUNDS_ID = ['FramewiseDisplacement',
-                'WhiteMatter',
-                'GlobalSignal',
+                'aCompCor0',
+                'aCompCor1',
+                'aCompCor2',
+                'aCompCor3',
+                'aCompCor4',
+                'aCompCor5',
                 'X',
                 'Y',
                 'Z',
@@ -18,21 +22,6 @@ CONFOUNDS_ID = ['FramewiseDisplacement',
                 'RotY',
                 'RotZ',
                 ]
-
-#CONFOUNDS_ID = ['FramewiseDisplacement',
-#                'aCompCor0',
-#                'aCompCor1',
-#                'aCompCor2',
-#                'aCompCor3',
-#                'aCompCor4',
-#                'aCompCor5',
-#                'X',
-#                'Y',
-#                'Z',
-#                'RotX',
-#                'RotY',
-#                'RotZ',
-#                ]
 
 NEIGHBOURS = [0, 1]
 # TODO: this as iterable variable and convert pipeline to nipype

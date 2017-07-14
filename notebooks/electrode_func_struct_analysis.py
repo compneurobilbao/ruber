@@ -57,8 +57,8 @@ if __name__ == "__main__":
     sub_ses_comb = [[subject, session] for subject in SUBJECT_LIST
                     for session in SESSION_LIST]
     
-    SPHERE_SIZE = [1, 2, 3]
-    DENOISE_TYPE = ['gsr', 'compcor']
+    SPHERE_SIZE = [ 2, 3]
+    DENOISE_TYPE = ['nogsr']
 
     for sub, ses in sub_ses_comb:
         for sphere, denoise_type in product(SPHERE_SIZE, DENOISE_TYPE):
