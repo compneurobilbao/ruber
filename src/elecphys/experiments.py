@@ -15,18 +15,26 @@ from src.elecphys.utils import (clean_file,
                                 bandpass_filter,
                                 )
 
-INTERICTAL_DATA = opj(DATA, 'raw', 'elec_record', 'sub-001', 'interictal', 'exported')
+"""
+Code for extracting electrophysiological timeseries
+"""
 
+sub = 'sub-004'
+INTERICTAL_DATA = opj(DATA, 'raw', 'elec_record', sub, 'chuncks')
 clean_all_files_and_convert_to_npy(INTERICTAL_DATA)
 
-test = '/media/asier/DISK_IMG/test.txt'
-clean_file(test)
+chunck = str(2)
+file = opj(INTERICTAL_DATA, 'chunck_' + chunck + '.npy')
+contact_num = np.load(file)
+plt.plot(contact_num)
 
-contact_num = np.loadtxt(test,
-                         dtype='float32',
-                         delimiter='\t',
-                         usecols=range(3, 60))
+interictal = str(5)
+interictal_1 = contact_num[30000:60000, :]
+np.save('/home/asier/git/ruber/data/raw/elec_record/'+sub+'/interictal/interictal_'+interictal+'.npy',interictal_1)
 
+"""
+Code to play with elec.phys timeseries
+"""
 
 contact_num = np.load(file[:-4] + '.npy')
 fs = 500
@@ -62,48 +70,3 @@ plt.plot(contact_num[:, 1]-contact_num[:, 2])
 plt.plot(contact_num[:, 31]-contact_num[:, 32], linewidth=0.1)
 
 plt.plot(filtered[:, 31][1000:])
-
-
-
-
-
-
-sub = 'sub-004'
-INTERICTAL_DATA = opj(DATA, 'raw', 'elec_record', sub, 'chuncks')
-clean_all_files_and_convert_to_npy(INTERICTAL_DATA)
-
-
-
-chunck = str(2)
-file = opj(INTERICTAL_DATA, 'chunck_' + chunck + '.npy')
-contact_num = np.load(file)
-plt.plot(contact_num)
-
-interictal = str(5)
-interictal_1 = contact_num[30000:60000, :]
-np.save('/home/asier/git/ruber/data/raw/elec_record/'+sub+'/interictal/interictal_'+interictal+'.npy',interictal_1)
-
-
-
-interictal = str(6)
-interictal_1 = contact_num[200000:230000, :]
-np.save('/home/asier/git/ruber/data/raw/elec_record/'+sub+'/interictal/interictal_'+interictal+'.npy',interictal_1)
-
-
-
-interictal = str(7)
-interictal_1 = contact_num[400000:430000, :]
-np.save('/home/asier/git/ruber/data/raw/elec_record/'+sub+'/interictal/interictal_'+interictal+'.npy',interictal_1)
-
-
-
-interictal = str(8)
-interictal_1 = contact_num[600000:630000, :]
-np.save('/home/asier/git/ruber/data/raw/elec_record/'+sub+'/interictal/interictal_'+interictal+'.npy',interictal_1)
-
-
-elec_name = ''
-contact_num = 
-first_contact_pos = [,,]
-last_contact_pos = [,,]
-contacts_from_electrode(first_contact_pos, last_contact_pos, contact_num, elec_name)
