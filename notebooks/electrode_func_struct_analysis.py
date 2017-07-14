@@ -6,8 +6,10 @@ from src.env import DATA, ATLAS_TYPES
 from os.path import join as opj
 import numpy as np
 from matplotlib import pyplot as plt
-from nilearn.connectome import ConnectivityMeasure
+from matplotlib.backends.backend_pdf import PdfPages
 
+from nilearn.connectome import ConnectivityMeasure
+from itertools import product
 
 SUBJECT_LIST = ['sub-001']
 SESSION_LIST = ['ses-presurg']
@@ -22,6 +24,15 @@ def log_transform(im):
     except:
         pass
     return im
+
+
+def multipage(filename, figs=None, dpi=200):
+    pp = PdfPages(filename)
+    if figs is None:
+        figs = [plt.figure(n) for n in plt.get_fignums()]
+    for fig in figs:
+        fig.savefig(pp, format='pdf')
+    pp.close()
 
 
 def plot_matrix(matrix, elec_tags, log=False):
@@ -45,54 +56,61 @@ if __name__ == "__main__":
 
     sub_ses_comb = [[subject, session] for subject in SUBJECT_LIST
                     for session in SESSION_LIST]
-    SPHERE_SIZE = 3
+    
+    SPHERE_SIZE = [1, 2, 3]
+    DENOISE_TYPE = ['gsr', 'compcor']
 
     for sub, ses in sub_ses_comb:
-        # FUNCTION MATRIX
-        elec_file = opj(DATA, 'raw', 'bids', sub, 'electrodes',
-                        'elec.loc')
-        elec_location_mni09 = load_elec_file(elec_file)
-
-        ordered_elec = order_dict(elec_location_mni09)
-
-        elec_tags = list(ordered_elec.keys())
-
-        # load function (conn matrix?)
-        func_file = opj(DATA, 'processed', 'fmriprep', sub, ses, 'func',
-                        'time_series_noatlas_' + str(sphere_size) + '.txt')
-
-        func_mat = np.loadtxt(func_file)
-
-        correlation_measure = ConnectivityMeasure(kind='correlation')
-        corr_mat = correlation_measure.fit_transform([func_mat])[0]
-
-        # STRUCT MATRIX
-        struct_mat = np.load(opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
-                                 'con_mat_noatlas_' + str(sphere_size) + '.npy'))
-
+        for sphere, denoise_type in product(SPHERE_SIZE, DENOISE_TYPE):
         
-        
-        elec_mat = np.load('/home/asier/git/ruber/data/raw/elec_record/sub-001/elec_con_mat.npy')
-        
-        plot_matrix(corr_mat, elec_tags)
-        plt.title('fMRI connectivity matrix')
-        plt.savefig(opj('/home/asier/git/ruber/reports/figures/', sub, 'fMRI_conmat'))
+            # FUNCTION MATRIX
+            elec_file = opj(DATA, 'raw', 'bids', sub, 'electrodes',
+                            'elec.loc')
+            elec_location_mni09 = load_elec_file(elec_file)
+    
+            ordered_elec = order_dict(elec_location_mni09)
+    
+            elec_tags = list(ordered_elec.keys())
+    
+            # load function (conn matrix?)
+            func_file = opj(DATA, 'processed', 'fmriprep', sub, ses, 'func',
+                            'time_series_noatlas_' + denoise_type + '_' +
+                            str(sphere) + '.txt')
+            func_mat = np.loadtxt(func_file)
 
-        plot_matrix(struct_mat, elec_tags, log=True)
-        plt.title('DWI connectivity matrix')
-        plt.savefig(opj('/home/asier/git/ruber/reports/figures/', sub, 'DWI_conmat'))
+            correlation_measure = ConnectivityMeasure(kind='correlation')
+            corr_mat = correlation_measure.fit_transform([func_mat])[0]
 
-        plot_matrix(elec_mat, elec_tags)
-        plt.title('deep electrode connectivity matrix')
-        plt.savefig(opj('/home/asier/git/ruber/reports/figures/', sub, 'deep_conmat'))
+            # STRUCT MATRIX
+            struct_mat = np.load(opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
+                                     'con_mat_noatlas_' +
+                                     str(sphere) + '.npy'))
 
-        plt.figure()
-        plt.scatter(log_transform(struct_mat), corr_mat)
-        plt.title('#Streamlines vs fMRI corr values')
-        plt.xlabel('log(#streamlines)')
-        plt.ylabel('correlation values')
-        plt.savefig(opj('/home/asier/git/ruber/reports/figures/', sub, 'scatter_DWI_fMRI'))
-        plt.close("all")
+            plot_matrix(corr_mat, elec_tags)
+            ax1 = plt.title('fMRI connectivity matrix: ' + denoise_type + ':' +
+                            'sphere size: ' + str(sphere))
+            fig1 = ax1.get_figure()
+
+            plot_matrix(struct_mat, elec_tags, log=True)
+            ax2 = plt.title('DWI connectivity matrix: ' +
+                            'sphere size: ' + str(sphere))
+            fig2 = ax2.get_figure()
+
+            plt.scatter(log_transform(struct_mat), corr_mat)
+            ax3 = plt.title('#Streamlines vs fMRI corr values' + denoise_type +
+                            ':' + 'sphere size: ' + str(sphere))
+            plt.xlabel('log(#streamlines)')
+            plt.ylabel('correlation values')
+            fig3 = ax3.get_figure()
+
+            multipage(opj('/home/asier/git/ruber/reports/figures/',
+                          sub,
+                          'scatter_DWI_fMRI_' + denoise_type + '_' +
+                          str(sphere) + '.pdf'),
+                      [fig1, fig2, fig3],
+                      dpi=250)
+
+#            plt.close("all")
 """
 test area
 """
