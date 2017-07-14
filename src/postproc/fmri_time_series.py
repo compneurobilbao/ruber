@@ -30,6 +30,11 @@ EXTERNAL = opj(DATA, 'external')
 
 def atlas_2_bold_space(sub, ses, atlas, preproc_data):
 
+    if os.path.exists(opj(PROCESSED, 'fmriprep', sub, ses, 'func',
+                          sub + '_' + ses + '_' + atlas + '_bold_space.nii.gz')):
+        return opj(PROCESSED, 'fmriprep', sub, ses, 'func',
+                   sub + '_' + ses + '_' + atlas + '_bold_space.nii.gz')
+
     atlas_path = opj(EXTERNAL, 'bha_' + atlas + '_1mm_mni09c.nii.gz')
     atlas_img = nib.load(atlas_path)
     fmri = nib.load(preproc_data)
