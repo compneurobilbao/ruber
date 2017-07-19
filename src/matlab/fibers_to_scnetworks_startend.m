@@ -55,8 +55,9 @@ fprintf('\n');
 
 for i=1:num_nodes
     for j=1:num_nodes
-	if mean_length(i,j)~=0
-           mean_length(i,j)=mean_length(i,j)/fiber_num(i,j);      
+        if mean_length(i,j)~=0
+               mean_length(i,j)=mean_length(i,j)/fiber_num(i,j); 
+        end
     end
 
 end
