@@ -465,7 +465,7 @@ def create_electrode_rois(sub, ses, atlas, vxl_loc, roi):
             # Expand to sphere
             command = ['fslmaths',
                        temp_file[1],
-                       '-kernel', 'gauss', str(ELECTRODE_KERNEL_SIZE),
+                       '-kernel', 'gauss', str(ELECTRODE_SPHERE_SIZE),
                        '-fmean',
                        temp_file[1],
                        ]
