@@ -4,17 +4,21 @@ from src.preproc import run_fmriprep, run_mriqc
 
 from src.postproc.utils import atlas_to_t1
 
-from src.dmri import run_dti_artifact_correction
-from src.dmri import run_spm_fsl_dti_preprocessing
-from src.dmri import run_camino_tractography
-from src.dmri.utils import correct_dwi_space_atlas
+from src.dmri import (run_dti_artifact_correction,
+                      run_spm_fsl_dti_preprocessing,
+                      run_camino_tractography,
+                      )
+
+from src.dmri.utils import (correct_dwi_space_atlas,
+                            get_con_matrix_matlab,
+                            )
 
 from src.postproc.fmri_time_series import clean_and_get_time_series
 
 from src.postproc.utils import (t1w_electrodes_to_09c,
                                 locate_electrodes,
                                 locate_electrodes_closest_roi,
-                                calc_con_mat_electrodes_noatlas
+                                calc_con_mat_electrodes_noatlas,
                                 )
 
 SUBJECT_LIST = ['sub-001']
@@ -50,6 +54,8 @@ run_spm_fsl_dti_preprocessing(SUBJECT_LIST, SESSION_LIST)
 correct_dwi_space_atlas(SUBJECT_LIST, SESSION_LIST)
 
 run_camino_tractography(SUBJECT_LIST, SESSION_LIST)
+
+get_con_matrix_matlab(SUBJECT_LIST, SESSION_LIST)
 
 # Visualization
 # http://web4.cs.ucl.ac.uk/research/medic/camino/pmwiki/pmwiki.php?n=Tutorials.TrackingTutorial
