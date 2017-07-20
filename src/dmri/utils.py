@@ -4,6 +4,7 @@ Utilities to help in the DTI pre-processing
 """
 from nipype.algorithms.rapidart import ArtifactDetect
 from src.env import DATA, ATLAS_TYPES
+from src.postproc.util import execute
 import os
 from os.path import join as opj
 import nibabel as nib
@@ -235,3 +236,48 @@ def correct_dwi_space_atlas(subject_list, session_list):
             os.remove(atlas_new)
             nib.save(atlas_new_data_img_corrected,
                      atlas_new)
+
+
+def get_con_matrix_matlab(subject_list, session_list):
+    """
+    Function to get atlas-wise connectivity matrix. End-to-end fiber counting.
+    Camino's workflow is not calculating end-to-end
+    """
+    sub_ses_comb = [[subject, session] for subject in subject_list
+                    for session in session_list]
+
+    for sub, ses in sub_ses_comb:
+        for atlas in ATLAS_TYPES:
+
+            atlas_old = opj(DATA, 'external',
+                            'bha_' + atlas + '_1mm_mni09c.nii.gz')
+            atlas_new = opj(DATA, 'processed', 'diff', '_session_id_' +
+                            ses + '_subject_id_' + sub,
+                            'r' + sub + '_' + ses + '_' + atlas + '.nii')
+
+            print('Calculating: Subject ', sub, ' and session', ses)
+
+            # Extract brain from subject space
+            command = ['fslmaths',
+                       opj(PROCESSED, sub, ses, 'anat',
+                           sub + '_' + ses + '_T1w_preproc.nii.gz'),
+                       '-mas',
+                       opj(PROCESSED, sub, ses, 'anat',
+                           sub + '_' + ses + '_T1w_brainmask.nii.gz'),
+                       opj(PROCESSED, sub, ses, 'anat',
+                           sub + '_' + ses + '_T1w_brain.nii.gz'),
+                       ]
+            for output in execute(command):
+                print(output)
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
