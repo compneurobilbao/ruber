@@ -4,7 +4,7 @@ Utilities to help in the DTI pre-processing
 """
 from nipype.algorithms.rapidart import ArtifactDetect
 from src.env import DATA, ATLAS_TYPES
-from src.postproc.util import execute
+from src.postproc.utils import execute
 import os
 from os.path import join as opj
 import nibabel as nib
@@ -258,24 +258,41 @@ def get_con_matrix_matlab(subject_list, session_list):
             print('Calculating: Subject ', sub, ' and session', ses)
 
             # Extract brain from subject space
-            command = ['fslmaths',
-                       opj(PROCESSED, sub, ses, 'anat',
-                           sub + '_' + ses + '_T1w_preproc.nii.gz'),
-                       '-mas',
-                       opj(PROCESSED, sub, ses, 'anat',
-                           sub + '_' + ses + '_T1w_brainmask.nii.gz'),
-                       opj(PROCESSED, sub, ses, 'anat',
-                           sub + '_' + ses + '_T1w_brain.nii.gz'),
+            command = ['matlab',
+                       '-r',
+                       '-nodisplay',
+                       '\'calc_cm('+
+                                  input_path +
+                                  output_path + 
+                                  atlas +
+                                  '); exit;\''
                        ]
             for output in execute(command):
                 print(output)
 
+
+            command = ["matlab",
+                       "-nodisplay",
+                       "-r",
+                       "test"
+                       ]
+            for output in execute(command):
+                print(output)
             
             
-            
-            
-            
-            
+matlab  = ['matlab']
+options = ['-r']
+command = ["addpath('/home/asier/git/ruber/src/matlab');test;exit;"]
+ 
+# on mac use the full path to matlab or add the path to your .profile
+# matlab = ['/Applications/MATLAB_R2016a.app/bin/matlab']
+ 
+# on windows use:
+# options = ['-nosplash', '-wait', '-r']
+ 
+p = Popen(matlab + options + command)
+ 
+stdout, stderr = p.communicate()
             
             
             
