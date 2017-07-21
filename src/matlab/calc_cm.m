@@ -1,4 +1,4 @@
-function calc_cm(tracts_file, reference_file, atlas_file, num_nodes, out_folder)
+function calc_cm(tracts_file, reference_file, atlas_file, out_folder, num_nodes)
 
 
 [fibers]=camino_tracts_reader(tracts_file, reference_file);
