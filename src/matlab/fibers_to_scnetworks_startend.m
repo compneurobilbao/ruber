@@ -61,10 +61,10 @@ for i=1:num_nodes
     end
 
 end
-
-save([out_folder '/fiber_number.txt'],'fiber_num','-ascii');
-save([out_folder '/num_voxels.txt'],'num_voxels','-ascii');
-save([out_folder '/mean_length.txt'],'mean_length','-ascii');
+strcat('f', num2str(i))
+save([out_folder strcat('/fiber_number_', num2str(num_nodes),'.txt')],'fiber_num','-ascii');
+save([out_folder strcat('/num_voxels_', num2str(num_nodes),'.txt')],'num_voxels','-ascii');
+save([out_folder strcat('/mean_length_', num2str(num_nodes),'.txt')],'mean_length','-ascii');
 
 
 
@@ -86,7 +86,7 @@ for i=1:num_nodes
      euclidean_distance(i,:)=sqrt(sum((centroids-repmat(centroids(i,:),num_nodes,1)).^2,2));
 end
 
-save([out_folder '/euclidean_distance.txt'],'euclidean_distance','-ascii');
+save([out_folder strcat('/euclidean_distance_', num2str(num_nodes),'.txt')],'euclidean_distance','-ascii');
 
 
 

@@ -238,6 +238,15 @@ def correct_dwi_space_atlas(subject_list, session_list):
                      atlas_new)
 
 
+def compress_file_gz(path_file):
+    from subprocess import check_call
+
+    check_call(['gzip', path_file])
+    check_call(['rm', path_file])
+
+    return path_file + '.gz'
+
+
 def get_con_matrix_matlab(subject_list, session_list):
     """
     Function to get atlas-wise connectivity matrix. End-to-end fiber counting.
@@ -259,6 +268,11 @@ def get_con_matrix_matlab(subject_list, session_list):
             atlas_file = opj(DATA, 'processed', 'diff',
                              '_session_id_' + ses + '_subject_id_' + sub,
                              'r' + sub + '_' + ses + '_' + atlas + '.nii')
+
+            try:
+                atlas_file = compress_file_gz(atlas_file)
+            except:
+                atlas_file = atlas_file + '.gz'
 
             matlab_path = opj(os.getcwd(), 'src', 'matlab')
 
