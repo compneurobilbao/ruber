@@ -249,52 +249,32 @@ def get_con_matrix_matlab(subject_list, session_list):
     for sub, ses in sub_ses_comb:
         for atlas in ATLAS_TYPES:
 
-            atlas_old = opj(DATA, 'external',
-                            'bha_' + atlas + '_1mm_mni09c.nii.gz')
-            atlas_new = opj(DATA, 'processed', 'diff', '_session_id_' +
-                            ses + '_subject_id_' + sub,
-                            'r' + sub + '_' + ses + '_' + atlas + '.nii')
+            num_nodes = atlas[-4:]
+            out_folder = opj(DATA, 'processed', 'tract',
+                             '_session_id_' + ses + '_subject_id_' + sub)
+            tracts_file = opj(out_folder, 'tracts.Bfloat_' + num_nodes)
+            reference_file = opj(DATA, 'processed', 'diff',
+                                 '_session_id_' + ses + '_subject_id_' + sub,
+                                 'eddy_corrected_avg_b0.nii.gz')
+            atlas_file = opj(DATA, 'processed', 'diff',
+                             '_session_id_' + ses + '_subject_id_' + sub,
+                             'r' + sub + '_' + ses + '_' + atlas + '.nii')
 
-            print('Calculating: Subject ', sub, ' and session', ses)
+            matlab_path = opj(os.getcwd(), 'src', 'matlab')
 
             # Extract brain from subject space
-            command = ['matlab',
-                       '-r',
-                       '-nodisplay',
-                       '\'calc_cm('+
-                                  input_path +
-                                  output_path + 
-                                  atlas +
-                                  '); exit;\''
-                       ]
-            for output in execute(command):
-                print(output)
-
-
             command = ["matlab",
                        "-nodisplay",
+                       "-nojvm",
                        "-r",
-                       "test"
+                       "addpath(\'" + matlab_path + "\');" +
+                       "calc_cm(" +
+                       "\'" + tracts_file + "\'," +
+                       "\'" + reference_file + "\'," +
+                       "\'" + atlas_file + "\'," +
+                       "\'" + out_folder + "\'," +
+                       num_nodes +
+                       "); exit;"
                        ]
             for output in execute(command):
                 print(output)
-            
-            
-matlab  = ['matlab']
-options = ['-r']
-command = ["addpath('/home/asier/git/ruber/src/matlab');test;exit;"]
- 
-# on mac use the full path to matlab or add the path to your .profile
-# matlab = ['/Applications/MATLAB_R2016a.app/bin/matlab']
- 
-# on windows use:
-# options = ['-nosplash', '-wait', '-r']
- 
-p = Popen(matlab + options + command)
- 
-stdout, stderr = p.communicate()
-            
-            
-            
-            
-            
