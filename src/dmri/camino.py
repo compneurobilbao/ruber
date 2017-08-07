@@ -91,9 +91,9 @@ def camino_tractography(wf_name="camino_tract"):
     conmat_2514 = pe.Node(Conmat(output_root="conmat_atlas_2514_"), name="conmat_2514")
     conmat_2754 = pe.Node(Conmat(output_root="conmat_atlas_2754_"), name="conmat_2754")
 
-    trk_2514 = pe.Node(cam2trk(out_file="trk_2514.trk", voxel_order='LAS',
+    trk_2514 = pe.Node(cam2trk(voxel_order='LAS',
                                min_length=30), name="trk_2514")
-    trk_2754 = pe.Node(cam2trk(out_file="trk_2754.trk", voxel_order='LAS',
+    trk_2754 = pe.Node(cam2trk(voxel_order='LAS',
                                min_length=30), name="trk_2754")
 
 
@@ -253,6 +253,8 @@ def run_camino_tractography(subject_list, session_list):
                                       ("tract_output.connectivity_2754", "tract.@connectivity_2754"),
                                       ("tract_output.mean_fa",      "tract.@mean_fa"),
                                       ("tract_output.fa",           "tract.@fa"),
+                                      ("tract_output.trk_2514",           "tract.@trk_2514"),
+                                      ("tract_output.trk_2754",           "tract.@trk_2754"),
                                       ])
                 ])
 
