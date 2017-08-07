@@ -93,8 +93,8 @@ def camino_tractography(wf_name="camino_tract"):
 
     trk_2514 = pe.Node(cam2trk(voxel_order='LAS',
                                min_length=30), name="trk_2514")
-    trk_2754 = pe.Node(cam2trk(voxel_order='LAS',
-                               min_length=30), name="trk_2754")
+#    trk_2754 = pe.Node(cam2trk(voxel_order='LAS',
+#                               min_length=30), name="trk_2754")
 
 
     tract_output = pe.Node(IdentityInterface(fields=out_fields),
@@ -151,9 +151,9 @@ def camino_tractography(wf_name="camino_tract"):
                 (tract_input,   trk_2514,           [(('diff', get_vox_dims),  "voxel_dims"  ),
                                                      (('diff', get_data_dims), "data_dims"   )]),
                 # trk file
-                (track_2754,    trk_2754,           [("tracked", "in_file")]),
-                (tract_input,   trk_2754,           [(('diff', get_vox_dims),  "voxel_dims"  ),
-                                                     (('diff', get_data_dims), "data_dims"   )]),
+#                (track_2754,    trk_2754,           [("tracked", "in_file")]),
+#                (tract_input,   trk_2754,           [(('diff', get_vox_dims),  "voxel_dims"  ),
+#                                                     (('diff', get_data_dims), "data_dims"   )]),
 
 
 
@@ -165,7 +165,7 @@ def camino_tractography(wf_name="camino_tract"):
                 (track_2754,         tract_output,     [("tracked",               "tracks_2754"      )]),
                 (conmat_2754,        tract_output,     [("conmat_sc",             "connectivity_2754")]),
                 (trk_2514,        tract_output,     [("trackvis",             "trk_2514")]),
-                (trk_2754,        tract_output,     [("trackvis",             "trk_2754")]),
+#                (trk_2754,        tract_output,     [("trackvis",             "trk_2754")]),
               ])
     return wf
 
@@ -254,7 +254,7 @@ def run_camino_tractography(subject_list, session_list):
                                       ("tract_output.mean_fa",      "tract.@mean_fa"),
                                       ("tract_output.fa",           "tract.@fa"),
                                       ("tract_output.trk_2514",           "tract.@trk_2514"),
-                                      ("tract_output.trk_2754",           "tract.@trk_2754"),
+#                                      ("tract_output.trk_2754",           "tract.@trk_2754"),
                                       ])
                 ])
 
