@@ -7,15 +7,17 @@ from src.env import DATA
 import os.path as op
 from os.path import join as opj
 
-from   nipype.interfaces.io import SelectFiles, DataSink
-import nipype.pipeline.engine    as pe
-import nipype.algorithms.misc    as misc
-from   nipype.interfaces.utility import IdentityInterface
-from   nipype.interfaces.camino  import (Image2Voxel, FSL2Scheme, DTIFit, Track,
-                                         Conmat, ComputeFractionalAnisotropy, AnalyzeHeader)
+from nipype.interfaces.io import SelectFiles, DataSink
+import nipype.pipeline.engine as pe
+import nipype.algorithms.misc as misc
+from nipype.interfaces.utility import IdentityInterface
+from nipype.interfaces.camino import (Image2Voxel, FSL2Scheme, DTIFit, Track,
+                                      Conmat, ComputeFractionalAnisotropy,
+                                      AnalyzeHeader)
+from nipype.interfaces.camino2trackvis import Camino2Trackvis as cam2trk
 
 #from   src.config  import setup_node, check_atlas_file
-from   src.utils import (get_datasink,
+from src.utils import (get_datasink,
                        get_interface_node,
                        get_input_node,
                        get_data_dims,
@@ -66,7 +68,8 @@ def camino_tractography(wf_name="camino_tract"):
     wf: nipype Workflow
     """
     in_fields  = ["diff", "bvec", "bval", "mask", "atlas_2514", "atlas_2754"]
-    out_fields = ["tensor", "tracks_2514", "tracks_2754", "connectivity_2514", "connectivity_2754", "mean_fa", "fa"]
+    out_fields = ["tensor", "tracks_2514", "tracks_2754", "connectivity_2514",
+                  "connectivity_2754", "mean_fa", "fa", "trk_2514", "trk_2754"]
 
     tract_input  = pe.Node(IdentityInterface(fields=in_fields,
                                              mandatory_inputs=True),
@@ -87,6 +90,11 @@ def camino_tractography(wf_name="camino_tract"):
     track_2754  = pe.Node(Track(inputmodel="dt", out_file="tracts.Bfloat_2754"), name="track_2754")
     conmat_2514 = pe.Node(Conmat(output_root="conmat_atlas_2514_"), name="conmat_2514")
     conmat_2754 = pe.Node(Conmat(output_root="conmat_atlas_2754_"), name="conmat_2754")
+
+    trk_2514 = pe.Node(cam2trk(out_file="trk_2514.trk", voxel_order='LAS',
+                               min_length=30), name="trk_2514")
+    trk_2754 = pe.Node(cam2trk(out_file="trk_2754.trk", voxel_order='LAS',
+                               min_length=30), name="trk_2754")
 
 
     tract_output = pe.Node(IdentityInterface(fields=out_fields),
@@ -138,6 +146,17 @@ def camino_tractography(wf_name="camino_tract"):
                 (tract_input,   conmat_2754,           [("atlas_2754",                 "target_file" )]),
                 (track_2754,    conmat_2754,           [("tracked",               "in_file"     )]),
 
+                # trk file
+                (track_2514,    trk_2514,           [("tracked", "in_file")]),
+                (tract_input,   trk_2514,           [(('diff', get_vox_dims),  "voxel_dims"  ),
+                                                     (('diff', get_data_dims), "data_dims"   )]),
+                # trk file
+                (track_2754,    trk_2754,           [("tracked", "in_file")]),
+                (tract_input,   trk_2754,           [(('diff', get_vox_dims),  "voxel_dims"  ),
+                                                     (('diff', get_data_dims), "data_dims"   )]),
+
+
+
                 # output
                 (fa2nii,        tract_output,     [("nifti_file",            "fa"          )]),
                 (dtifit,        tract_output,     [("tensor_fitted",         "tensor"      )]),
@@ -145,6 +164,8 @@ def camino_tractography(wf_name="camino_tract"):
                 (conmat_2514,        tract_output,     [("conmat_sc",             "connectivity_2514")]),
                 (track_2754,         tract_output,     [("tracked",               "tracks_2754"      )]),
                 (conmat_2754,        tract_output,     [("conmat_sc",             "connectivity_2754")]),
+                (trk_2514,        tract_output,     [("trackvis",             "trk_2514")]),
+                (trk_2754,        tract_output,     [("trackvis",             "trk_2754")]),
               ])
     return wf
 
