@@ -68,8 +68,8 @@ def camino_tractography(wf_name="camino_tract"):
     wf: nipype Workflow
     """
     in_fields  = ["diff", "bvec", "bval", "mask", "atlas_2514", "atlas_2754"]
-    out_fields = ["tensor", "tracks_2514", "tracks_2754", "connectivity_2514",
-                  "connectivity_2754", "mean_fa", "fa", "trk_2514", "trk_2754"]
+    out_fields = ["tensor", "tracks_2514", "tracks_2754","mean_fa", "fa"]
+#     "connectivity_2514","connectivity_2754", "trk_2514", "trk_2754"]
 
     tract_input  = pe.Node(IdentityInterface(fields=in_fields,
                                              mandatory_inputs=True),
@@ -88,11 +88,11 @@ def camino_tractography(wf_name="camino_tract"):
 
     track_2514  = pe.Node(Track(inputmodel="dt", out_file="tracts.Bfloat_2514"), name="track_2514")
     track_2754  = pe.Node(Track(inputmodel="dt", out_file="tracts.Bfloat_2754"), name="track_2754")
-    conmat_2514 = pe.Node(Conmat(output_root="conmat_atlas_2514_"), name="conmat_2514")
-    conmat_2754 = pe.Node(Conmat(output_root="conmat_atlas_2754_"), name="conmat_2754")
-
-    trk_2514 = pe.Node(cam2trk(voxel_order='LAS',
-                               min_length=30), name="trk_2514")
+#    conmat_2514 = pe.Node(Conmat(output_root="conmat_atlas_2514_"), name="conmat_2514")
+#    conmat_2754 = pe.Node(Conmat(output_root="conmat_atlas_2754_"), name="conmat_2754")
+#
+#    trk_2514 = pe.Node(cam2trk(voxel_order='LAS',
+#                               min_length=30), name="trk_2514")
 #    trk_2754 = pe.Node(cam2trk(voxel_order='LAS',
 #                               min_length=30), name="trk_2754")
 
@@ -139,17 +139,17 @@ def camino_tractography(wf_name="camino_tract"):
                 (analyzehdr_fa, fa2nii,           [("header",                "header_file" )]),
                 (fa,            fa2nii,           [("fa",                    "data_file"   )]),
 
-                # connectivity matrix
-                (tract_input,   conmat_2514,           [("atlas_2514",                 "target_file" )]),
-                (track_2514,    conmat_2514,           [("tracked",               "in_file"     )]),
-                # connectivity matrix
-                (tract_input,   conmat_2754,           [("atlas_2754",                 "target_file" )]),
-                (track_2754,    conmat_2754,           [("tracked",               "in_file"     )]),
+#                # connectivity matrix
+#                (tract_input,   conmat_2514,           [("atlas_2514",                 "target_file" )]),
+#                (track_2514,    conmat_2514,           [("tracked",               "in_file"     )]),
+#                # connectivity matrix
+#                (tract_input,   conmat_2754,           [("atlas_2754",                 "target_file" )]),
+#                (track_2754,    conmat_2754,           [("tracked",               "in_file"     )]),
 
-                # trk file
-                (track_2514,    trk_2514,           [("tracked", "in_file")]),
-                (tract_input,   trk_2514,           [(('diff', get_vox_dims),  "voxel_dims"  ),
-                                                     (('diff', get_data_dims), "data_dims"   )]),
+#                # trk file
+#                (track_2514,    trk_2514,           [("tracked", "in_file")]),
+#                (tract_input,   trk_2514,           [(('diff', get_vox_dims),  "voxel_dims"  ),
+#                                                     (('diff', get_data_dims), "data_dims"   )]),
                 # trk file
 #                (track_2754,    trk_2754,           [("tracked", "in_file")]),
 #                (tract_input,   trk_2754,           [(('diff', get_vox_dims),  "voxel_dims"  ),
@@ -161,10 +161,10 @@ def camino_tractography(wf_name="camino_tract"):
                 (fa2nii,        tract_output,     [("nifti_file",            "fa"          )]),
                 (dtifit,        tract_output,     [("tensor_fitted",         "tensor"      )]),
                 (track_2514,         tract_output,     [("tracked",               "tracks_2514"      )]),
-                (conmat_2514,        tract_output,     [("conmat_sc",             "connectivity_2514")]),
+#                (conmat_2514,        tract_output,     [("conmat_sc",             "connectivity_2514")]),
                 (track_2754,         tract_output,     [("tracked",               "tracks_2754"      )]),
-                (conmat_2754,        tract_output,     [("conmat_sc",             "connectivity_2754")]),
-                (trk_2514,        tract_output,     [("trackvis",             "trk_2514")]),
+#                (conmat_2754,        tract_output,     [("conmat_sc",             "connectivity_2754")]),
+#                (trk_2514,        tract_output,     [("trackvis",             "trk_2514")]),
 #                (trk_2754,        tract_output,     [("trackvis",             "trk_2754")]),
               ])
     return wf
@@ -249,11 +249,11 @@ def run_camino_tractography(subject_list, session_list):
                 (tract_wf, datasink, [("tract_output.tensor",       "tract.@tensor"),
                                       ("tract_output.tracks_2514",       "tract.@tracks_2514"),
                                       ("tract_output.tracks_2754",       "tract.@tracks_2754"),
-                                      ("tract_output.connectivity_2514", "tract.@connectivity_2514"),
-                                      ("tract_output.connectivity_2754", "tract.@connectivity_2754"),
+#                                      ("tract_output.connectivity_2514", "tract.@connectivity_2514"),
+#                                      ("tract_output.connectivity_2754", "tract.@connectivity_2754"),
                                       ("tract_output.mean_fa",      "tract.@mean_fa"),
                                       ("tract_output.fa",           "tract.@fa"),
-                                      ("tract_output.trk_2514",           "tract.@trk_2514"),
+#                                      ("tract_output.trk_2514",           "tract.@trk_2514"),
 #                                      ("tract_output.trk_2754",           "tract.@trk_2754"),
                                       ])
                 ])
