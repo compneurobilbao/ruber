@@ -2,6 +2,7 @@ from src.dmri import (run_spm_fsl_dti_preprocessing,
                       run_dti_artifact_correction,
                       correct_dwi_space_atlas,
                       get_con_matrix_matlab,
+                      run_dtk_tractography,
                       )
 
 from src.interfaces import (CanICAInterface,

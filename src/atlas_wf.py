@@ -7,6 +7,7 @@ from src.postproc.utils import atlas_to_t1
 from src.dmri import (run_dti_artifact_correction,
                       run_spm_fsl_dti_preprocessing,
                       run_camino_tractography,
+                      run_dtk_tractography,
                       )
 
 from src.dmri.utils import (correct_dwi_space_atlas,
@@ -54,6 +55,8 @@ run_spm_fsl_dti_preprocessing(SUBJECT_LIST, SESSION_LIST)
 correct_dwi_space_atlas(SUBJECT_LIST, SESSION_LIST)
 
 run_camino_tractography(SUBJECT_LIST, SESSION_LIST)
+
+run_dtk_tractography(SUBJECT_LIST, SESSION_LIST)
 
 get_con_matrix_matlab(SUBJECT_LIST, SESSION_LIST)
 
