@@ -691,6 +691,28 @@ def calc_streamlines_elec_noatlas(args):
     return int(streams)
 
 
+def single_dwi_atlas_from_rois(sub, ses, sphere_size):
+
+    rois_path = opj(DATA, 'raw', 'bids', sub, 'electrodes',
+                    ses, 'noatlas_dwi_' + str(sphere_size))
+    out_path = opj(DATA, 'raw', 'bids', sub, 'electrodes',
+                   ses)
+
+    # select 1 file from folder
+    random_file = os.listdir(rois_path)[0]
+    dummy_roi_img = nib.load(opj(rois_path, random_file))
+    dummy_roi_data = dummy_roi_img.get_data()
+    new_atlas = np.zeros(dummy_roi_data.shape)
+
+    for roi in os.listdir(rois_path):
+        dummy_roi_data = nib.load(opj(rois_path, roi)).get_data()
+        new_atlas += dummy_roi_data
+
+    new_atlas = np.where(new_atlas > 1, 1, 0)
+    new_roi_img = nib.Nifti1Image(new_atlas, dummy_roi_img.affine)
+    nib.save(new_roi_img, opj(out_path, 'noatlas_dwi_' + str(sphere_size)))
+
+
 def calc_con_mat_electrodes_noatlas(subject_list, session_list):
     import itertools
     from multiprocessing import Pool
@@ -734,7 +756,13 @@ def calc_con_mat_electrodes_noatlas(subject_list, session_list):
             np.save(opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
                         'con_mat_noatlas_' + str(sphere_size)), con_mat)
 
+            single_dwi_atlas_from_rois(sub, ses, sphere_size)
 
+
+                    
+                    
+                
+                
 """
 from nilearn import datasets
 
