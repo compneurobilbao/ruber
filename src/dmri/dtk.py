@@ -75,8 +75,7 @@ def dtk_tractography(wf_name="dtk_tract"):
     dtifit = pe.Node(interface=dtk.DTIRecon(),name='dtifit')
 
     dtk_tracker = pe.Node(interface=dtk.DTITracker(), name="dtk_tracker")
-    dtk_tracker.inputs.invert_x = True
-    
+    dtk_tracker.inputs.input_type = "nii.gz"
     smooth_trk = pe.Node(interface=dtk.SplineFilter(), name="smooth_trk")
     smooth_trk.inputs.step_length = 0.5
 
@@ -151,8 +150,8 @@ def run_dtk_tractography(subject_list, session_list):
     # SelectFiles
     templates = {'eddy_corr_file': 'processed/diff/_session_id_{session_id}_subject_id_{subject_id}/eddy_corrected_denoised.nii.gz',
                  'bval': 'raw/bids/{subject_id}/{session_id}/dwi/{subject_id}_{session_id}_dwi.bval',
-                 'bvec_rotated': 'processed/diff/_session_id_{session_id}_subject_id_{subject_id}/{subject_id}_{session_id}_dwi_rotated.bvec',
-                 'brain_mask_diff': 'processed/diff/_session_id_{session_id}_subject_id_{subject_id}/r{subject_id}_{session_id}_T1w_brainmask.nii',
+                 'bvec_rotated': 'raw/bids/{subject_id}/{session_id}/dwi/{subject_id}_{session_id}_dwi.bvec',
+                 'brain_mask_diff': 'processed/diff/_session_id_{session_id}_subject_id_{subject_id}/eddy_corrected_avg_b0_brain_mask.nii.gz',
                  }
     selectfiles = pe.Node(SelectFiles(templates,
                                       base_directory=DATA),
