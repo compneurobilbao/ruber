@@ -4,9 +4,11 @@ from src.preproc import run_fmriprep, run_mriqc
 
 from src.postproc.utils import atlas_to_t1
 
-from src.dmri import run_dti_artifact_correction
-from src.dmri import run_spm_fsl_dti_preprocessing
-from src.dmri import run_camino_tractography
+from src.dmri import (run_dti_artifact_correction,
+                      run_spm_fsl_dti_preprocessing,
+                      run_camino_tractography,
+                      run_dtk_tractography,
+                      )
 from src.dmri.utils import correct_dwi_space_atlas
 
 from src.postproc.fmri_time_series import clean_and_get_time_series_noatlas
@@ -49,6 +51,9 @@ run_spm_fsl_dti_preprocessing(SUBJECT_LIST, SESSION_LIST)
 correct_dwi_space_atlas(SUBJECT_LIST, SESSION_LIST)
 
 run_camino_tractography(SUBJECT_LIST, SESSION_LIST)
+
+run_dtk_tractography(SUBJECT_LIST, SESSION_LIST)
+
 
 # Visualization
 # http://web4.cs.ucl.ac.uk/research/medic/camino/pmwiki/pmwiki.php?n=Tutorials.TrackingTutorial
