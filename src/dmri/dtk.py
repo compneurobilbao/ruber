@@ -76,6 +76,9 @@ def dtk_tractography(wf_name="dtk_tract"):
 
     dtk_tracker = pe.Node(interface=dtk.DTITracker(), name="dtk_tracker")
     dtk_tracker.inputs.input_type = "nii.gz"
+    dtk_tracker.inputs.angle_threshold = 50
+    dtk_tracker.inputs.step_length = 0.5
+    dtk_tracker.inputs.tracking_method ='tl'
     smooth_trk = pe.Node(interface=dtk.SplineFilter(), name="smooth_trk")
     smooth_trk.inputs.step_length = 0.5
 
