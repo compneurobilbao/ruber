@@ -118,11 +118,34 @@ def reorder_pat1_elec(elec_data):
     return elec_data_ordered
 
 
+def reorder_and_regress_pat1_elec(elec_data):
+
+    elec_data_ordered = np.zeros(elec_data.shape, dtype='float16')
+
+    # OIM
+    elec_data_ordered[:, 24:36] = regress_signal(elec_data[:, :12])
+    # OIL
+    elec_data_ordered[:, 12:24] = regress_signal(elec_data[:, 12:24])
+    # OSM
+    elec_data_ordered[:, 41:49] = regress_signal(elec_data[:, 24:32])
+    # OSL
+    elec_data_ordered[:, 36:41] = regress_signal(elec_data[:, 32:37])
+    # TI
+    elec_data_ordered[:, 49:57] = regress_signal(elec_data[:, 37:45])
+    # A
+    elec_data_ordered[:, :12] = regress_signal(elec_data[:, 45:57])
+
+    return elec_data_ordered
+
+
 def filter_and_save(elec_data, lowcut, highcut, fs, output_path):
+    import scipy.io as sio
+
     filtered = np.zeros((elec_data.shape))
     for i in range(57):
         filtered[:, i] = bandpass_filter(elec_data[:, i], lowcut, highcut, fs)
     np.save(output_path, filtered)
+    sio.savemat(output_path + '.mat', {'data': filtered})
 
 
 input_path = '/home/asier/git/ruber/data/raw/elec_record/sub-001/interictal'
@@ -164,7 +187,10 @@ for file in os.listdir(input_path):
     output = opj(output_path, 'gamma', file)
     filter_and_save(elec_data,  lowcut, highcut, fs, output)
 
-
+    lowcut = 70
+    highcut = 250
+    output = opj(output_path, 'gamma_high', file)
+    filter_and_save(elec_data,  lowcut, highcut, fs, output)
 
 ### CORRELATION ###
 input_path = '/home/asier/git/ruber/data/interim/elec_record/sub-001/interictal'
