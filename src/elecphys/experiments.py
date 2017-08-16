@@ -139,13 +139,13 @@ def reorder_and_regress_pat1_elec(elec_data):
 
 
 def filter_and_save(elec_data, lowcut, highcut, fs, output_path):
-    import scipy.io as sio
+#    import scipy.io as sio
 
     filtered = np.zeros((elec_data.shape))
     for i in range(57):
         filtered[:, i] = bandpass_filter(elec_data[:, i], lowcut, highcut, fs)
     np.save(output_path, filtered)
-    sio.savemat(output_path + '.mat', {'data': filtered})
+#    sio.savemat(output_path[:-4] + '.mat', {'data': filtered})
 
 
 input_path = '/home/asier/git/ruber/data/raw/elec_record/sub-001/interictal'
@@ -154,7 +154,7 @@ output_path = '/home/asier/git/ruber/data/interim/elec_record/sub-001/interictal
 for file in os.listdir(input_path):
     print(file)
     elec_data = np.load(opj(input_path, file))
-    elec_data = reorder_pat1_elec(elec_data)
+    elec_data = reorder_and_regress_pat1_elec(elec_data)
 
     fs = 500
     lowcut = 0.05
@@ -188,7 +188,7 @@ for file in os.listdir(input_path):
     filter_and_save(elec_data,  lowcut, highcut, fs, output)
 
     lowcut = 70
-    highcut = 250
+    highcut = 249
     output = opj(output_path, 'gamma_high', file)
     filter_and_save(elec_data,  lowcut, highcut, fs, output)
 
