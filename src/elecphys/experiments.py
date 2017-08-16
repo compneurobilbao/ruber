@@ -78,6 +78,26 @@ analysis august -> report
 
 ### FILTER ###
 
+
+def regress_signal(elec_data):
+    """
+    % the "electrodeSignal" must be a matrix for a given electrode (OIL, OIM etc). 
+    % If the electrode has N recording sites (columns), and the samples in the chunk
+    % signal are M (rows), the variable  "electrodeSignal" is a matrix of MxN
+    """
+
+    regressed = np.zeros((elec_data.shape))
+    for i in range(elec_data.shape[1]):
+        xx = np.column_stack((np.ones(elec_data.shape[0]),
+                              np.mean(np.delete(elec_data, i, axis=1), 1)))
+        wml = np.dot(np.dot(np.linalg.pinv(np.dot(xx.T,
+                                                  xx)),
+                            xx.T),
+                     elec_data[:, i])
+        regressed[:, i] = elec_data[:, i] - wml[0] - wml[1] * \
+            np.mean(np.delete(elec_data, i, axis=1), 1)
+
+
 def reorder_pat1_elec(elec_data):
 
     elec_data_ordered = np.zeros(elec_data.shape, dtype='float16')
@@ -170,5 +190,7 @@ for rithm in rithms:
 #            con_mat)
 
 
-#    for i in range(elec_data.shape[1]):
-#        plt.plot(elec_data[:, i])
+    for i in range(elec_data.shape[1]):
+        plt.plot(elec_data[:, i])
+    for i in range(regressed.shape[1]):
+        plt.plot(regressed[:, i])
