@@ -61,7 +61,7 @@ def run_mriqc(subject_list, session_list):
                    '-w', '/work',
                    'poldracklab/mriqc:latest',
                    '/data', '/output', 'participant',
-                   '--participant_label', sub, '-s', ses,
+                   '--participant_label', sub, # '-s', ses,
                    '-w', '/work', '--verbose-reports',
                 ]
 

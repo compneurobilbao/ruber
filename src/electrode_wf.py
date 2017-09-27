@@ -19,7 +19,7 @@ from src.postproc.utils import (t1w_electrodes_to_09c,
                                 calc_con_mat_electrodes_noatlas
                                 )
 
-SUBJECT_LIST = ['sub-001']
+SUBJECT_LIST = ['sub-003', 'sub-004', 'sub-005']
 SESSION_LIST = ['ses-presurg']
 
 """
