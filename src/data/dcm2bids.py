@@ -53,7 +53,7 @@ def electrodes_session_processing(sub, ses):
 
 def normal_sesssion_processing(sub, ses):
 
-    for i in range(6):
+    for i in range(50):
         try:
             data_dir = RAW_DATA + '/DICOM' + \
                        '/' + sub + '/' + ses \
