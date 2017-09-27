@@ -33,7 +33,7 @@ def run_fmriprep(subject_list, session_list):
                    '-w', '/work',
                    'poldracklab/fmriprep:latest',
                    '/data', '/output', 'participant',
-                   '--participant_label', sub, '-s', ses,
+                   '--participant_label', sub, #'-s', ses,
                    '-w', '/work', '--no-freesurfer', '--ignore', 'fieldmaps',
                    '--output-space', 'template',
                    '--template', 'MNI152NLin2009cAsym',
