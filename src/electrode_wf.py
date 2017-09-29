@@ -19,7 +19,7 @@ from src.postproc.utils import (t1w_electrodes_to_09c,
                                 calc_con_mat_electrodes_noatlas
                                 )
 
-SUBJECT_LIST = ['sub-002','sub-003', 'sub-004', 'sub-005']
+SUBJECT_LIST = ['sub-002','sub-003', 'sub-004']
 SESSION_LIST = ['ses-presurg']
 
 """
@@ -31,6 +31,7 @@ run_fmriprep(SUBJECT_LIST, SESSION_LIST)
 run_mriqc(SUBJECT_LIST, SESSION_LIST)
 
 # WARNING!! Execute permission change over files before continue
+# OUTPUT_DIR=/home/asier/git/ruber/data
 # sudo chmod d------rwx -R $OUTPUT_DIR
 # sudo chmod 777 -R $OUTPUT_DIR
 
