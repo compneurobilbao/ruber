@@ -175,14 +175,14 @@ def dti_acquisition_parameters(in_file, epi_factor=128):
     descrip = dict([item.split("=", 1) for item in descrip_field.split(";")])
 
     # assume by default phaseDir = '+'
-    phase_dir = descrip.get("phaseDir", '+')
+    phase_dir = descrip.get("phase", '+')
     pe_axis   = "0 1 0"
     if phase_dir == "-":
         pe_axis = "0 -1 0"
 
-    if 'phaseDir' not in descrip:
+    if 'phase' not in descrip:
         warnings.warn("Could not find or understand the value for phaseDir: {}. "
-                      "Using default PE axis {}.".format(descrip.get("phaseDir"), pe_axis),
+                      "Using default PE axis {}.".format(descrip.get("phase"), pe_axis),
                       category=RuntimeWarning, stacklevel=2)
 
     # (number of phase-encode steps - 1) *
@@ -193,8 +193,8 @@ def dti_acquisition_parameters(in_file, epi_factor=128):
     with open(acqp_file, "wt") as fout:
         fout.write("{} {}\n".format(pe_axis, total_readout_time))
 
-    with open(index_file, "wt") as fout:
-        fout.write("{}\n".format(" ".join(n_volumes * ["1"])))
+    with open(index_file, "wt") as fout2:
+        fout2.write("{}\n".format(" ".join(n_volumes * ["1"])))
 
     return op.abspath(acqp_file), op.abspath(index_file)
 
