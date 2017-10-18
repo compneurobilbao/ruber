@@ -49,7 +49,7 @@ def reorder_and_regress_pat4_elec(elec_data):
     return elec_data_ordered
 
 
-def create_pat2_files():
+def create_pat4_files():
 
     input_path = '/home/asier/git/ruber/data/raw/elec_record/sub-004/interictal'
     out_path_reg = '/home/asier/git/ruber/data/processed/elec_record/sub-004/interictal_regressed'
