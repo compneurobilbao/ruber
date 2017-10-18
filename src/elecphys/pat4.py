@@ -25,54 +25,26 @@ Compare the ordered_elec
 #elec_tags = list(ordered_elec.keys())
 
 
-def reorder_pat4_elec(elec_data):
-
-    elec_data_ordered = np.zeros(elec_data.shape, dtype='float16')
-
-    # A
-    elec_data_ordered[:, :5] = elec_data[:, :5]
-    # B
-    elec_data_ordered[:, 15:20] = elec_data[:, 5:10]
-    # C
-    elec_data_ordered[:, 20:28] = elec_data[:, 10:18]
-    # D
-    elec_data_ordered[:, 28:33] = elec_data[:, 18:23]
-    # E
-    elec_data_ordered[:, 33:41] = elec_data[:, 23:31]
-    # F
-    elec_data_ordered[:, 41:46] = elec_data[:, 31:36]
-    # G
-    elec_data_ordered[:, 46:56] = elec_data[:, 36:46]
-    # AM
-    elec_data_ordered[:, 5:15] = elec_data[:, 46:56]
-    # HP
-    elec_data_ordered[:, 56:] = elec_data[:, 56:]
-
-    return elec_data_ordered
-
-
 def reorder_and_regress_pat4_elec(elec_data):
 
     elec_data_ordered = np.zeros(elec_data.shape, dtype='float16')
 
     # A
-    elec_data_ordered[:, :5] = regress_signal(elec_data[:, :5])
-    # B
-    elec_data_ordered[:, 15:20] = regress_signal(elec_data[:, 5:10])
+    elec_data_ordered[:, :8] = regress_signal(elec_data[:, :8])
     # C
-    elec_data_ordered[:, 20:28] = regress_signal(elec_data[:, 10:18])
+    elec_data_ordered[:, 8:16] = regress_signal(elec_data[:, 8:16])
     # D
-    elec_data_ordered[:, 28:33] = regress_signal(elec_data[:, 18:23])
+    elec_data_ordered[:, 16:26] = regress_signal(elec_data[:, 16:26])
     # E
-    elec_data_ordered[:, 33:41] = regress_signal(elec_data[:, 23:31])
+    elec_data_ordered[:, 26:36] = regress_signal(elec_data[:, 26:36])
     # F
-    elec_data_ordered[:, 41:46] = regress_signal(elec_data[:, 31:36])
+    elec_data_ordered[:, 36:46] = regress_signal(elec_data[:, 36:46])
     # G
-    elec_data_ordered[:, 46:56] = regress_signal(elec_data[:, 36:46])
-    # AM
-    elec_data_ordered[:, 5:15] = regress_signal(elec_data[:, 46:56])
-    # HP
-    elec_data_ordered[:, 56:] = regress_signal(elec_data[:, 56:])
+    elec_data_ordered[:, 46:54] = regress_signal(elec_data[:, 46:54])
+    # J
+    elec_data_ordered[:, 54:59] = regress_signal(elec_data[:, 54:59])
+    # K
+    elec_data_ordered[:, 59:64] = regress_signal(elec_data[:, 59:64])
 
     return elec_data_ordered
 
@@ -86,7 +58,7 @@ def create_pat2_files():
     for file in os.listdir(input_path):
         print(file)
         elec_data = np.load(opj(input_path, file))
-        elec_data_ordered = reorder_pat4_elec(elec_data)
+        elec_data_ordered = elec_data  # no need of reorder
         elec_data_regressed = reorder_and_regress_pat4_elec(elec_data)
 
         filter_and_save_all_bands(out_path_not_reg, elec_data_ordered, file)
