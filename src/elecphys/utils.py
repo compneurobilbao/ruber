@@ -98,3 +98,41 @@ def regress_signal(elec_data):
             np.mean(np.delete(elec_data, i, axis=1), 1)
 
     return regressed
+
+
+def filter_and_save_all_bands(output_path, elec_data, file):
+    fs = 500
+    lowcut = 0.05
+    highcut = 70
+    output = opj(output_path, 'filtered', file)
+    filter_and_save(elec_data,  lowcut, highcut, fs, output)
+
+    lowcut = 0.5
+    highcut = 3
+    output = opj(output_path, 'delta', file)
+    filter_and_save(elec_data,  lowcut, highcut, fs, output)
+
+    lowcut = 3
+    highcut = 7
+    output = opj(output_path, 'theta', file)
+    filter_and_save(elec_data,  lowcut, highcut, fs, output)
+
+    lowcut = 7
+    highcut = 13
+    output = opj(output_path, 'alpha', file)
+    filter_and_save(elec_data,  lowcut, highcut, fs, output)
+
+    lowcut = 13
+    highcut = 30
+    output = opj(output_path, 'beta', file)
+    filter_and_save(elec_data,  lowcut, highcut, fs, output)
+
+    lowcut = 30
+    highcut = 70
+    output = opj(output_path, 'gamma', file)
+    filter_and_save(elec_data,  lowcut, highcut, fs, output)
+
+    lowcut = 70
+    highcut = 249
+    output = opj(output_path, 'gamma_high', file)
+    filter_and_save(elec_data,  lowcut, highcut, fs, output)
