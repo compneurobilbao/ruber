@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from src.postproc.utils import load_elec_file, order_dict
-from src.env import DATA, ATLAS_TYPES
-#import os.path as op
+from src.env import DATA
 from os.path import join as opj
 import numpy as np
 from matplotlib import pyplot as plt
@@ -20,7 +19,8 @@ def log_transform(im):
     try:
         (min, max) = (im[im > 0].min(), im.max())
         if (max > min) and (max > 0):
-            return (np.log(im.clip(min, max)) - np.log(min)) / (np.log(max) - np.log(min))
+            return ((np.log(im.clip(min, max)) - np.log(min)) /
+                    (np.log(max) - np.log(min)))
     except:
         pass
     return im
