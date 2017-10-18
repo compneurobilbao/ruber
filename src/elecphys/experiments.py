@@ -5,14 +5,13 @@ import os
 import os.path as op
 from os.path import join as opj
 import numpy as np
-import tempfile
-import shutil
 import matplotlib.pyplot as plt
 from scipy.signal import remez, filtfilt
 
 from src.elecphys.utils import (clean_file, 
                                 clean_all_files_and_convert_to_npy,
                                 bandpass_filter,
+                                regress_signal,
                                 )
 
 """
@@ -79,25 +78,7 @@ analysis august -> report
 ### FILTER ###
 
 
-def regress_signal(elec_data):
-    """
-    % the "electrodeSignal" must be a matrix for a given electrode (OIL, OIM etc). 
-    % If the electrode has N recording sites (columns), and the samples in the chunk
-    % signal are M (rows), the variable  "electrodeSignal" is a matrix of MxN
-    """
 
-    regressed = np.zeros((elec_data.shape))
-    for i in range(elec_data.shape[1]):
-        xx = np.column_stack((np.ones(elec_data.shape[0]),
-                              np.mean(np.delete(elec_data, i, axis=1), 1)))
-        wml = np.dot(np.dot(np.linalg.pinv(np.dot(xx.T,
-                                                  xx)),
-                            xx.T),
-                     elec_data[:, i])
-        regressed[:, i] = elec_data[:, i] - wml[0] - wml[1] * \
-            np.mean(np.delete(elec_data, i, axis=1), 1)
-   
-    return regressed
 
 
 def reorder_pat1_elec(elec_data):
@@ -140,14 +121,7 @@ def reorder_and_regress_pat1_elec(elec_data):
     return elec_data_ordered
 
 
-def filter_and_save(elec_data, lowcut, highcut, fs, output_path):
-    import scipy.io as sio
 
-    filtered = np.zeros((elec_data.shape))
-    for i in range(57):
-        filtered[:, i] = bandpass_filter(elec_data[:, i], lowcut, highcut, fs)
-   np.save(output_path, filtered)
-    sio.savemat(output_path[:-4] + '.mat', {'data': filtered})
 
 
 input_path = '/home/asier/git/ruber/data/raw/elec_record/sub-001/interictal'
@@ -193,6 +167,10 @@ for file in os.listdir(input_path):
     highcut = 249
     output = opj(output_path, 'gamma_high', file)
     filter_and_save(elec_data,  lowcut, highcut, fs, output)
+
+
+
+
 
 ### CORRELATION ###
 input_path = '/home/asier/git/ruber/data/interim/elec_record/sub-001/interictal_not_regressed'

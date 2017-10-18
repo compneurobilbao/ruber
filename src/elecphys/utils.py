@@ -71,8 +71,9 @@ def bandpass_filter(data, lowcut, highcut, fs):
 def filter_and_save(elec_data, lowcut, highcut, fs, output_path):
     import scipy.io as sio
 
-    filtered = np.zeros((elec_data.shape))
-    for i in range(57):
+    rows, cols = elec_data.shape
+    filtered = np.zeros((rows, cols))
+    for i in range(cols):
         filtered[:, i] = bandpass_filter(elec_data[:, i], lowcut, highcut, fs)
     np.save(output_path, filtered)
     sio.savemat(output_path[:-4] + '.mat', {'data': filtered})
