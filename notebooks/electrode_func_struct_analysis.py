@@ -111,47 +111,8 @@ if __name__ == "__main__":
                       dpi=250)
 
             plt.close("all")
-"""
-test area
-"""
-
-import h5py
-import numpy as np
-
-file1 = '/home/asier/git/ruber/data/raw/elec_record/sub-001/rec_2_export_all_selectedChannels_1_53_63_64.mat'
-f = h5py.File(file1)
-for k, v in f.items():
-    elec1 = np.array(v, dtype='float16')
-
-file2 = '/home/asier/git/ruber/data/raw/elec_record/sub-001/rec_2_export_all_selectedChannels_54_56.mat'
-f = h5py.File(file2)
-for k, v in f.items():
-    elec2 = np.array(v, dtype='float16')
-
-elec_data = np.concatenate((elec1[:-2], elec2)) # from elec1 2 last electrodes are EKG
-# np.save('/home/asier/git/ruber/data/raw/elec_record/sub-001/elec_data',
-#         elec_data)
-elec_data_ordered = np.zeros((57, elec_data.shape[1]), dtype='float16')
-
-# OIM
-elec_data_ordered[24:36, :] = elec_data[:12, :]
-# OIL
-elec_data_ordered[12:24, :] = elec_data[12:24, :]
-# OSM
-elec_data_ordered[41:49, :] = elec_data[24:32, :]
-# OSL
-elec_data_ordered[36:41, :] = elec_data[32:37, :]
-# TI
-elec_data_ordered[49:57, :] = elec_data[37:45, :]
-# A
-elec_data_ordered[:11, :] = elec_data[45:57, :]
 
 
-elec_conn_mat = np.zeros((57, 57))
-elec_conn_mat = np.corrcoef(elec_data_ordered[:, 13352000:13367000])
 
-np.save('/home/asier/git/ruber/data/raw/elec_record/sub-001/elec_con_mat',
-        elec_conn_mat)
 
-plot_matrix(struct_mat, elec_tags, log=True)
-plot_matrix(elec_conn_mat, elec_tags)
+
