@@ -11,8 +11,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 from nilearn.connectome import ConnectivityMeasure
 from itertools import product
 
-SUBJECT_LIST = ['sub-001', 'sub-002', 'sub-003', 'sub-004']
-SESSION_LIST = ['ses-presurg']
+
 
 CWD = os.getcwd()
 
@@ -57,15 +56,21 @@ def plot_matrix(matrix, elec_tags, log=False):
 
 if __name__ == "__main__":
 
+    rithms = ['filtered', 'delta', 'theta', 'alpha', 'beta', 'gamma', 'gamma_high']
+    SUBJECT_LIST = ['sub-001', 'sub-002', 'sub-003', 'sub-004']
+    SESSION_LIST = ['ses-presurg']
+
     sub_ses_comb = [[subject, session] for subject in SUBJECT_LIST
                     for session in SESSION_LIST]
-    
+
     SPHERE_SIZE = [3]
     DENOISE_TYPE = ['gsr']
 
     for sub, ses in sub_ses_comb:
+
+        # fMRI and DTI
         for sphere, denoise_type in product(SPHERE_SIZE, DENOISE_TYPE):
-        
+
             output_dir_path = opj(CWD, 'reports', 'figures', sub)
             if not os.path.exists(output_dir_path):
                 os.makedirs(output_dir_path)
@@ -73,11 +78,11 @@ if __name__ == "__main__":
             elec_file = opj(DATA, 'raw', 'bids', sub, 'electrodes',
                             'elec.loc')
             elec_location_mni09 = load_elec_file(elec_file)
-    
+
             ordered_elec = order_dict(elec_location_mni09)
-    
+
             elec_tags = list(ordered_elec.keys())
-    
+
             # load function (conn matrix?)
             func_file = opj(DATA, 'processed', 'fmriprep', sub, ses, 'func',
                             'time_series_noatlas_' + denoise_type + '_' +
@@ -117,40 +122,43 @@ if __name__ == "__main__":
 
             plt.close("all")
 
+        # Electrophysiology
+        for elec_reg_type in ['regressed', 'not_regressed']:
+            input_path = opj(CWD, 'data', 'processed', 'elec_record',
+                             sub, 'interictal_' + elec_reg_type)
 
+            for rithm in rithms:
 
+                figures = []
+                # load random file
+                random_data = np.load(opj(input_path, 'alpha',
+                                          'interictal_1.npy'))
+                contact_num = random_data.shape[1]
+                all_conn_mat = np.zeros((12, contact_num, contact_num))
 
-
-"""
-analysis august -> report
-"""
-
-
-### CORRELATION ###
-input_path = '/home/asier/git/ruber/data/interim/elec_record/sub-001/interictal_not_regressed'
-rithms = ['filtered', 'delta', 'theta', 'alpha', 'beta', 'gamma', 'gamma_high']
-
-for rithm in rithms:
+                files = [file for file in os.listdir(opj(input_path, rithm))
+                         if file.endswith('npy')]
+                for i, file  in enumerate(files):
+                    elec_data = np.load(opj(input_path, rithm, file))
+                    
+                    elec_conn_mat = np.zeros((contact_num, contact_num))
+                    elec_conn_mat = np.corrcoef(elec_data.T)
+                    all_conn_mat[i, :, :] = elec_conn_mat
+            
+                con_mat = np.mean(all_conn_mat,0)
+            
+                plot_matrix(con_mat, elec_tags)
+                ax = plt.title('Electrophysiology ' + elec_reg_type + ':' +
+                                'rithm: ' + rithm)
+                fig = ax.get_figure()
+                figures.append(fig)
+                plt.close()
     
-    all_conn_mat = np.zeros((12, 57, 57))
-    
-    for i, file  in enumerate(os.listdir(opj(input_path, rithm))):
-        print(file)
-        elec_data = np.load(opj(input_path, rithm, file))
-        
-        elec_conn_mat = np.zeros((57, 57))
-        elec_conn_mat = np.corrcoef(elec_data.T)
-        all_conn_mat[i, :, :] = elec_conn_mat
-
-    con_mat = np.mean(all_conn_mat,0)
-
-    plot_matrix(con_mat, elec_tags)
-
-#    np.save(opj('/home/asier/git/ruber/reports/figures/sub-001',rithm),
-#            con_mat)
-
-
-    for i in range(elec_data.shape[1]):
-        plt.plot(elec_data[:, i])
-    for i in range(regressed.shape[1]):
-        plt.plot(regressed[:, i])
+#            
+#            multipage(opj(output_dir_path,
+#                              'Electrophysiology ' + elec_reg_type + ':' +
+#                                'rithm: ' + rithm),
+#                          figures,
+#                          dpi=250)
+#
+#        
