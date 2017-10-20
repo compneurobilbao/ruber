@@ -2,6 +2,7 @@
 
 from src.postproc.utils import load_elec_file, order_dict
 from src.env import DATA
+import os
 from os.path import join as opj
 import numpy as np
 from matplotlib import pyplot as plt
@@ -10,8 +11,10 @@ from matplotlib.backends.backend_pdf import PdfPages
 from nilearn.connectome import ConnectivityMeasure
 from itertools import product
 
-SUBJECT_LIST = ['sub-001']
+SUBJECT_LIST = ['sub-001', 'sub-002', 'sub-003', 'sub-004']
 SESSION_LIST = ['ses-presurg']
+
+CWD = os.getcwd()
 
 
 def log_transform(im):
@@ -57,12 +60,15 @@ if __name__ == "__main__":
     sub_ses_comb = [[subject, session] for subject in SUBJECT_LIST
                     for session in SESSION_LIST]
     
-    SPHERE_SIZE = [ 2, 3]
-    DENOISE_TYPE = ['nogsr']
+    SPHERE_SIZE = [3]
+    DENOISE_TYPE = ['gsr']
 
     for sub, ses in sub_ses_comb:
         for sphere, denoise_type in product(SPHERE_SIZE, DENOISE_TYPE):
         
+            output_dir_path = opj(CWD, 'reports', 'figures', sub)
+            if not os.path.exists(output_dir_path):
+                os.makedirs(output_dir_path)
             # FUNCTION MATRIX
             elec_file = opj(DATA, 'raw', 'bids', sub, 'electrodes',
                             'elec.loc')
@@ -95,7 +101,7 @@ if __name__ == "__main__":
             ax2 = plt.title('DWI connectivity matrix: ' +
                             'sphere size: ' + str(sphere))
             fig2 = ax2.get_figure()
-
+            plt.close("all")
             plt.scatter(log_transform(struct_mat), corr_mat)
             ax3 = plt.title('#Streamlines vs fMRI corr values' + denoise_type +
                             ':' + 'sphere size: ' + str(sphere))
@@ -103,8 +109,7 @@ if __name__ == "__main__":
             plt.ylabel('correlation values')
             fig3 = ax3.get_figure()
 
-            multipage(opj('/home/asier/git/ruber/reports/figures/',
-                          sub,
+            multipage(opj(output_dir_path,
                           'scatter_DWI_fMRI_' + denoise_type + '_' +
                           str(sphere) + '.pdf'),
                       [fig1, fig2, fig3],
