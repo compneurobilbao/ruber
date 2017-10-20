@@ -116,3 +116,36 @@ if __name__ == "__main__":
 
 
 
+"""
+analysis august -> report
+"""
+
+
+### CORRELATION ###
+input_path = '/home/asier/git/ruber/data/interim/elec_record/sub-001/interictal_not_regressed'
+rithms = ['filtered', 'delta', 'theta', 'alpha', 'beta', 'gamma', 'gamma_high']
+
+for rithm in rithms:
+    
+    all_conn_mat = np.zeros((12, 57, 57))
+    
+    for i, file  in enumerate(os.listdir(opj(input_path, rithm))):
+        print(file)
+        elec_data = np.load(opj(input_path, rithm, file))
+        
+        elec_conn_mat = np.zeros((57, 57))
+        elec_conn_mat = np.corrcoef(elec_data.T)
+        all_conn_mat[i, :, :] = elec_conn_mat
+
+    con_mat = np.mean(all_conn_mat,0)
+
+    plot_matrix(con_mat, elec_tags)
+
+#    np.save(opj('/home/asier/git/ruber/reports/figures/sub-001',rithm),
+#            con_mat)
+
+
+    for i in range(elec_data.shape[1]):
+        plt.plot(elec_data[:, i])
+    for i in range(regressed.shape[1]):
+        plt.plot(regressed[:, i])
