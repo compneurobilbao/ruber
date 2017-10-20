@@ -126,10 +126,9 @@ if __name__ == "__main__":
         for elec_reg_type in ['regressed', 'not_regressed']:
             input_path = opj(CWD, 'data', 'processed', 'elec_record',
                              sub, 'interictal_' + elec_reg_type)
-
+            figures = []
             for rithm in rithms:
 
-                figures = []
                 # load random file
                 random_data = np.load(opj(input_path, 'alpha',
                                           'interictal_1.npy'))
@@ -153,12 +152,10 @@ if __name__ == "__main__":
                 fig = ax.get_figure()
                 figures.append(fig)
                 plt.close()
-    
-#            
-#            multipage(opj(output_dir_path,
-#                              'Electrophysiology ' + elec_reg_type + ':' +
-#                                'rithm: ' + rithm),
-#                          figures,
-#                          dpi=250)
-#
-#        
+
+            multipage(opj(output_dir_path,
+                          'Electrophysiology_' + elec_reg_type +
+                          '_bands.pdf'),
+                          figures,
+                          dpi=250)
+      
