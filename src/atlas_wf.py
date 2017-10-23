@@ -22,7 +22,7 @@ from src.postproc.utils import (t1w_electrodes_to_09c,
                                 calc_con_mat_electrodes_noatlas,
                                 )
 
-SUBJECT_LIST = ['sub-001']
+SUBJECT_LIST = ['sub-002','sub-003', 'sub-004']
 SESSION_LIST = ['ses-presurg']
 
 """
@@ -93,4 +93,4 @@ locate_electrodes(SUBJECT_LIST)
 
 # or
 
-#locate_electrodes_closest_roi(SUBJECT_LIST)
+locate_electrodes_closest_roi(SUBJECT_LIST)
