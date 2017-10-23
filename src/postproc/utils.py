@@ -759,10 +759,56 @@ def calc_con_mat_electrodes_noatlas(subject_list, session_list):
             single_dwi_atlas_from_rois(sub, ses, sphere_size)
 
 
-                    
-                    
-                
-                
+def export_data_to_mat(subject_list, session_list):
+    """
+    function to locate each electrode contact to the closest ROI.
+    (might be the contact not to fall down in no ROI)
+    """
+    from scipy import io as sio
+    import shutil as sh
+
+    sub_ses_comb = [[subject, session] for subject in subject_list
+                    for session in session_list]
+
+    matlab_output = opj(DATA, 'processed', 'matlab')
+
+    for sub, ses in sub_ses_comb:
+        data_output = opj(matlab_output, sub)
+
+        # COPY electrophys data
+        source_dir = opj(DATA, 'processed', 'elec_record', sub)
+        ignore_func = lambda d, files: [f for f in files if
+                                        os.path.isfile(opj(d, f)) and
+                                        f[-4:] != '.mat']
+        sh.copytree(source_dir, data_output, ignore=ignore_func)
+
+        # COPY FC, SC and elec_roi data
+        for atlas in ATLAS_TYPES:
+            num_rois = atlas[-4:]
+
+            sc_data = opj(DATA, 'processed', 'tract',
+                          '_session_id_' + ses + '_subject_id_' + sub,
+                          'fiber_number_' + str(num_rois) + '.txt')
+            fc_data = opj(PROCESSED, sub, ses,
+                          'func', 'time_series_' + atlas + '.txt')
+            elec_data = opj(DATA, 'raw', 'bids',
+                            sub, 'electrodes',
+                            sub + '_' + atlas + '_closest_rois.roi')
+
+            sc_data = np.loadtxt(sc_data)
+            fc_data = np.loadtxt(fc_data)
+
+            if not os.path.exists(data_output):
+                os.makedirs(data_output)
+
+            sio.savemat(opj(data_output, 'SC_' + atlas + '.mat'),
+                        {'sc_data': sc_data})
+            sio.savemat(opj(data_output, 'FC_' + atlas + '.mat'),
+                        {'sc_data': fc_data})
+            sh.copy(elec_data,
+                    opj(data_output, sub + '_' + atlas + '_closest_rois.roi'))
+
+
 """
 from nilearn import datasets
 

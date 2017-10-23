@@ -20,6 +20,7 @@ from src.postproc.utils import (t1w_electrodes_to_09c,
                                 locate_electrodes,
                                 locate_electrodes_closest_roi,
                                 calc_con_mat_electrodes_noatlas,
+                                export_data_to_mat,
                                 )
 
 SUBJECT_LIST = ['sub-002','sub-003', 'sub-004']
@@ -87,10 +88,13 @@ t1w_electrodes_to_09c(SUBJECT_LIST)
 # contacts_from_electrode(first_contact_pos, last_contact_pos, contact_num, elec_name)
 
 """
-APPROACH 1: ATLAS
+Locate electrodes
 """
 locate_electrodes(SUBJECT_LIST)
-
 # or
-
 locate_electrodes_closest_roi(SUBJECT_LIST)
+
+"""
+Export all data to matlab
+"""
+export_data_to_mat(SUBJECT_LIST, SESSION_LIST)
