@@ -7,6 +7,7 @@ from os.path import join as opj
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
+import seaborn as sns
 
 from nilearn.connectome import ConnectivityMeasure
 from itertools import product
@@ -192,9 +193,9 @@ def figures_2():
                                  'con_mat_noatlas_' +
                                  str(sphere) + '.npy'))
 
-        th = 10
-        struct_mat = struct_mat
-        struct_mat_treatment = 'no_log_' + str(th)
+        th = 0
+        struct_mat = log_transform(struct_mat)
+        struct_mat_treatment = 'log_th_' + str(th)
 
         idx = np.where(struct_mat >= th)
         struct_mat = struct_mat[idx]
@@ -225,13 +226,14 @@ def figures_2():
                     all_conn_mat[i, :, :] = elec_conn_mat
                 # Get elec con_mat
                 con_mat = np.mean(all_conn_mat, 0)
+                con_mat = con_mat[idx]
 
                 # scatter vs struct
                 corr_value = np.corrcoef(np.ndarray.flatten(struct_mat),
-                                         np.ndarray.flatten(corr_mat))[0][1]
+                                         np.ndarray.flatten(con_mat))[0][1]
                 corr_values_struct.append(corr_value)
 
-                plt.scatter(struct_mat, con_mat[idx])
+                plt.scatter(struct_mat, con_mat)
                 ax = plt.title('R = ' + str(corr_value) +
                                ' #Streamlines vs corr values of ' + rithm +
                                ' ' + elec_reg_type)
@@ -243,10 +245,10 @@ def figures_2():
 
                 # scatter vs func
                 corr_value = np.corrcoef(np.ndarray.flatten(struct_mat),
-                                         np.ndarray.flatten(corr_mat))[0][1]
+                                         np.ndarray.flatten(con_mat))[0][1]
                 corr_values_func.append(corr_value)
 
-                plt.scatter(corr_mat, con_mat[idx])
+                plt.scatter(corr_mat, con_mat)
                 ax = plt.title('Func corr vs corr values of ' + rithm +
                                ' ' + elec_reg_type)
                 plt.xlabel('Func corr')
@@ -268,3 +270,37 @@ def figures_2():
                         struct_mat_treatment + '_' +
                         elec_reg_type),
                     np.array(corr_values_struct))
+
+
+def work_stats():
+
+    subjects = ['sub-001', 'sub-002', 'sub-003', 'sub-004']
+    struct_mat_treatment = ['log_th_0', 'no_log_th_10']
+    elec_reg_type = ['regressed', 'not_regressed']
+
+    for struct_treat in struct_mat_treatment:
+        input_dir = opj(CWD, 'reports', 'stats', struct_treat)
+
+        for reg in elec_reg_type:
+            stat_mat = np.empty((7, len(subjects)))
+            for i, sub in enumerate(subjects):
+                stat_mat[:, i] = np.load(opj(input_dir,
+                                             'stats_' + sub + '_' +
+                                             struct_treat + '_' +
+                                             reg + '.npy'))
+
+                ax = sns.tsplot(data=stat_mat.T,
+                                err_style="ci_bars",
+                                interpolate=False)
+
+                plt.title('Stats ' + struct_treat + ' ' + reg)
+                plt.ylabel('corr')
+                ax.set(xticklabels=['', 'filtered', 'delta', 'theta', 'alpha',
+                                    'beta', 'gamma', 'gamma_h'])
+                fig = ax.get_figure()
+                fig.savefig(opj(os.getcwd(),
+                                'reports', 'figures', 'total_stats',
+                                'stats_' +
+                                struct_treat + '_' +
+                                reg + '.png'))
+                plt.close("all")
