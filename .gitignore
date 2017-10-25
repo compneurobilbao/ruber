@@ -76,3 +76,4 @@ target/
 # Crash files
 crash*
 reports/figures/*
+reports/stats/*
