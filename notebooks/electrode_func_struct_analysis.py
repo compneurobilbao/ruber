@@ -265,11 +265,11 @@ def figures_2():
                       dpi=250)
             plt.close("all")
 
-#            np.save(opj(CWD, 'reports', 'stats',
-#                        'stats_' + sub + '_' +
-#                        struct_mat_treatment + '_' +
-#                        elec_reg_type),
-#                    np.array(corr_values_struct))
+            np.save(opj(CWD, 'reports', 'stats',
+                        'stats_' + sub + '_' +
+                        struct_mat_treatment + '_' +
+                        elec_reg_type),
+                    np.array(corr_values_struct))
                 
             np.save(opj(CWD, 'reports', 'stats',
                     'stats_' + sub + '_func_' +
