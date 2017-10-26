@@ -199,7 +199,7 @@ def figures_2():
 
         idx = np.where(struct_mat >= th)
         struct_mat = struct_mat[idx]
-        corr_mat = corr_mat[idx]
+        corr_mat = corr_mat[idx]  # CAREFULL!! THIS IS WRONG IF TH>0, deletes FUNCTIONAL nodes
 
         # Electrophysiology
         for elec_reg_type in ['regressed', 'not_regressed']:
@@ -209,13 +209,12 @@ def figures_2():
             corr_values_struct = []
             corr_values_func = []
 
+            random_data = np.load(opj(input_path, 'alpha',
+                                      'interictal_1.npy'))
+            contact_num = random_data.shape[1]
+            all_conn_mat = np.zeros((12, contact_num, contact_num))
             for rithm in rithms:
                 # load random file
-                random_data = np.load(opj(input_path, 'alpha',
-                                          'interictal_1.npy'))
-                contact_num = random_data.shape[1]
-                all_conn_mat = np.zeros((12, contact_num, contact_num))
-
                 files = [file for file in os.listdir(opj(input_path, rithm))
                          if file.endswith('npy')]
                 for i, file in enumerate(files):
@@ -229,13 +228,13 @@ def figures_2():
                 con_mat = con_mat[idx]
 
                 # scatter vs struct
-                corr_value = np.corrcoef(np.ndarray.flatten(struct_mat),
-                                         np.ndarray.flatten(con_mat))[0][1]
+                corr_value = np.corrcoef(struct_mat,
+                                         con_mat)[0][1]
                 corr_values_struct.append(corr_value)
 
                 plt.scatter(struct_mat, con_mat)
                 ax = plt.title('R = ' + str(corr_value) +
-                               ' #Streamlines vs corr values of ' + rithm +
+                               '#Streamlines vs corr values of ' + rithm +
                                ' ' + elec_reg_type)
                 plt.xlabel(struct_mat_treatment)
                 plt.ylabel('elec corr')
@@ -249,7 +248,8 @@ def figures_2():
                 corr_values_func.append(corr_value)
 
                 plt.scatter(corr_mat, con_mat)
-                ax = plt.title('Func corr vs corr values of ' + rithm +
+                ax = plt.title('R = ' + str(corr_value) +
+                               'Func corr vs corr values of ' + rithm +
                                ' ' + elec_reg_type)
                 plt.xlabel('Func corr')
                 plt.ylabel('elec corr')
@@ -258,8 +258,9 @@ def figures_2():
                 plt.close()
 
             multipage(opj(output_dir_path,
-                          'Scatter_' + elec_reg_type + ' ' +
-                          struct_mat_treatment + ' ' +
+                          'Scatter_func_struct_' + sub + '_' +
+                          struct_mat_treatment + '_' +
+                          elec_reg_type + ' ' +
                           '_bands.pdf'),
                       figures,
                       dpi=250)
@@ -270,11 +271,11 @@ def figures_2():
                         struct_mat_treatment + '_' +
                         elec_reg_type),
                     np.array(corr_values_struct))
-                
+
             np.save(opj(CWD, 'reports', 'stats',
-                    'stats_' + sub + '_func_' +
-                    elec_reg_type),
-                np.array(corr_values_struct))
+                        'stats_' + sub + '_func_' +
+                        elec_reg_type),
+                    np.array(corr_values_func))
 
 
 def work_stats_struct():
@@ -287,7 +288,7 @@ def work_stats_struct():
         input_dir = opj(CWD, 'reports', 'stats', struct_treat)
 
         for reg in elec_reg_type:
-            stat_mat = np.empty((7, len(subjects))) # 7 bands
+            stat_mat = np.empty((7, len(subjects)))  # 7 bands
             for i, sub in enumerate(subjects):
                 stat_mat[:, i] = np.load(opj(input_dir,
                                              'stats_' + sub + '_' +
@@ -305,10 +306,11 @@ def work_stats_struct():
                 fig = ax.get_figure()
                 fig.savefig(opj(os.getcwd(),
                                 'reports', 'figures', 'total_stats',
-                                'stats_struct' +
+                                'stats_struct_' +
                                 struct_treat + '_' +
                                 reg + '.png'))
                 plt.close("all")
+
 
 def work_stats_func():
 
@@ -318,7 +320,7 @@ def work_stats_func():
     input_dir = opj(CWD, 'reports', 'stats', 'func')
 
     for reg in elec_reg_type:
-        stat_mat = np.empty((7, len(subjects))) # 7 bands
+        stat_mat = np.empty((7, len(subjects)))  # 7 bands
         for i, sub in enumerate(subjects):
             stat_mat[:, i] = np.load(opj(input_dir,
                                          'stats_' + sub + '_func_' +
@@ -328,13 +330,13 @@ def work_stats_func():
                             err_style="ci_bars",
                             interpolate=False)
 
-            plt.title('Stats func ' + ' ' + reg)
+            plt.title('Stats func ' + reg)
             plt.ylabel('corr')
             ax.set(xticklabels=['', 'filtered', 'delta', 'theta', 'alpha',
                                 'beta', 'gamma', 'gamma_h'])
             fig = ax.get_figure()
             fig.savefig(opj(os.getcwd(),
                             'reports', 'figures', 'total_stats',
-                            'stats_func' +                            
+                            'stats_func_' +                            
                             reg + '.png'))
             plt.close("all")
