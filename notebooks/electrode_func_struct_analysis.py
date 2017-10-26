@@ -265,14 +265,19 @@ def figures_2():
                       dpi=250)
             plt.close("all")
 
+#            np.save(opj(CWD, 'reports', 'stats',
+#                        'stats_' + sub + '_' +
+#                        struct_mat_treatment + '_' +
+#                        elec_reg_type),
+#                    np.array(corr_values_struct))
+                
             np.save(opj(CWD, 'reports', 'stats',
-                        'stats_' + sub + '_' +
-                        struct_mat_treatment + '_' +
-                        elec_reg_type),
-                    np.array(corr_values_struct))
+                    'stats_' + sub + '_func_' +
+                    elec_reg_type),
+                np.array(corr_values_struct))
 
 
-def work_stats():
+def work_stats_struct():
 
     subjects = ['sub-001', 'sub-002', 'sub-003', 'sub-004']
     struct_mat_treatment = ['log_th_0', 'no_log_th_10']
@@ -282,7 +287,7 @@ def work_stats():
         input_dir = opj(CWD, 'reports', 'stats', struct_treat)
 
         for reg in elec_reg_type:
-            stat_mat = np.empty((7, len(subjects)))
+            stat_mat = np.empty((7, len(subjects))) # 7 bands
             for i, sub in enumerate(subjects):
                 stat_mat[:, i] = np.load(opj(input_dir,
                                              'stats_' + sub + '_' +
@@ -293,14 +298,43 @@ def work_stats():
                                 err_style="ci_bars",
                                 interpolate=False)
 
-                plt.title('Stats ' + struct_treat + ' ' + reg)
+                plt.title('Stats struct ' + struct_treat + ' ' + reg)
                 plt.ylabel('corr')
                 ax.set(xticklabels=['', 'filtered', 'delta', 'theta', 'alpha',
                                     'beta', 'gamma', 'gamma_h'])
                 fig = ax.get_figure()
                 fig.savefig(opj(os.getcwd(),
                                 'reports', 'figures', 'total_stats',
-                                'stats_' +
+                                'stats_struct' +
                                 struct_treat + '_' +
                                 reg + '.png'))
                 plt.close("all")
+
+def work_stats_func():
+
+    subjects = ['sub-001', 'sub-002', 'sub-003', 'sub-004']
+    elec_reg_type = ['regressed', 'not_regressed']
+
+    input_dir = opj(CWD, 'reports', 'stats', 'func')
+
+    for reg in elec_reg_type:
+        stat_mat = np.empty((7, len(subjects))) # 7 bands
+        for i, sub in enumerate(subjects):
+            stat_mat[:, i] = np.load(opj(input_dir,
+                                         'stats_' + sub + '_func_' +
+                                         reg + '.npy'))
+
+            ax = sns.tsplot(data=stat_mat.T,
+                            err_style="ci_bars",
+                            interpolate=False)
+
+            plt.title('Stats func ' + ' ' + reg)
+            plt.ylabel('corr')
+            ax.set(xticklabels=['', 'filtered', 'delta', 'theta', 'alpha',
+                                'beta', 'gamma', 'gamma_h'])
+            fig = ax.get_figure()
+            fig.savefig(opj(os.getcwd(),
+                            'reports', 'figures', 'total_stats',
+                            'stats_func' +                            
+                            reg + '.png'))
+            plt.close("all")
