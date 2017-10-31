@@ -47,6 +47,16 @@ def count_energy_over_percentile(energy, perc=95):
     return counter
 
 
+#matplotlib.pyplot.hist(energy[:,i], bins=100)
+#
+#a = sc.signal.hilbert(elec_data[:, i])
+#matplotlib.pyplot.plot(np.abs(a))
+#matplotlib.pyplot.hist(np.log(np.abs(a)), bins=100)
+#matplotlib.pyplot.hist(np.abs(a), bins=100)
+#
+#
+#matplotlib.pyplot.plot(elec_data[:, i])
+
 def figures_1():
 
     rithms = ['filtered', 'delta', 'theta', 'alpha', 'beta', 'gamma', 'gamma_high']
