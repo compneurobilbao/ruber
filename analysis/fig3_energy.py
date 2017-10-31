@@ -13,6 +13,24 @@ from itertools import product
 CWD = os.getcwd()
 
 
+def convolve_signal(elec_data, window_size=50):
+    '''
+    
+    '''
+    power_data = elec_data * elec_data 
+    window = np.ones((window_size,))
+    points, channels = power_data.shape
+    
+    convolved_signal = np.empty(((max(points, window_size) - 
+                                min(points, window_size) + 1),
+                                channels))
+    
+    for i in range(channels):
+        convolved_signal[:,i] = np.convolve(power_data[:,i], window, 'valid')
+    
+    return convolved_signal
+
+
 def figures_1():
 
     rithms = ['filtered', 'delta', 'theta', 'alpha', 'beta', 'gamma', 'gamma_high']
