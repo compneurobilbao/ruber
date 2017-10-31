@@ -13,22 +13,38 @@ from itertools import product
 CWD = os.getcwd()
 
 
-def convolve_signal(elec_data, window_size=50):
+def calculate_energy(elec_data, window_size=500):
     '''
-    
+    Calculates energy of a signal based on a sliding window
     '''
-    power_data = elec_data * elec_data 
+    power_data = elec_data * elec_data
     window = np.ones((window_size,))
     points, channels = power_data.shape
-    
-    convolved_signal = np.empty(((max(points, window_size) - 
-                                min(points, window_size) + 1),
-                                channels))
-    
+
+    energy = np.empty(((max(points, window_size) -
+                        min(points, window_size) + 1),
+                       channels))
+
     for i in range(channels):
-        convolved_signal[:,i] = np.convolve(power_data[:,i], window, 'valid')
-    
-    return convolved_signal
+        energy[:, i] = np.convolve(power_data[:, i], window, 'valid')
+
+    return energy
+
+
+def count_energy_over_percentile(energy, perc=95):
+    '''
+    For each channel, counts how many values of
+    the energy go over the percentile value
+    '''
+    _, channels = energy.shape
+    counter = np.empty((channels,))
+
+    for i in range(channels):
+        # Counts how many values of the energy go over the percentile value
+        counter[i] = np.where(energy[:, i] > np.percentile(energy[:, i],
+                                                           perc))[0].shape[0]
+
+    return counter
 
 
 def figures_1():
