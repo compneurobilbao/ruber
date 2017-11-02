@@ -57,6 +57,12 @@ def count_energy_over_percentile(energy, perc=95):
 #
 #matplotlib.pyplot.plot(elec_data[:, i])
 
+def calc_one_gauss(beta, x):
+    y = beta[0] * np.exp(-(x-beta[1]) ^ 2 / np.abs(beta[2]))
+    # y=beta(1)*exp(-(x-beta(2)).^2/abs(beta(3)));
+    return y
+
+
 def figures_1():
 
     rithms = ['filtered', 'delta', 'theta', 'alpha', 'beta', 'gamma', 'gamma_high']
