@@ -5,7 +5,7 @@ import os
 from os.path import join as opj
 import numpy as np
 from matplotlib import pyplot as plt
-
+from scipy.optimize import curve_fit
 
 from nilearn.connectome import ConnectivityMeasure
 from itertools import product
@@ -57,10 +57,45 @@ def count_energy_over_percentile(energy, perc=95):
 #
 #matplotlib.pyplot.plot(elec_data[:, i])
 
-def calc_one_gauss(beta, x):
-    y = beta[0] * np.exp(-(x-beta[1]) ^ 2 / np.abs(beta[2]))
-    # y=beta(1)*exp(-(x-beta(2)).^2/abs(beta(3)));
-    return y
+# Define model function to be used to fit to the data above:
+def gauss(x, *p):
+    A, mu, sigma = p
+    return A*np.exp(-(x-mu)**2/(2.*sigma**2))
+
+
+def calc_gaussian_fit(signal, apply_log=False):
+    # do gaussian fit; decide in next line if in log10 space or not
+    # Paolo and stackoverflow.com/questions/11507028/fit-a-gaussian-function
+
+    if apply_log is True:
+        signal = np.log10(signal)
+
+    hist, bin_edges = np.histogram(signal, density=True)
+    bin_centres = (bin_edges[:-1] + bin_edges[1:])/2
+
+    # p0 is the initial guess for the fitting coefficients (A, mu and sigma)
+    p0 = [np.max(signal), np.mean(signal), 2*(np.std(signal))]
+
+    coeff, var_matrix = curve_fit(gauss, bin_centres, hist, p0=p0)
+
+    mean_gauss_fit = coeff[1]
+    std_gauss_fit = coeff[2]
+    # Get the fitted curve
+#    hist_fit = gauss(bin_centres, *coeff)
+
+#    plt.plot(bin_centres, hist, label='Test data')
+#    plt.plot(bin_centres, hist_fit, label='Fitted data')
+
+    # Finally, lets get the fitting parameters, i.e. the mean and std:
+#    print('Fitted mean = ', coeff[1])
+#    print('Fitted standard deviation = ', coeff[2])
+
+    # put the threshold on the energy signal or hilbert or whatelse
+#    plt.plot(signal)
+#    plt.plot(np.full(signal.shape[0], mean_gauss_fit+3*std_gauss_fit),'k-')
+#    plt.plot(np.full(signal.shape[0], mean_gauss_fit+2*std_gauss_fit),'g-')
+
+    return mean_gauss_fit, std_gauss_fit
 
 
 def figures_1():
