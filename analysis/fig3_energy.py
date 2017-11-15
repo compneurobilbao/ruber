@@ -155,6 +155,15 @@ norm_sig = energy - mean_gauss_fit
 
 calc_envelope_oscillations(norm_sig, window_size, times_cyc_window)
 
+# parameter number standard deviation above noise
+points = np.where(norm_sig > (2 * std_gauss_fit))
+# parameter refractory time between peaks
+refract_time = cycles * 2; 
+stPt = np.where(np.diff(points) > refract_time)[1:]
+stActPk = np.array((points[0][0], points[0][stPt[0][0]+1]))
+endActPk = np.array((points[0][stPt], points[0][-1]))
+
+
 
 
 
