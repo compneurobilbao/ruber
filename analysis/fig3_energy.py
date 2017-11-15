@@ -67,18 +67,42 @@ def gauss(x, *p):
     return A*np.exp(-(x-mu)**2/(2.*sigma**2))
 
 
-def calc_gaussian_fit(signal, apply_log=False):
+#def calc_gaussian_fit(signal):
+#    # do gaussian fit; decide in next line if in log10 space or not
+#    # Paolo and stackoverflow.com/questions/11507028/fit-a-gaussian-function
+#
+#
+#    hist, bin_edges = np.histogram(signal, density=True)
+#    bin_centres = (bin_edges[:-1] + bin_edges[1:])/2
+#
+#    # p0 is the initial guess for the fitting coefficients (A, mu and sigma)
+#    p0 = [np.max(signal), np.mean(signal), 2*(np.std(signal))]
+#
+#    coeff, var_matrix = curve_fit(gauss, bin_centres, hist, p0=p0)
+#
+#    mean_gauss_fit = coeff[1]
+#    std_gauss_fit = coeff[2]
+#
+#    return mean_gauss_fit, std_gauss_fit
+
+
+def calc_gaussian_fit(signal):
     # do gaussian fit; decide in next line if in log10 space or not
     # Paolo and stackoverflow.com/questions/11507028/fit-a-gaussian-function
 
+    y, X = np.histogram(signal, density=True)
+    
+    s=max(signal)-min(signal);
+    bins = np.arange(np.min(signal), np.max(signal), s/500)
+    y, X = np.histogram(energy, bins)
 
-    hist, bin_edges = np.histogram(signal, density=True)
-    bin_centres = (bin_edges[:-1] + bin_edges[1:])/2
+    X_ = X[np.where((y > max(y) * 0.005))]
+    y_ = y[np.where((y > max(y) * 0.005))]
 
     # p0 is the initial guess for the fitting coefficients (A, mu and sigma)
-    p0 = [np.max(signal), np.mean(signal), 2*(np.std(signal))]
+    p0 = [np.max(y_), np.mean(signal), 2*(np.std(signal))]
 
-    coeff, var_matrix = curve_fit(gauss, bin_centres, hist, p0=p0)
+    coeff, var_matrix = curve_fit(gauss, X_, y_, p0=p0)
 
     mean_gauss_fit = coeff[1]
     std_gauss_fit = coeff[2]
@@ -91,6 +115,7 @@ file = '/home/asier/git/ruber/data/raw/elec_record/sub-002/interictal/interictal
 sampling_freq = 500
 lower_band = 30
 cycles = 2  # convolution window as number of cycles of lower freq
+apply_log = True
 
 data = np.load(file)[:,9]
 
@@ -98,10 +123,16 @@ window_size = np.int(np.ceil(cycles * sampling_freq / lower_band))
 energy = calculate_energy(data, window_size)
 
 if apply_log is True:
-    signal = np.log10(signal)
+    energy = np.log10(energy)
 
+s = np.max(energy) - np.min(energy)
+bins = np.arange(np.min(energy), np.max(energy), s/500)
+y,X = np.histogram(energy, bins)
 
+X_ = X[np.where((y>max(y)*0.005))]
+y_ = y[np.where((y>max(y)*0.005))]
 
+mean_gauss_fit, std_gauss_fit = calc_gaussian_fit(signal)
 
 
 
