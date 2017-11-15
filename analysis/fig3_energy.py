@@ -141,6 +141,7 @@ lower_band = 30
 cycles = 2  # convolution window as number of cycles of lower freq
 times_cyc_window = 4
 apply_log = True
+std_parameter = 2
 
 data = np.load(file)[:,9]
 
@@ -156,12 +157,12 @@ norm_sig = energy - mean_gauss_fit
 calc_envelope_oscillations(norm_sig, window_size, times_cyc_window)
 
 # parameter number standard deviation above noise
-points = np.where(norm_sig > (2 * std_gauss_fit))
+points = np.where(norm_sig > (std_parameter * std_gauss_fit))
 # parameter refractory time between peaks
-refract_time = cycles * 2; 
-stPt = np.where(np.diff(points) > refract_time)[1:]
-stActPk = np.array((points[0][0], points[0][stPt[0][0]+1]))
-endActPk = np.array((points[0][stPt], points[0][-1]))
+refract_time = cycles * 2
+refract_points = np.where(np.diff(points) > refract_time)[1:]
+start_peaks = np.array((points[0][0], points[0][refract_points[0][0]+1]))
+end_peaks = np.array((points[0][refract_points], points[0][-1]))
 
 
 
