@@ -110,11 +110,36 @@ def calc_gaussian_fit(signal):
     return mean_gauss_fit, std_gauss_fit
 
 
+def calc_envelope_oscillations(signal, window_size=500, times_cyc_window=4):
+
+    positive_part = signal
+    positive_part[np.where(positive_part < 0)] = 0
+
+    window = np.ones((window_size*times_cyc_window,))
+
+    if data.ndim == 1:
+        envelope_oscillations = np.convolve(positive_part, window, 'valid')
+    else:
+        points, channels = power_data.shape
+
+        envelope_oscillations = np.empty(((max(points, window_size) -
+                                           min(points, window_size) + 1),
+                                         channels))
+
+        for i in range(channels):
+            envelope_oscillations[:, i] = np.convolve(positive_part[:, i],
+                                                      window,
+                                                      'valid')
+
+    return envelope_oscillations/(window_size*times_cyc_window)
+
+
 
 file = '/home/asier/git/ruber/data/raw/elec_record/sub-002/interictal/interictal_1.npy'
 sampling_freq = 500
 lower_band = 30
 cycles = 2  # convolution window as number of cycles of lower freq
+times_cyc_window = 4
 apply_log = True
 
 data = np.load(file)[:,9]
@@ -125,15 +150,10 @@ energy = calculate_energy(data, window_size)
 if apply_log is True:
     energy = np.log10(energy)
 
-s = np.max(energy) - np.min(energy)
-bins = np.arange(np.min(energy), np.max(energy), s/500)
-y,X = np.histogram(energy, bins)
+mean_gauss_fit, std_gauss_fit = calc_gaussian_fit(energy)
+norm_sig = energy - mean_gauss_fit
 
-X_ = X[np.where((y>max(y)*0.005))]
-y_ = y[np.where((y>max(y)*0.005))]
-
-mean_gauss_fit, std_gauss_fit = calc_gaussian_fit(signal)
-
+calc_envelope_oscillations(norm_sig, window_size, times_cyc_window)
 
 
 
