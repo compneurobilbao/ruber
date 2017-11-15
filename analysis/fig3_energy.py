@@ -13,20 +13,24 @@ from itertools import product
 CWD = os.getcwd()
 
 
-def calculate_energy(elec_data, window_size=500):
+def calculate_energy(data, window_size=500):
     '''
     Calculates energy of a signal based on a sliding window
     '''
-    power_data = elec_data * elec_data
+    power_data = data * data
     window = np.ones((window_size,))
-    points, channels = power_data.shape
 
-    energy = np.empty(((max(points, window_size) -
-                        min(points, window_size) + 1),
-                       channels))
+    if data.ndim == 1:
+        energy = np.convolve(power_data, window, 'valid')
+    else:
+        points, channels = power_data.shape
 
-    for i in range(channels):
-        energy[:, i] = np.convolve(power_data[:, i], window, 'valid')
+        energy = np.empty(((max(points, window_size) -
+                            min(points, window_size) + 1),
+                           channels))
+
+        for i in range(channels):
+            energy[:, i] = np.convolve(power_data[:, i], window, 'valid')
 
     return energy
 
@@ -67,8 +71,6 @@ def calc_gaussian_fit(signal, apply_log=False):
     # do gaussian fit; decide in next line if in log10 space or not
     # Paolo and stackoverflow.com/questions/11507028/fit-a-gaussian-function
 
-    if apply_log is True:
-        signal = np.log10(signal)
 
     hist, bin_edges = np.histogram(signal, density=True)
     bin_centres = (bin_edges[:-1] + bin_edges[1:])/2
@@ -80,22 +82,39 @@ def calc_gaussian_fit(signal, apply_log=False):
 
     mean_gauss_fit = coeff[1]
     std_gauss_fit = coeff[2]
-    # Get the fitted curve
-#    hist_fit = gauss(bin_centres, *coeff)
-
-#    plt.plot(bin_centres, hist, label='Test data')
-#    plt.plot(bin_centres, hist_fit, label='Fitted data')
-
-    # Finally, lets get the fitting parameters, i.e. the mean and std:
-#    print('Fitted mean = ', coeff[1])
-#    print('Fitted standard deviation = ', coeff[2])
-
-    # put the threshold on the energy signal or hilbert or whatelse
-#    plt.plot(signal)
-#    plt.plot(np.full(signal.shape[0], mean_gauss_fit+3*std_gauss_fit),'k-')
-#    plt.plot(np.full(signal.shape[0], mean_gauss_fit+2*std_gauss_fit),'g-')
 
     return mean_gauss_fit, std_gauss_fit
+
+
+
+file = '/home/asier/git/ruber/data/raw/elec_record/sub-002/interictal/interictal_1.npy'
+sampling_freq = 500
+lower_band = 30
+cycles = 2  # convolution window as number of cycles of lower freq
+
+data = np.load(file)[:,9]
+
+window_size = np.int(np.ceil(cycles * sampling_freq / lower_band))
+energy = calculate_energy(data, window_size)
+
+if apply_log is True:
+    signal = np.log10(signal)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def figures_1():
