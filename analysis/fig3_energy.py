@@ -154,20 +154,35 @@ if apply_log is True:
 mean_gauss_fit, std_gauss_fit = calc_gaussian_fit(energy)
 norm_sig = energy - mean_gauss_fit
 
-calc_envelope_oscillations(norm_sig, window_size, times_cyc_window)
+envelope_oscillations = calc_envelope_oscillations(norm_sig,
+                                                   window_size,
+                                                   times_cyc_window)
 
-# parameter number standard deviation above noise
-points = np.where(norm_sig > (std_parameter * std_gauss_fit))
+# Find start-end peaks
 # parameter refractory time between peaks
 refract_time = cycles * 2
-refract_points = np.where(np.diff(points) > refract_time)[1:]
-start_peaks = np.array((points[0][0], points[0][refract_points[0][0]+1]))
-end_peaks = np.array((points[0][refract_points], points[0][-1]))
+# parameter number standard deviation above noise
+points = np.where(norm_sig > (std_parameter * std_gauss_fit))[0]
+refract_points = np.where(np.diff(points) > refract_time)[0]
+start_peaks = np.array((points[0], points[refract_points + 1]))
+end_peaks = np.array((points[refract_points], points[-1]))
 
 
+# Find start end of envelope oscillation
+# parameter refractory time between env.oscs.
+refract_time = cycles
+points = np.where(envelope_oscillations > 0)[0]
+refract_points = np.where(np.diff(points) > refract_time)[0]
+start_env = np.concatenate(([points[0]], points[refract_points+1]))
+end_env = np.concatenate((points[refract_points], [points[-1]]))
 
-
-
+start_osc = []
+end_osc = []
+for i, peak in enumerate(start_peaks):
+    for j, env in enumerate(start_env):
+        if peak in np.arange(env, end_env[j]):
+            start_osc.append(start_env[i])
+            end_osc.append(end_env[j])
 
 
 
