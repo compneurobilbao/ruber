@@ -197,6 +197,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.collections as collections
 from matplotlib.collections import LineCollection
+from pylab import figure, show, setp
 
 
 
@@ -217,19 +218,20 @@ ax.add_collection(collection)
 
 
 
-ax2 = plt.plot()
-segs = []
-segs.append(ax)
-segs.append(ax)
 
 
 
-from pylab import figure, show, setp
-from numpy import sin, cos, exp, pi, arange
 
 
+
+if data.ndim == 1:
+    height = 1
+else:
+    points, channels = signal.shape
+    height = 1/channels
+
+fig = figure()
 t = range(len(signal))
-fig = figure()
 
 yprops = dict(rotation=0,
               horizontalalignment='right',
@@ -237,67 +239,37 @@ yprops = dict(rotation=0,
               x=-0.01)
 
 axprops = dict(yticks=[])
-
-ax.set_ylabel('S1', **yprops)
-
-axprops['sharex'] = ax
-axprops['sharey'] = ax
-# force x axes to remain in register, even with toolbar navigation
-
-# turn off x ticklabels for all but the lower axes
-setp(ax.get_xticklabels(), visible=False)
-
-show()
-
-
-
-
-
-
-
-t = arange(0.0, 2.0, 0.01)
-s1 = sin(2*pi*t)
-s2 = exp(-t)
-s3 = sin(2*pi*t)*exp(-t)
-s4 = sin(2*pi*t)*cos(4*pi*t)
-
-fig = figure()
-t = arange(0.0, 2.0, 0.01)
-
-yprops = dict(rotation=0,
-              horizontalalignment='right',
-              verticalalignment='center',
-              x=-0.01)
-
-axprops = dict(yticks=[])
-
 
 # [left, bottom, width, height] bottom and height are parameters!!
-ax1 =fig.add_axes([0.1, 0.7, 0.8, 0.1], **axprops)
-ax1.plot(t, s1)
-ax1.set_ylabel('S1', **yprops)
+ax = fig.add_axes([0.1, height * i, 0.8, height], **axprops)
+ax.plot(signal)
 
-axprops['sharex'] = ax1
-axprops['sharey'] = ax1
-# force x axes to remain in register, even with toolbar navigation
-ax2 = fig.add_axes([0.1, 0.5, 0.8, 0.2], **axprops)
+collection = collections.BrokenBarHCollection.span_where(x = range(len(signal)),
+                                                         ymin=min(signal),
+                                                         ymax=max(signal),
+                                                         where=signal_response > 0,
+                                                         facecolor='green')
 
-ax2.plot(t, s2)
-ax2.set_ylabel('S2', **yprops)
+ax.add_collection(collection)
+ax.set_ylabel('S1', **yprops)
 
-ax3 = fig.add_axes([0.1, 0.3, 0.8, 0.2], **axprops)
-ax3.plot(t, s4)
-ax3.set_ylabel('S3', **yprops)
+if i == 1:
+    axprops['sharex'] = ax
+    axprops['sharey'] = ax
 
-ax4 = fig.add_axes([0.1, 0.1, 0.8, 0.2], **axprops)
-ax4.plot(t, s4)
-ax4.set_ylabel('S4', **yprops)
+setp(ax.get_xticklabels(), visible=False)
 
-# turn off x ticklabels for all but the lower axes
-for ax in ax1, ax2, ax3:
-    setp(ax.get_xticklabels(), visible=False)
 
-show()
+
+
+
+
+
+
+
+
+
+
 
 
 
