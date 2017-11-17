@@ -104,11 +104,11 @@ def calc_envelope_oscillations(signal, window_size=50, times_cyc_window=4):
     return envelope_oscillations/(window_size*times_cyc_window)
 
 
-def calculate_signal_response(signal, lower_band, sampling_freq=500,
-                              cycles=2, times_cyc_window=4, apply_log=True,
-                              std_parameter=3):
+def calculate_active_state(signal, lower_band, sampling_freq=500,
+                           cycles=2, times_cyc_window=4, apply_log=True,
+                           std_parameter=3):
     """
-    Calculates signal response of activation cycles.
+    Calculates active state of a signal taking cycles into account.
     Input: 1D dimensional signal
     Output: Signal_response
     """
@@ -153,14 +153,14 @@ def calculate_signal_response(signal, lower_band, sampling_freq=500,
                 start_osc.append(start_env[i])
                 end_osc.append(end_env[j])
 
-    signal_response = np.zeros(envelope_oscillations.shape)
+    active_state = np.zeros(envelope_oscillations.shape)
     for i, osc in enumerate(start_osc):
-        signal_response[osc:end_osc[i]] = 1
+        active_state[osc:end_osc[i]] = 1
 
-    return energy, signal_response
+    return energy, active_state
 
 
-def plot_signal_response(signal, signal_response, labels=[]):
+def plot_active_state(signal, active_state, labels=[]):
     """
     Function to plot signals and their response in time.
     The aim is to see propagation of activations between electrodes.
@@ -187,7 +187,7 @@ def plot_signal_response(signal, signal_response, labels=[]):
     for i in range(channels):
 
         sig = signal[:, i]
-        sig_response = signal_response[:, i]
+        act_state = active_state[:, i]
         # [left, bottom, width, height] bottom and height are parameters!!
         ax = fig.add_axes([0.1, height * i+0.05, 0.8, height], **axprops)
         ax.plot(sig)
@@ -195,7 +195,7 @@ def plot_signal_response(signal, signal_response, labels=[]):
         collection = col.BrokenBarHCollection.span_where(x=range(len(sig)),
                                                          ymin=min(sig),
                                                          ymax=max(sig),
-                                                         where=sig_response>0,
+                                                         where=act_state>0,
                                                          facecolor='green')
 
         ax.add_collection(collection)
@@ -206,21 +206,6 @@ def plot_signal_response(signal, signal_response, labels=[]):
             axprops['sharey'] = ax
         else:
             plt.setp(ax.get_xticklabels(), visible=False)
-
-
-
-
-plot_signal_response(a,b)
-
-
-
-
-
-
-
-
-
-
 
 
 
