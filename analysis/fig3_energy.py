@@ -134,136 +134,105 @@ def calc_envelope_oscillations(signal, window_size=500, times_cyc_window=4):
     return envelope_oscillations/(window_size*times_cyc_window)
 
 
+def calculate_signal_response(signal, lower_band, sampling_freq=500,
+                              cycles=2, times_cyc_window=4, apply_log=True,
+                              std_parameter=2):
+    """
+    Calculates signal response of activation cycles.
+    Input: 1D dimensional signal
+    Output: Signal_response
+    """
 
-file = '/home/asier/git/ruber/data/raw/elec_record/sub-002/interictal/interictal_1.npy'
-sampling_freq = 500
-lower_band = 30
-cycles = 2  # convolution window as number of cycles of lower freq
-times_cyc_window = 4
-apply_log = True
-std_parameter = 2
+    window_size = np.int(np.ceil(cycles * sampling_freq / lower_band))
+    energy = calculate_energy(signal, window_size)
 
-data = np.load(file)[:,9]
+    if apply_log is True:
+        energy = np.log10(energy)
 
-window_size = np.int(np.ceil(cycles * sampling_freq / lower_band))
-energy = calculate_energy(data, window_size)
+    mean_gauss_fit, std_gauss_fit = calc_gaussian_fit(energy)
+    norm_sig = energy - mean_gauss_fit
 
-if apply_log is True:
-    energy = np.log10(energy)
+    envelope_oscillations = calc_envelope_oscillations(norm_sig,
+                                                       window_size,
+                                                       times_cyc_window)
 
-mean_gauss_fit, std_gauss_fit = calc_gaussian_fit(energy)
-norm_sig = energy - mean_gauss_fit
+    # Find start-end peaks
+    # parameter refractory time between peaks
+    refract_time = cycles * 2
+    # parameter number standard deviation above noise
+    points = np.where(norm_sig > (std_parameter * std_gauss_fit))[0]
+    refract_points = np.where(np.diff(points) > refract_time)[0]
+    start_peaks = np.array((points[0], points[refract_points + 1]))
+    # end_peaks = np.array((points[refract_points], points[-1]))
 
-envelope_oscillations = calc_envelope_oscillations(norm_sig,
-                                                   window_size,
-                                                   times_cyc_window)
+    # Find start end of envelope oscillation
+    # parameter refractory time between env.oscs.
+    refract_time = cycles
+    points = np.where(envelope_oscillations > 0)[0]
+    refract_points = np.where(np.diff(points) > refract_time)[0]
+    start_env = np.concatenate(([points[0]], points[refract_points+1]))
+    end_env = np.concatenate((points[refract_points], [points[-1]]))
 
-# Find start-end peaks
-# parameter refractory time between peaks
-refract_time = cycles * 2
-# parameter number standard deviation above noise
-points = np.where(norm_sig > (std_parameter * std_gauss_fit))[0]
-refract_points = np.where(np.diff(points) > refract_time)[0]
-start_peaks = np.array((points[0], points[refract_points + 1]))
-end_peaks = np.array((points[refract_points], points[-1]))
+    start_osc = []
+    end_osc = []
+    for i, peak in enumerate(start_peaks):
+        for j, env in enumerate(start_env):
+            if peak in np.arange(env, end_env[j]):
+                start_osc.append(start_env[i])
+                end_osc.append(end_env[j])
 
+    signal_response = np.zeros(envelope_oscillations.shape)
+    for i, osc in enumerate(start_osc):
+        signal_response[osc:end_osc[i]] = 1
 
-# Find start end of envelope oscillation
-# parameter refractory time between env.oscs.
-refract_time = cycles
-points = np.where(envelope_oscillations > 0)[0]
-refract_points = np.where(np.diff(points) > refract_time)[0]
-start_env = np.concatenate(([points[0]], points[refract_points+1]))
-end_env = np.concatenate((points[refract_points], [points[-1]]))
-
-start_osc = []
-end_osc = []
-for i, peak in enumerate(start_peaks):
-    for j, env in enumerate(start_env):
-        if peak in np.arange(env, end_env[j]):
-            start_osc.append(start_env[i])
-            end_osc.append(end_env[j])
-
-signal_response = np.zeros(envelope_oscillations.shape)
-for i, osc in enumerate(start_osc):
-    signal_response[osc:end_osc[i]] = 1
-
-plt.plot(signal_response)
+    return signal_response
 
 
+def plot_signal_response(signal, signal_response, labels=[]):
+    """
+    Function to plot signals and their response in time.
+    The aim is to see propagation of activations between electrodes.
+    """
+    import matplotlib.collections as col
 
+    if signal.ndim == 1:
+        height = 0.9
+    else:
+        points, channels = signal.shape
+        height = 0.9/channels
 
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.collections as collections
-from matplotlib.collections import LineCollection
-from pylab import figure, show, setp
+    fig = plt.figure()
 
+    yprops = dict(rotation=0,
+                  horizontalalignment='right',
+                  verticalalignment='center',
+                  x=-0.01)
 
+    axprops = dict(yticks=[])
 
-signal = energy
-signal_response = signal_response
+    for i in range(channels):
 
-fig, ax = plt.subplots()
-ax.set_title('using span_where')
-ax.plot(signal)
+        sig = signal[:, i]
+        sig_response = signal_response[:, i]
+        # [left, bottom, width, height] bottom and height are parameters!!
+        ax = fig.add_axes([0.1, height * i+0.05, 0.8, height], **axprops)
+        ax.plot(sig)
 
-collection = collections.BrokenBarHCollection.span_where(x = range(len(signal)),
-                                                         ymin=min(signal),
-                                                         ymax=max(signal),
-                                                         where=signal_response > 0,
+        collection = col.BrokenBarHCollection.span_where(x=range(len(sig)),
+                                                         ymin=min(sig),
+                                                         ymax=max(sig),
+                                                         where=sig_response>0,
                                                          facecolor='green')
 
-ax.add_collection(collection)
+        ax.add_collection(collection)
+        if labels:
+            ax.set_ylabel(labels[i], **yprops)
+        if i == 0:
+            axprops['sharex'] = ax
+            axprops['sharey'] = ax
+        else:
+            plt.setp(ax.get_xticklabels(), visible=False)
 
-
-
-
-
-
-
-signal = a
-signal_response = b
-    
-if signal.ndim == 1:
-    height = 1
-else:
-    points, channels = signal.shape
-    height = 1/channels
-
-fig = figure()
-t = range(len(signal))
-    
-yprops = dict(rotation=0,
-              horizontalalignment='right',
-              verticalalignment='center',
-              x=-0.01)
-
-axprops = dict(yticks=[])
-    
-for i in range(channels):
-    
-    sig = signal[:,i]
-    sig_response = signal_response[:,i]
-    # [left, bottom, width, height] bottom and height are parameters!!
-    ax = fig.add_axes([0.1, height * i, 0.8, height], **axprops)
-    ax.plot(sig)
-    
-    collection = collections.BrokenBarHCollection.span_where(x = range(len(sig)),
-                                                             ymin=min(sig),
-                                                             ymax=max(sig),
-                                                             where=sig_response > 0,
-                                                             facecolor='green')
-    
-    ax.add_collection(collection)
-    ax.set_ylabel('S1', **yprops)
-    
-    if i == 1:
-        axprops['sharex'] = ax
-        axprops['sharey'] = ax
-    else:
-        setp(ax.get_xticklabels(), visible=False)
-    
 
 
 
