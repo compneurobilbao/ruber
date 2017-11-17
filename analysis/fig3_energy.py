@@ -222,9 +222,10 @@ ax.add_collection(collection)
 
 
 
-
-
-if data.ndim == 1:
+signal = a
+signal_response = b
+    
+if signal.ndim == 1:
     height = 1
 else:
     points, channels = signal.shape
@@ -232,32 +233,39 @@ else:
 
 fig = figure()
 t = range(len(signal))
-
+    
 yprops = dict(rotation=0,
               horizontalalignment='right',
               verticalalignment='center',
               x=-0.01)
 
 axprops = dict(yticks=[])
+    
+for i in range(channels):
+    
+    sig = signal[:,i]
+    sig_response = signal_response[:,i]
+    # [left, bottom, width, height] bottom and height are parameters!!
+    ax = fig.add_axes([0.1, height * i, 0.8, height], **axprops)
+    ax.plot(sig)
+    
+    collection = collections.BrokenBarHCollection.span_where(x = range(len(sig)),
+                                                             ymin=min(sig),
+                                                             ymax=max(sig),
+                                                             where=sig_response > 0,
+                                                             facecolor='green')
+    
+    ax.add_collection(collection)
+    ax.set_ylabel('S1', **yprops)
+    
+    if i == 1:
+        axprops['sharex'] = ax
+        axprops['sharey'] = ax
+    else:
+        setp(ax.get_xticklabels(), visible=False)
+    
 
-# [left, bottom, width, height] bottom and height are parameters!!
-ax = fig.add_axes([0.1, height * i, 0.8, height], **axprops)
-ax.plot(signal)
 
-collection = collections.BrokenBarHCollection.span_where(x = range(len(signal)),
-                                                         ymin=min(signal),
-                                                         ymax=max(signal),
-                                                         where=signal_response > 0,
-                                                         facecolor='green')
-
-ax.add_collection(collection)
-ax.set_ylabel('S1', **yprops)
-
-if i == 1:
-    axprops['sharex'] = ax
-    axprops['sharey'] = ax
-
-setp(ax.get_xticklabels(), visible=False)
 
 
 
