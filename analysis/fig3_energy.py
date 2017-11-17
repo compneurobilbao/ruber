@@ -80,7 +80,7 @@ def calc_gaussian_fit(signal):
     return mean_gauss_fit, std_gauss_fit
 
 
-def calc_envelope_oscillations(signal, window_size=500, times_cyc_window=4):
+def calc_envelope_oscillations(signal, window_size=50, times_cyc_window=4):
 
     positive_part = signal
     positive_part[np.where(positive_part < 0)] = 0
@@ -106,7 +106,7 @@ def calc_envelope_oscillations(signal, window_size=500, times_cyc_window=4):
 
 def calculate_signal_response(signal, lower_band, sampling_freq=500,
                               cycles=2, times_cyc_window=4, apply_log=True,
-                              std_parameter=2):
+                              std_parameter=3):
     """
     Calculates signal response of activation cycles.
     Input: 1D dimensional signal
@@ -114,6 +114,8 @@ def calculate_signal_response(signal, lower_band, sampling_freq=500,
     """
 
     window_size = np.int(np.ceil(cycles * sampling_freq / lower_band))
+    if window_size > 50:
+        window_size = 50
     energy = calculate_energy(signal, window_size)
 
     if apply_log is True:
