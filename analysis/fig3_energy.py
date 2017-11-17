@@ -51,39 +51,9 @@ def count_energy_over_percentile(energy, perc=95):
     return counter
 
 
-#matplotlib.pyplot.hist(energy[:,i], bins=100)
-#
-#a = sc.signal.hilbert(elec_data[:, i])
-#matplotlib.pyplot.plot(np.abs(a))
-#matplotlib.pyplot.hist(np.log(np.abs(a)), bins=100)
-#matplotlib.pyplot.hist(np.abs(a), bins=100)
-#
-#
-#matplotlib.pyplot.plot(elec_data[:, i])
-
-# Define model function to be used to fit to the data above:
 def gauss(x, *p):
     A, mu, sigma = p
     return A*np.exp(-(x-mu)**2/(2.*sigma**2))
-
-
-#def calc_gaussian_fit(signal):
-#    # do gaussian fit; decide in next line if in log10 space or not
-#    # Paolo and stackoverflow.com/questions/11507028/fit-a-gaussian-function
-#
-#
-#    hist, bin_edges = np.histogram(signal, density=True)
-#    bin_centres = (bin_edges[:-1] + bin_edges[1:])/2
-#
-#    # p0 is the initial guess for the fitting coefficients (A, mu and sigma)
-#    p0 = [np.max(signal), np.mean(signal), 2*(np.std(signal))]
-#
-#    coeff, var_matrix = curve_fit(gauss, bin_centres, hist, p0=p0)
-#
-#    mean_gauss_fit = coeff[1]
-#    std_gauss_fit = coeff[2]
-#
-#    return mean_gauss_fit, std_gauss_fit
 
 
 def calc_gaussian_fit(signal):
@@ -91,10 +61,10 @@ def calc_gaussian_fit(signal):
     # Paolo and stackoverflow.com/questions/11507028/fit-a-gaussian-function
 
     y, X = np.histogram(signal, density=True)
-    
-    s=max(signal)-min(signal);
+
+    s = max(signal) - min(signal)
     bins = np.arange(np.min(signal), np.max(signal), s/500)
-    y, X = np.histogram(energy, bins)
+    y, X = np.histogram(signal, bins)
 
     X_ = X[np.where((y > max(y) * 0.005))]
     y_ = y[np.where((y > max(y) * 0.005))]
@@ -117,10 +87,10 @@ def calc_envelope_oscillations(signal, window_size=500, times_cyc_window=4):
 
     window = np.ones((window_size*times_cyc_window,))
 
-    if data.ndim == 1:
+    if signal.ndim == 1:
         envelope_oscillations = np.convolve(positive_part, window, 'valid')
     else:
-        points, channels = power_data.shape
+        points, channels = signal.shape
 
         envelope_oscillations = np.empty(((max(points, window_size) -
                                            min(points, window_size) + 1),
@@ -185,17 +155,19 @@ def calculate_signal_response(signal, lower_band, sampling_freq=500,
     for i, osc in enumerate(start_osc):
         signal_response[osc:end_osc[i]] = 1
 
-    return signal_response
+    return energy, signal_response
 
 
 def plot_signal_response(signal, signal_response, labels=[]):
     """
     Function to plot signals and their response in time.
     The aim is to see propagation of activations between electrodes.
+    Does not work(yet) for 1D arrays
     """
     import matplotlib.collections as col
 
     if signal.ndim == 1:
+        channels = 1
         height = 0.9
     else:
         points, channels = signal.shape
@@ -236,7 +208,7 @@ def plot_signal_response(signal, signal_response, labels=[]):
 
 
 
-
+plot_signal_response(a,b)
 
 
 
