@@ -18,17 +18,17 @@ from src.elecphys.utils import (clean_file,
 Code for extracting electrophysiological timeseries
 """
 
-sub = 'sub-004'
-INTERICTAL_DATA = opj(DATA, 'raw', 'elec_record', sub, 'chuncks')
+sub = 'sub-001'
+INTERICTAL_DATA = opj(DATA, 'raw', 'elec_record', sub, 'chunks')
 clean_all_files_and_convert_to_npy(INTERICTAL_DATA)
 
-chunck = str(2)
-file = opj(INTERICTAL_DATA, 'chunck_' + chunck + '.npy')
+chunck = str(3)
+file = opj(INTERICTAL_DATA, 'chunk_' + chunck + '.npy')
 contact_num = np.load(file)
 plt.plot(contact_num)
 
-interictal = str(5)
-interictal_1 = contact_num[30000:60000, :]
+interictal = str(12)
+interictal_1 = contact_num[1120000:1240000, :]
 np.save('/home/asier/git/ruber/data/raw/elec_record/'+sub+'/interictal/interictal_'+interictal+'.npy',interictal_1)
 
 """
@@ -40,7 +40,7 @@ fs = 500
 lowcut = 0.05
 highcut = 70
 
-file = '/home/asier/git/ruber/data/raw/elec_record/sub-001/interictal/chunck_1.npy'
+file = '/home/asier/git/ruber/data/raw/elec_record/sub-001/interictal/chunk_1.npy'
 contact_num = np.load(file)
 
 
