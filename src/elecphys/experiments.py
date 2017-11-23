@@ -23,12 +23,12 @@ INTERICTAL_DATA = opj(DATA, 'raw', 'elec_record', sub, 'chunks')
 clean_all_files_and_convert_to_npy(INTERICTAL_DATA)
 
 chunck = str(3)
-file = opj(INTERICTAL_DATA, 'chunk_' + chunck + '.npy')
+file = opj(INTERICTAL_DATA, 'chunk' + chunck + '.npy')
 contact_num = np.load(file)
 plt.plot(contact_num)
 
 interictal = str(12)
-interictal_1 = contact_num[1120000:1240000, :]
+interictal_1 = contact_num[600000:630000, :]
 np.save('/home/asier/git/ruber/data/raw/elec_record/'+sub+'/interictal/interictal_'+interictal+'.npy',interictal_1)
 
 """

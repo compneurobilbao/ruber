@@ -29,7 +29,10 @@ def clean_all_files_and_convert_to_npy(data_path):
     for filename in os.listdir(data_path):
         file = opj(data_path, filename)
         if filename.endswith(".txt"):
-            clean_file(file)
+            try:
+                clean_file(file)
+            except:
+                pass
             with open(file, 'r') as f:
                 ncols = len(f.readline().split('\t'))
 
