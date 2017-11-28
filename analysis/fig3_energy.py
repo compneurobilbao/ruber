@@ -160,6 +160,19 @@ def calculate_active_state(signal, lower_band, sampling_freq=500,
     return energy, active_state
 
 
+def calc_active_state_elec(signals, lower_band):
+
+    active_state = np.zeros((signals.shape))
+    energy = np.zeros((signals.shape))
+
+    for i in range(signals.shape[0]):
+        signal = signals[i, :]
+        energy[i, :], active_state[i, :] = calculate_active_state(signal,
+                                                                  lower_band)
+
+    return energy. active_state
+
+
 def plot_active_state(signal, active_state, labels=[]):
     """
     Function to plot signals and their response in time.
@@ -195,7 +208,7 @@ def plot_active_state(signal, active_state, labels=[]):
         collection = col.BrokenBarHCollection.span_where(x=range(len(sig)),
                                                          ymin=min(sig),
                                                          ymax=max(sig),
-                                                         where=act_state>0,
+                                                         where=act_state > 0,
                                                          facecolor='green')
 
         ax.add_collection(collection)
@@ -211,6 +224,11 @@ def plot_active_state(signal, active_state, labels=[]):
 
 
 
+# Calc active state for each electrode
+# plot and save
+# compare with MD outcomes
+            
+# do the same for fMRI
 def figures_1():
 
     rithms = ['filtered', 'delta', 'theta', 'alpha', 'beta', 'gamma', 'gamma_high']
