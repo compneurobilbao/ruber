@@ -221,7 +221,20 @@ def plot_active_state(signal, active_state, labels=[]):
             plt.setp(ax.get_xticklabels(), visible=False)
 
 
+def calc_active_state_fmri(signal,
+                           std_parameter=2):
+    """
+    Calculates active state of a signal taking positive values over a th
+    into account.
+    Input: Multidimensional signal
+    Output: Signal_response
+    """
+    active_state_fmri = np.zeros((signal.shape()))
 
+    std = np.std(signal[:])
+    active_state_fmri[np.where(signal > 2*std)] = 1
+
+    return active_state_fmri
 
 
 # Calc active state for each electrode
