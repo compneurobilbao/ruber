@@ -327,7 +327,7 @@ def figure_3():
         dictionary = OrderedDict(zip(elec_tags,
                                      np.sum(result, axis=0, dtype='int32')))
 
-        output_file_fmri = opj(CWD, 'reports', 'stats', 'active_state'
+        output_file_fmri = opj(CWD, 'reports', 'stats', 'active_state',
                                'fmri',
                                'stats_fmri_active_state_' + sub)
         writeDict(dictionary, output_file_fmri)
@@ -368,4 +368,58 @@ def figure_3():
               figures_fmri,
               dpi=250)
     plt.close("all")
-              
+
+
+
+
+def get_max_active_state_elecs(active_state_dict):
+    
+    
+    return 
+
+
+def analyze_results_active_state():
+
+    rithms = ['filtered', 'delta', 'theta', 'alpha', 'beta', 'gamma', 'gamma_high']
+    SUBJECT_LIST = ['sub-001', 'sub-002', 'sub-003', 'sub-004']
+    SESSION_LIST = ['ses-presurg']
+
+    sub_ses_comb = [[subject, session] for subject in SUBJECT_LIST
+                    for session in SESSION_LIST]
+
+    sphere = 3
+    denoise_type = 'gsr'
+    elec_reg_type = 'not_regressed'
+
+    for i, sub_ses in enumerate(sub_ses_comb):
+        sub, ses = sub_ses
+        output_dir_path = opj(CWD, 'reports', 'figures', sub)
+        if not os.path.exists(output_dir_path):
+            os.makedirs(output_dir_path)
+        # FUNCTION MATRIX
+        # load function (conn matrix?)
+        
+        
+        input_file_fmri = opj(CWD, 'reports', 'stats', 'active_state',
+                               'fmri',
+                               'stats_fmri_active_state_' + sub)
+        
+        fmri_active_state = load_elec_file(input_file_fmri)
+        
+        get_max_active_state_elecs(fmri_active_state)
+        sorted(fmri_active_state, key=fmri_active_state.get)[::-1][:10]
+                
+        
+
+        for rithm in rithms:
+            
+            input_file_elec = opj(CWD, 'reports', 'stats', 'active_state',
+                                   'elec',
+                                   'stats_elec_active_state_' + sub +
+                                   '_' + rithm)
+            elec_active_state = load_elec_file(input_file_elec)
+            get_max_active_state_elecs(elec_active_state)
+            sorted(elec_active_state, key=elec_active_state.get)[::-1][:10]
+
+
+    
