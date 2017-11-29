@@ -281,7 +281,7 @@ def get_lower_band(rithm):
 
 
 def figure_3():
-    
+
     rithms = ['filtered', 'delta', 'theta', 'alpha', 'beta', 'gamma', 'gamma_high']
     SUBJECT_LIST = ['sub-001', 'sub-002', 'sub-003', 'sub-004']
     SESSION_LIST = ['ses-presurg']
@@ -327,7 +327,8 @@ def figure_3():
         dictionary = OrderedDict(zip(elec_tags,
                                      np.sum(result, axis=0, dtype='int32')))
 
-        output_file_fmri = opj(CWD, 'reports', 'stats', 'active_state',
+        output_file_fmri = opj(CWD, 'reports', 'stats', 'active_state'
+                               'fmri',
                                'stats_fmri_active_state_' + sub)
         writeDict(dictionary, output_file_fmri)
 
@@ -357,11 +358,12 @@ def figure_3():
                                                  axis=0,
                                                  dtype='int32')))
             output_file_elec = opj(CWD, 'reports', 'stats', 'active_state',
+                                   'elec',
                                    'stats_elec_active_state_' + sub +
                                    '_' + rithm)
             writeDict(dictionary, output_file_elec)
 
-    multipage(opj(output_dir_path,
+    multipage(opj('/home/asier/git/ruber/reports/figures/',
                   'fmri_active_state.pdf'),
               figures_fmri,
               dpi=250)
