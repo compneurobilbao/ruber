@@ -5,12 +5,30 @@ import os
 from os.path import join as opj
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 from scipy.optimize import curve_fit
+from collections import OrderedDict
 
 from nilearn.connectome import ConnectivityMeasure
 from itertools import product
 
+
 CWD = os.getcwd()
+
+
+def multipage(filename, figs=None, dpi=200):
+    pp = PdfPages(filename)
+    if figs is None:
+        figs = [plt.figure(n) for n in plt.get_fignums()]
+    for fig in figs:
+        fig.savefig(pp, format='pdf')
+    pp.close()
+
+
+def writeDict(dict, filename, sep=','):
+    with open(filename, "w") as f:
+        for i in dict.keys():
+            f.write('elec[\'' + i + '\'] = ' + str(dict[i]) + '\n')
 
 
 def calculate_energy(data, window_size=500):
@@ -229,7 +247,7 @@ def calc_active_state_fmri(signal,
     Input: Multidimensional signal
     Output: Signal_response
     """
-    active_state_fmri = np.zeros((signal.shape()))
+    active_state_fmri = np.zeros((signal.shape))
 
     std = np.std(signal[:])
     active_state_fmri[np.where(signal > 2*std)] = 1
@@ -237,118 +255,22 @@ def calc_active_state_fmri(signal,
     return active_state_fmri
 
 
+def get_lower_band(rithm):
+
+    rithms_dict = dict({'filtered': 0.05,
+                        'delta': 0.5,
+                        'theta': 3,
+                        'alpha': 7,
+                        'beta': 13,
+                        'gamma': 30,
+                        'gamma_high': 70})
+
+    return rithms_dict[rithm]
 # Calc active state for each electrode
 # plot and save
 # compare with MD outcomes
             
-# do the same for fMRI
-def figures_1():
-
-    rithms = ['filtered', 'delta', 'theta', 'alpha', 'beta', 'gamma', 'gamma_high']
-    SUBJECT_LIST = ['sub-001', 'sub-002', 'sub-003', 'sub-004']
-    SESSION_LIST = ['ses-presurg']
-
-    sub_ses_comb = [[subject, session] for subject in SUBJECT_LIST
-                    for session in SESSION_LIST]
-
-    SPHERE_SIZE = [3]
-    DENOISE_TYPE = ['gsr']
-
-    for sub, ses in sub_ses_comb:
-
-        # fMRI and DTI
-        for sphere, denoise_type in product(SPHERE_SIZE, DENOISE_TYPE):
-
-            output_dir_path = opj(CWD, 'reports', 'figures', sub)
-            if not os.path.exists(output_dir_path):
-                os.makedirs(output_dir_path)
-            # FUNCTION MATRIX
-            elec_file = opj(DATA, 'raw', 'bids', sub, 'electrodes',
-                            'elec.loc')
-            elec_location_mni09 = load_elec_file(elec_file)
-
-            ordered_elec = order_dict(elec_location_mni09)
-
-            elec_tags = list(ordered_elec.keys())
-
-            # load function (conn matrix?)
-            func_file = opj(DATA, 'processed', 'fmriprep', sub, ses, 'func',
-                            'time_series_noatlas_' + denoise_type + '_' +
-                            str(sphere) + '.txt')
-            func_mat = np.loadtxt(func_file)
-
-            correlation_measure = ConnectivityMeasure(kind='correlation')
-            corr_mat = correlation_measure.fit_transform([func_mat])[0]
-
-            # STRUCT MATRIX
-            struct_mat = np.load(opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
-                                     'con_mat_noatlas_' +
-                                     str(sphere) + '.npy'))
-
-            plot_matrix(corr_mat, elec_tags)
-            ax1 = plt.title('fMRI connectivity matrix: ' + denoise_type + ':' +
-                            'sphere size: ' + str(sphere))
-            fig1 = ax1.get_figure()
-
-            plot_matrix(struct_mat, elec_tags, log=True)
-            ax2 = plt.title('DWI connectivity matrix: ' +
-                            'sphere size: ' + str(sphere))
-            fig2 = ax2.get_figure()
-            plt.close("all")
-            plt.scatter(log_transform(struct_mat), corr_mat)
-            ax3 = plt.title('#Streamlines vs fMRI corr values' + denoise_type +
-                            ':' + 'sphere size: ' + str(sphere))
-            plt.xlabel('log(#streamlines)')
-            plt.ylabel('correlation values')
-            fig3 = ax3.get_figure()
-
-            multipage(opj(output_dir_path,
-                          'scatter_DWI_fMRI_' + denoise_type + '_' +
-                          str(sphere) + '.pdf'),
-                      [fig1, fig2, fig3],
-                      dpi=250)
-
-            plt.close("all")
-
-        # Electrophysiology
-        for elec_reg_type in ['regressed', 'not_regressed']:
-            input_path = opj(CWD, 'data', 'processed', 'elec_record',
-                             sub, 'interictal_' + elec_reg_type)
-            figures = []
-            for rithm in rithms:
-
-                # load random file
-                random_data = np.load(opj(input_path, 'alpha',
-                                          'interictal_1.npy'))
-                contact_num = random_data.shape[1]
-                all_conn_mat = np.zeros((12, contact_num, contact_num))
-
-                files = [file for file in os.listdir(opj(input_path, rithm))
-                         if file.endswith('npy')]
-                for i, file  in enumerate(files):
-                    elec_data = np.load(opj(input_path, rithm, file))
-                    
-                    elec_conn_mat = np.zeros((contact_num, contact_num))
-                    elec_conn_mat = np.corrcoef(elec_data.T)
-                    all_conn_mat[i, :, :] = elec_conn_mat
-            
-                con_mat = np.mean(all_conn_mat,0)
-            
-                plot_matrix(con_mat, elec_tags)
-                ax = plt.title('Electrophysiology ' + elec_reg_type + ':' +
-                                'rithm: ' + rithm)
-                fig = ax.get_figure()
-                figures.append(fig)
-                plt.close()
-
-            multipage(opj(output_dir_path,
-                          'Electrophysiology_' + elec_reg_type +
-                          '_bands.pdf'),
-                          figures,
-                          dpi=250)
-
-
-def figures_2():
+def figure_3():
 
     rithms = ['filtered', 'delta', 'theta', 'alpha', 'beta', 'gamma', 'gamma_high']
     SUBJECT_LIST = ['sub-001', 'sub-002', 'sub-003', 'sub-004']
@@ -359,6 +281,9 @@ def figures_2():
 
     sphere = 3
     denoise_type = 'gsr'
+    elec_reg_type = 'not_regressed'
+    
+    figures_fmri = []
 
     for i, sub_ses in enumerate(sub_ses_comb):
         sub, ses = sub_ses
@@ -367,99 +292,112 @@ def figures_2():
             os.makedirs(output_dir_path)
         # FUNCTION MATRIX
         # load function (conn matrix?)
+        elec_file = opj(DATA, 'raw', 'bids', sub, 'electrodes',
+                        'elec.loc')
+        elec_location_mni09 = load_elec_file(elec_file)
+        ordered_elec = order_dict(elec_location_mni09)
+        elec_tags = list(ordered_elec.keys())
+        
         func_file = opj(DATA, 'processed', 'fmriprep', sub, ses, 'func',
                         'time_series_noatlas_' + denoise_type + '_' +
                         str(sphere) + '.txt')
-        func_mat = np.loadtxt(func_file)
+        func_data = np.loadtxt(func_file)
 
-        correlation_measure = ConnectivityMeasure(kind='correlation')
-        corr_mat = correlation_measure.fit_transform([func_mat])[0]
+        result = calc_active_state_fmri(func_data)
 
-        # STRUCT MATRIX
-        struct_mat = np.load(opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
-                                 'con_mat_noatlas_' +
-                                 str(sphere) + '.npy'))
+        plot_active_state(func_data, result, elec_tags)
+        ax = plt.title('Subject ' + str(sub) +
+                       ' fmri active state ')
+        plt.xlabel('time')
+        plt.ylabel('tags')
+        fig = ax.get_figure()
+        figures_fmri.append(fig)
+        plt.close()
 
-        th = 0
-        struct_mat = log_transform(struct_mat)
-        struct_mat_treatment = 'log_th_' + str(th)
+        dictionary = OrderedDict(zip(elec_tags,
+                                     np.sum(result, axis=0, dtype='int32')))
 
-        idx = np.where(struct_mat >= th)
-        struct_mat = struct_mat[idx]
-        corr_mat = corr_mat[idx]  # CAREFULL!! THIS IS WRONG IF TH>0, deletes FUNCTIONAL nodes
+        output_file_fmri = opj(CWD, 'reports', 'stats', 'active_state',
+                               'stats_fmri_active_state_' + sub)
+        writeDict(dictionary, output_file_fmri)
 
         # Electrophysiology
-        for elec_reg_type in ['regressed', 'not_regressed']:
-            input_path = opj(CWD, 'data', 'processed', 'elec_record',
-                             sub, 'interictal_' + elec_reg_type)
-            figures = []
-            corr_values_struct = []
-            corr_values_func = []
+        input_path = opj(CWD, 'data', 'processed', 'elec_record',
+                         sub, 'interictal_' + elec_reg_type)
 
-            random_data = np.load(opj(input_path, 'alpha',
-                                      'interictal_1.npy'))
-            contact_num = random_data.shape[1]
-            all_conn_mat = np.zeros((12, contact_num, contact_num))
-            for rithm in rithms:
-                # load random file
-                files = [file for file in os.listdir(opj(input_path, rithm))
-                         if file.endswith('npy')]
-                for i, file in enumerate(files):
-                    elec_data = np.load(opj(input_path, rithm, file))
+        random_data = np.load(opj(input_path, 'alpha',
+                                  'interictal_1.npy'))
+        contact_num = random_data.shape[1]
+        all_active_state = np.zeros((12, contact_num))
 
-                    elec_conn_mat = np.zeros((contact_num, contact_num))
-                    elec_conn_mat = np.corrcoef(elec_data.T)
-                    all_conn_mat[i, :, :] = elec_conn_mat
-                # Get elec con_mat
-                con_mat = np.mean(all_conn_mat, 0)
-                con_mat = con_mat[idx]
+        for rithm in rithms:
+            # load random file
+            files = [file for file in os.listdir(opj(input_path, rithm))
+                     if file.endswith('npy')]
+            for i, file in enumerate(files):
+                lower_band = get_lower_band(rithm)
+                elec_data = np.load(opj(input_path, rithm, file))
+                elec_conn_mat = calc_active_state_elec(elec_data,
+                                                       lower_band=)
+                
+                all_conn_mat[i, :] = elec_conn_mat
+                
+                
+                
+                
+                
+            # Get elec con_mat
+            con_mat = np.mean(all_conn_mat, 0)
+            con_mat = con_mat[idx]
 
-                # scatter vs struct
-                corr_value = np.corrcoef(struct_mat,
-                                         con_mat)[0][1]
-                corr_values_struct.append(corr_value)
+            # scatter vs struct
+            corr_value = np.corrcoef(struct_mat,
+                                     con_mat)[0][1]
+            corr_values_struct.append(corr_value)
 
-                plt.scatter(struct_mat, con_mat)
-                ax = plt.title('R = ' + str(corr_value) +
-                               '#Streamlines vs corr values of ' + rithm +
-                               ' ' + elec_reg_type)
-                plt.xlabel(struct_mat_treatment)
-                plt.ylabel('elec corr')
-                fig = ax.get_figure()
-                figures.append(fig)
-                plt.close()
+            plt.scatter(struct_mat, con_mat)
+            ax = plt.title('R = ' + str(corr_value) +
+                           '#Streamlines vs corr values of ' + rithm +
+                           ' ' + elec_reg_type)
+            plt.xlabel(struct_mat_treatment)
+            plt.ylabel('elec corr')
+            fig = ax.get_figure()
+            figures.append(fig)
+            plt.close()
 
-                # scatter vs func
-                corr_value = np.corrcoef(np.ndarray.flatten(struct_mat),
-                                         np.ndarray.flatten(con_mat))[0][1]
-                corr_values_func.append(corr_value)
+            # scatter vs func
+            corr_value = 
+            corr_values_func.append(corr_value)
 
-                plt.scatter(corr_mat, con_mat)
-                ax = plt.title('R = ' + str(corr_value) +
-                               'Func corr vs corr values of ' + rithm +
-                               ' ' + elec_reg_type)
-                plt.xlabel('Func corr')
-                plt.ylabel('elec corr')
-                fig = ax.get_figure()
-                figures.append(fig)
-                plt.close()
+            plt.scatter(corr_mat, con_mat)
+            ax = plt.title('R = ' + str(corr_value) +
+                           'Func corr vs corr values of ' + rithm +
+                           ' ' + elec_reg_type)
+            plt.xlabel('Func corr')
+            plt.ylabel('elec corr')
+            fig = ax.get_figure()
+            figures.append(fig)
+            plt.close()
 
-            multipage(opj(output_dir_path,
-                          'Scatter_func_struct_' + sub + '_' +
-                          struct_mat_treatment + '_' +
-                          elec_reg_type + ' ' +
-                          '_bands.pdf'),
-                      figures,
-                      dpi=250)
-            plt.close("all")
 
-            np.save(opj(CWD, 'reports', 'stats',
-                        'stats_' + sub + '_' +
-                        struct_mat_treatment + '_' +
-                        elec_reg_type),
-                    np.array(corr_values_struct))
 
-            np.save(opj(CWD, 'reports', 'stats',
-                        'stats_' + sub + '_func_' +
-                        elec_reg_type),
-                    np.array(corr_values_func))
+    multipage(opj(output_dir_path,
+                              'Scatter_func_struct_' + sub + '_' +
+                              struct_mat_treatment + '_' +
+                              elec_reg_type + ' ' +
+                              '_bands.pdf'),
+                          figures,
+                          dpi=250)
+                plt.close("all")
+                
+                
+        np.save(opj(CWD, 'reports', 'stats',
+                    'stats_' + sub + '_' +
+                    struct_mat_treatment + '_' +
+                    elec_reg_type),
+                np.array(corr_values_struct))
+
+        np.save(opj(CWD, 'reports', 'stats',
+                    'stats_' + sub + '_func_' +
+                    elec_reg_type),
+                np.array(corr_values_func))
