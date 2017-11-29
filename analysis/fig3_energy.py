@@ -146,49 +146,56 @@ def calculate_active_state(signal, lower_band, sampling_freq=500,
                                                        window_size,
                                                        times_cyc_window)
 
-    # Find start-end peaks
-    # parameter refractory time between peaks
-    refract_time = cycles * 2
-    # parameter number standard deviation above noise
-    points = np.where(norm_sig > (std_parameter * std_gauss_fit))[0]
-    refract_points = np.where(np.diff(points) > refract_time)[0]
-    start_peaks = np.array((points[0], points[refract_points + 1]))
-    # end_peaks = np.array((points[refract_points], points[-1]))
+#    # Find start-end peaks
+#    # parameter refractory time between peaks
+#    refract_time = cycles * 2
+#    # parameter number standard deviation above noise
+#    points = np.where(norm_sig > (std_parameter * std_gauss_fit))[0]
+#    refract_points = np.where(np.diff(points) > refract_time)[0]
+#    if not np.size(refract_points):
+#        start_peaks = points[0]
+#    else:
+#        start_peaks = np.array((points[0], points[refract_points + 1]))
+#        # end_peaks = np.array((points[refract_points], points[-1]))
 
     # Find start end of envelope oscillation
     # parameter refractory time between env.oscs.
     refract_time = cycles
     points = np.where(envelope_oscillations > 0)[0]
     refract_points = np.where(np.diff(points) > refract_time)[0]
-    start_env = np.concatenate(([points[0]], points[refract_points+1]))
-    end_env = np.concatenate((points[refract_points], [points[-1]]))
+    start_osc = np.concatenate(([points[0]], points[refract_points+1]))
+    end_osc = np.concatenate((points[refract_points], [points[-1]]))
 
-    start_osc = []
-    end_osc = []
-    for i, peak in enumerate(start_peaks):
-        for j, env in enumerate(start_env):
-            if peak in np.arange(env, end_env[j]):
-                start_osc.append(start_env[i])
-                end_osc.append(end_env[j])
+#    start_osc = []
+#    end_osc = []
+#    for i, peak in enumerate(start_peaks):
+#        for j, env in enumerate(start_env):
+#            if peak in np.arange(env, end_env[j]):
+#                start_osc.append(start_env[i])
+#                end_osc.append(end_env[j])
 
-    active_state = np.zeros(envelope_oscillations.shape)
+    active_state = np.ones(envelope_oscillations.shape)
     for i, osc in enumerate(start_osc):
-        active_state[osc:end_osc[i]] = 1
+        active_state[osc:end_osc[i]] = 0
 
     return energy, active_state
 
 
 def calc_active_state_elec(signals, lower_band):
 
-    active_state = np.zeros((signals.shape))
-    energy = np.zeros((signals.shape))
+    active_state_all = np.zeros((signals.shape))
+    energy_all = np.zeros((signals.shape))
 
-    for i in range(signals.shape[0]):
-        signal = signals[i, :]
-        energy[i, :], active_state[i, :] = calculate_active_state(signal,
-                                                                  lower_band)
+    for i in range(signals.shape[1]):
+        signal = signals[:, i]
+        energy, active_state = calculate_active_state(signal,
+                                                      lower_band)
 
-    return energy. active_state
+        active_state_all[:active_state.shape[0], i] = active_state
+
+        energy_all[:energy.shape[0], i] = energy
+
+    return energy_all, active_state_all
 
 
 def plot_active_state(signal, active_state, labels=[]):
@@ -266,12 +273,15 @@ def get_lower_band(rithm):
                         'gamma_high': 70})
 
     return rithms_dict[rithm]
+
+
 # Calc active state for each electrode
 # plot and save
 # compare with MD outcomes
-            
-def figure_3():
 
+
+def figure_3():
+    
     rithms = ['filtered', 'delta', 'theta', 'alpha', 'beta', 'gamma', 'gamma_high']
     SUBJECT_LIST = ['sub-001', 'sub-002', 'sub-003', 'sub-004']
     SESSION_LIST = ['ses-presurg']
@@ -282,7 +292,7 @@ def figure_3():
     sphere = 3
     denoise_type = 'gsr'
     elec_reg_type = 'not_regressed'
-    
+
     figures_fmri = []
 
     for i, sub_ses in enumerate(sub_ses_comb):
@@ -297,7 +307,7 @@ def figure_3():
         elec_location_mni09 = load_elec_file(elec_file)
         ordered_elec = order_dict(elec_location_mni09)
         elec_tags = list(ordered_elec.keys())
-        
+
         func_file = opj(DATA, 'processed', 'fmriprep', sub, ses, 'func',
                         'time_series_noatlas_' + denoise_type + '_' +
                         str(sphere) + '.txt')
@@ -337,67 +347,23 @@ def figure_3():
             for i, file in enumerate(files):
                 lower_band = get_lower_band(rithm)
                 elec_data = np.load(opj(input_path, rithm, file))
-                elec_conn_mat = calc_active_state_elec(elec_data,
-                                                       lower_band=)
-                
-                all_conn_mat[i, :] = elec_conn_mat
-                
-                
-                
-                
-                
-            # Get elec con_mat
-            con_mat = np.mean(all_conn_mat, 0)
-            con_mat = con_mat[idx]
+                _, active_state = calc_active_state_elec(elec_data,
+                                                         lower_band=lower_band)
 
-            # scatter vs struct
-            corr_value = np.corrcoef(struct_mat,
-                                     con_mat)[0][1]
-            corr_values_struct.append(corr_value)
+                all_active_state[i, :] = np.sum(active_state, axis=0)
 
-            plt.scatter(struct_mat, con_mat)
-            ax = plt.title('R = ' + str(corr_value) +
-                           '#Streamlines vs corr values of ' + rithm +
-                           ' ' + elec_reg_type)
-            plt.xlabel(struct_mat_treatment)
-            plt.ylabel('elec corr')
-            fig = ax.get_figure()
-            figures.append(fig)
-            plt.close()
-
-            # scatter vs func
-            corr_value = 
-            corr_values_func.append(corr_value)
-
-            plt.scatter(corr_mat, con_mat)
-            ax = plt.title('R = ' + str(corr_value) +
-                           'Func corr vs corr values of ' + rithm +
-                           ' ' + elec_reg_type)
-            plt.xlabel('Func corr')
-            plt.ylabel('elec corr')
-            fig = ax.get_figure()
-            figures.append(fig)
-            plt.close()
-
-
+            dictionary = OrderedDict(zip(elec_tags,
+                                         np.mean(all_active_state,
+                                                 axis=0,
+                                                 dtype='int32')))
+            output_file_elec = opj(CWD, 'reports', 'stats', 'active_state',
+                                   'stats_elec_active_state_' + sub +
+                                   '_' + rithm)
+            writeDict(dictionary, output_file_elec)
 
     multipage(opj(output_dir_path,
-                              'Scatter_func_struct_' + sub + '_' +
-                              struct_mat_treatment + '_' +
-                              elec_reg_type + ' ' +
-                              '_bands.pdf'),
-                          figures,
-                          dpi=250)
-                plt.close("all")
-                
-                
-        np.save(opj(CWD, 'reports', 'stats',
-                    'stats_' + sub + '_' +
-                    struct_mat_treatment + '_' +
-                    elec_reg_type),
-                np.array(corr_values_struct))
-
-        np.save(opj(CWD, 'reports', 'stats',
-                    'stats_' + sub + '_func_' +
-                    elec_reg_type),
-                np.array(corr_values_func))
+                  'fmri_active_state.pdf'),
+              figures_fmri,
+              dpi=250)
+    plt.close("all")
+              
