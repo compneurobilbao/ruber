@@ -370,12 +370,8 @@ def figure_3():
     plt.close("all")
 
 
-
-
-def get_max_active_state_elecs(active_state_dict):
-    
-    
-    return 
+def get_max_active_state_elecs(active_state_dict, amount=10):
+    return sorted(active_state_dict, key=active_state_dict.get)[::-1][:amount]
 
 
 def analyze_results_active_state():
@@ -407,19 +403,16 @@ def analyze_results_active_state():
         fmri_active_state = load_elec_file(input_file_fmri)
         
         get_max_active_state_elecs(fmri_active_state)
-        sorted(fmri_active_state, key=fmri_active_state.get)[::-1][:10]
-                
         
-
+        # TODO: print fmri result
         for rithm in rithms:
-            
             input_file_elec = opj(CWD, 'reports', 'stats', 'active_state',
                                    'elec',
                                    'stats_elec_active_state_' + sub +
                                    '_' + rithm)
             elec_active_state = load_elec_file(input_file_elec)
             get_max_active_state_elecs(elec_active_state)
-            sorted(elec_active_state, key=elec_active_state.get)[::-1][:10]
+            # TODO: print rithm  result
 
 
     
