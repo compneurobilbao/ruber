@@ -275,11 +275,6 @@ def get_lower_band(rithm):
     return rithms_dict[rithm]
 
 
-# Calc active state for each electrode
-# plot and save
-# compare with MD outcomes
-
-
 def figure_3():
 
     rithms = ['filtered', 'delta', 'theta', 'alpha', 'beta', 'gamma', 'gamma_high']
@@ -450,6 +445,7 @@ def figure_4():
 
     SUBJECT_LIST = ['sub-001', 'sub-002', 'sub-003', 'sub-004']
     SESSION_LIST = ['ses-presurg']
+    NUM_ROIS = 35
 
     sub_ses_comb = [[subject, session] for subject in SUBJECT_LIST
                     for session in SESSION_LIST]
@@ -461,15 +457,15 @@ def figure_4():
             os.makedirs(output_dir_path)
         # FUNCTION MATRIX
         func_file = opj(DATA, 'processed', 'fmriprep', sub, ses, 'func',
-                        'time_series_atlas_2514.txt')
+                        'time_series_nozscore_atlas_2514.txt')
         func_data = np.loadtxt(func_file)
 
         fmri_active_state = calc_active_state_fmri(func_data)
         fmri_result = np.sum(fmri_active_state, axis=0, dtype='int32')
         output_file_fmri = opj(CWD, 'reports', 'figures', 'active_state',
-                               'fmri_active_state_' + sub)
+                               'fmri_active_state_nozscore_' + sub)
 
-        statmap = get_max_rois_statmap(fmri_result, num_rois=25)
+        statmap = get_max_rois_statmap(fmri_result, num_rois=NUM_ROIS)
 
         plotting.plot_glass_brain(statmap, threshold=0,
                                   cmap=matplotlib.pyplot.cm.autumn,
