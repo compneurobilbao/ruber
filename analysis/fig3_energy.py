@@ -257,7 +257,7 @@ def calc_active_state_fmri(signal,
     active_state_fmri = np.zeros((signal.shape))
 
     std = np.std(signal[:])
-    active_state_fmri[np.where(signal > 2*std)] = 1
+    active_state_fmri[np.where(signal > std_parameter*std)] = 1
 
     return active_state_fmri
 
@@ -469,7 +469,7 @@ def figure_4():
         output_file_fmri = opj(CWD, 'reports', 'figures', 'active_state',
                                'fmri_active_state_' + sub)
 
-        statmap = get_max_rois_statmap(rois)
+        statmap = get_max_rois_statmap(fmri_result, num_rois=25)
 
         plotting.plot_glass_brain(statmap, threshold=0,
                                   cmap=matplotlib.pyplot.cm.autumn,
