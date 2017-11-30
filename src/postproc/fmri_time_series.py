@@ -104,7 +104,7 @@ def clean_and_get_time_series(subject_list, session_list):
                 # atlas_2514
                 masker = NiftiLabelsMasker(labels_img=atlas_path,
                                            background_label=0, verbose=5,
-                                           detrend=True, standardize=False,
+                                           detrend=True, standardize=True,
                                            t_r=2.72, smoothing_fwhm=6,
                                            # TR should not be a variable
                                            low_pass=0.1, high_pass=0.01)
@@ -121,7 +121,7 @@ def clean_and_get_time_series(subject_list, session_list):
                 time_series = scrubbing(time_series, FD, thres)
 
                 # Save time series
-                np.savetxt(opj(base_path, 'time_series_nozscore_' + atlas + '.txt'),
+                np.savetxt(opj(base_path, 'time_series_' + atlas + '.txt'),
                            time_series)
     return
 
