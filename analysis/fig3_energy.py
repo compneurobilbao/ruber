@@ -421,3 +421,69 @@ def analyze_results_active_state():
             print("{} band electrophysiology active elecs {}.\n".format(rithm,
                                                                         elec_result))
 
+
+def get_max_rois_statmap(rois, num_rois=10):
+    import nibabel as nib
+
+    atlas = opj(CWD, 'data/external/bha_atlas_2514_1mm_mni09c.nii.gz')
+    most_active_rois = np.argsort(rois)[::-1][:num_rois] + 1  # +1,starts in 1
+
+    atlas_img = nib.load(atlas)
+    atlas_data = atlas_img.get_data()
+
+    result = np.zeros((atlas_data.shape))
+
+    for roi in most_active_rois:
+        result[np.where(atlas_data == [roi])] = 1
+    
+    statmap = nib.Nifti1Image(result,
+                              affine=atlas_img.affine)
+
+    return statmap
+
+
+def figure_4():
+    from nilearn import image
+    from nilearn import plotting
+    import matplotlib.pyplot
+    import nibabel as nib
+
+    SUBJECT_LIST = ['sub-001', 'sub-002', 'sub-003', 'sub-004']
+    SESSION_LIST = ['ses-presurg']
+
+    sub_ses_comb = [[subject, session] for subject in SUBJECT_LIST
+                    for session in SESSION_LIST]
+
+    for i, sub_ses in enumerate(sub_ses_comb):
+        sub, ses = sub_ses
+        output_dir_path = opj(CWD, 'reports', 'figures', sub)
+        if not os.path.exists(output_dir_path):
+            os.makedirs(output_dir_path)
+        # FUNCTION MATRIX
+        func_file = opj(DATA, 'processed', 'fmriprep', sub, ses, 'func',
+                        'time_series_atlas_2514.txt')
+        func_data = np.loadtxt(func_file)
+
+        fmri_active_state = calc_active_state_fmri(func_data)
+        fmri_result = np.sum(fmri_active_state, axis=0, dtype='int32')
+        output_file_fmri = opj(CWD, 'reports', 'figures', 'active_state',
+                               'fmri_active_state_' + sub)
+
+        statmap = get_max_rois_statmap(rois)
+
+        plotting.plot_glass_brain(statmap, threshold=0,
+                                  cmap=matplotlib.pyplot.cm.autumn,
+                                  display_mode='lyrz',
+                                  output_file=output_file_fmri + '.png')
+
+
+        
+        
+PAT1
+ENGLISH:
+Background activity: OIL-TI
+Interictal activity: OIL-TI and less in OIM-OSM. Delta activity mostly in these electrodes.
+Ictal activity: 3 types:
+- Common ones: OIL-TI -> occipital electrodes
+- Generalized tonic-clonic (~40secs): Fast-activity -> TI, propagates to distant electrodes
+- electrics (7secs): OIM,OIL,TI. First in one of them and then propagates
