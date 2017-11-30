@@ -374,18 +374,24 @@ def get_max_active_state_elecs(active_state_dict, amount=10):
     return sorted(active_state_dict, key=active_state_dict.get)[::-1][:amount]
 
 
+#def get_subject_MD_info(sub):
+#    
+#    info_dict = dict({'sub-001': "",
+#                      'sub-002': "",
+#                      'sub-003': "",
+#                      'sub-004': ""})
+#    
+#    return info_dict[sub]
+
+
 def analyze_results_active_state():
 
-    rithms = ['filtered', 'delta', 'theta', 'alpha', 'beta', 'gamma', 'gamma_high']
-    SUBJECT_LIST = ['sub-001', 'sub-002', 'sub-003', 'sub-004']
+    rithms = ['filtered', 'delta', 'theta', 'alpha', 'beta', 'gamma']
+    SUBJECT_LIST = ['sub-001']
     SESSION_LIST = ['ses-presurg']
 
     sub_ses_comb = [[subject, session] for subject in SUBJECT_LIST
                     for session in SESSION_LIST]
-
-    sphere = 3
-    denoise_type = 'gsr'
-    elec_reg_type = 'not_regressed'
 
     for i, sub_ses in enumerate(sub_ses_comb):
         sub, ses = sub_ses
@@ -394,25 +400,24 @@ def analyze_results_active_state():
             os.makedirs(output_dir_path)
         # FUNCTION MATRIX
         # load function (conn matrix?)
-        
-        
+
         input_file_fmri = opj(CWD, 'reports', 'stats', 'active_state',
-                               'fmri',
-                               'stats_fmri_active_state_' + sub)
-        
+                              'fmri',
+                              'stats_fmri_active_state_' + sub)
+
         fmri_active_state = load_elec_file(input_file_fmri)
-        
-        get_max_active_state_elecs(fmri_active_state)
-        
-        # TODO: print fmri result
+
+        fmri_result = get_max_active_state_elecs(fmri_active_state)
+        print("Subject {}: \nfMRI active elecs {}.\n".format(sub,
+                                                             fmri_result))
+
         for rithm in rithms:
             input_file_elec = opj(CWD, 'reports', 'stats', 'active_state',
-                                   'elec',
-                                   'stats_elec_active_state_' + sub +
-                                   '_' + rithm)
+                                  'elec',
+                                  'stats_elec_active_state_' + sub +
+                                  '_' + rithm)
             elec_active_state = load_elec_file(input_file_elec)
-            get_max_active_state_elecs(elec_active_state)
-            # TODO: print rithm  result
+            elec_result = get_max_active_state_elecs(elec_active_state)
+            print("{} band electrophysiology active elecs {}.\n".format(rithm,
+                                                                        elec_result))
 
-
-    
