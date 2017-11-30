@@ -23,7 +23,7 @@ from src.postproc.utils import (t1w_electrodes_to_09c,
                                 export_data_to_mat,
                                 )
 
-SUBJECT_LIST = ['sub-002','sub-003', 'sub-004']
+SUBJECT_LIST = ['sub-001','sub-002','sub-003', 'sub-004']
 SESSION_LIST = ['ses-presurg']
 
 """
