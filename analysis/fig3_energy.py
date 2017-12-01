@@ -247,7 +247,7 @@ def plot_active_state(signal, active_state, labels=[]):
 
 
 def calc_active_state_fmri(signal,
-                           std_parameter=2):
+                           std_parameter=0):
     """
     Calculates active state of a signal taking positive values over a th
     into account.
@@ -369,20 +369,10 @@ def get_max_active_state_elecs(active_state_dict, amount=10):
     return sorted(active_state_dict, key=active_state_dict.get)[::-1][:amount]
 
 
-#def get_subject_MD_info(sub):
-#    
-#    info_dict = dict({'sub-001': "",
-#                      'sub-002': "",
-#                      'sub-003': "",
-#                      'sub-004': ""})
-#    
-#    return info_dict[sub]
-
-
 def analyze_results_active_state():
 
     rithms = ['filtered', 'delta', 'theta', 'alpha', 'beta', 'gamma']
-    SUBJECT_LIST = ['sub-001']
+    SUBJECT_LIST = ['sub-001', 'sub-002', 'sub-003', 'sub-004']
     SESSION_LIST = ['ses-presurg']
 
     sub_ses_comb = [[subject, session] for subject in SUBJECT_LIST
@@ -463,14 +453,11 @@ def get_max_rois_statmap(rois, num_rois=10):
 
 
 def figure_4():
-    from nilearn import image
     from nilearn import plotting
-    import matplotlib.pyplot
-    import nibabel as nib
 
     SUBJECT_LIST = ['sub-001', 'sub-002', 'sub-003', 'sub-004']
     SESSION_LIST = ['ses-presurg']
-    NUM_ROIS = 35
+    NUM_ROIS = 10
 
     sub_ses_comb = [[subject, session] for subject in SUBJECT_LIST
                     for session in SESSION_LIST]
@@ -482,34 +469,18 @@ def figure_4():
             os.makedirs(output_dir_path)
         # FUNCTION MATRIX
         func_file = opj(DATA, 'processed', 'fmriprep', sub, ses, 'func',
-                        'time_series_nozscore_atlas_2514.txt')
+                        'time_series_atlas_2514.txt')
         func_data = np.loadtxt(func_file)
 
         fmri_active_state = calc_active_state_fmri(func_data)
         fmri_result = np.sum(fmri_active_state, axis=0, dtype='int32')
         output_file_fmri = opj(CWD, 'reports', 'figures', 'active_state',
-                               'fmri_active_state_nozscore_' + sub)
+                               'fmri_active_state_withelec_' + sub)
 
         statmap = get_max_rois_statmap(fmri_result, num_rois=NUM_ROIS)
 
         statmap = add_electrodes_to_statmap(statmap, sub)
 
         plotting.plot_glass_brain(statmap, threshold=0,
-                                  cmap=matplotlib.pyplot.cm.autumn,
                                   display_mode='lyrz',
                                   output_file=output_file_fmri + '.png')
-
-
-
-
-
-
-
-PAT1
-ENGLISH:
-Background activity: OIL-TI
-Interictal activity: OIL-TI and less in OIM-OSM. Delta activity mostly in these electrodes.
-Ictal activity: 3 types:
-- Common ones: OIL-TI -> occipital electrodes
-- Generalized tonic-clonic (~40secs): Fast-activity -> TI, propagates to distant electrodes
-- electrics (7secs): OIM,OIL,TI. First in one of them and then propagates
