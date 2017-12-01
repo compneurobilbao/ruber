@@ -414,7 +414,17 @@ def analyze_results_active_state():
             elec_active_state = load_elec_file(input_file_elec)
             elec_result = get_max_active_state_elecs(elec_active_state)
             print("{} band electrophysiology active elecs {}.\n".format(rithm,
-                                                                        elec_result))
+                  elec_result))
+
+
+def get_electrode_locations(sub):
+    from src.postproc.utils import load_elec_file
+
+    elec_file = opj(CWD, 'data/raw/bids/', sub, 'electrodes/elec.loc')
+    elec_dict = load_elec_file(elec_file)
+    locations = np.squeeze(np.array(list(elec_dict.values())))
+
+    return locations
 
 
 def get_max_rois_statmap(rois, num_rois=10):
@@ -473,8 +483,11 @@ def figure_4():
                                   output_file=output_file_fmri + '.png')
 
 
-        
-        
+
+
+
+
+
 PAT1
 ENGLISH:
 Background activity: OIL-TI
