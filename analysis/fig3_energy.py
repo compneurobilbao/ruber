@@ -427,6 +427,21 @@ def get_electrode_locations(sub):
     return locations
 
 
+def add_electrodes_to_statmap(statmap, sub):
+    import nibabel as nib
+
+    statmap_data = statmap.get_data()
+    locations = get_electrode_locations(sub)
+
+    for location in locations:
+        x, y, z = location
+        statmap_data[x, y, z] = 2
+
+    statmap = nib.Nifti1Image(statmap_data,
+                              affine=statmap.affine)
+    return statmap
+
+
 def get_max_rois_statmap(rois, num_rois=10):
     import nibabel as nib
 
@@ -440,7 +455,7 @@ def get_max_rois_statmap(rois, num_rois=10):
 
     for roi in most_active_rois:
         result[np.where(atlas_data == [roi])] = 1
-    
+
     statmap = nib.Nifti1Image(result,
                               affine=atlas_img.affine)
 
@@ -476,6 +491,8 @@ def figure_4():
                                'fmri_active_state_nozscore_' + sub)
 
         statmap = get_max_rois_statmap(fmri_result, num_rois=NUM_ROIS)
+
+        statmap = add_electrodes_to_statmap(statmap, sub)
 
         plotting.plot_glass_brain(statmap, threshold=0,
                                   cmap=matplotlib.pyplot.cm.autumn,
