@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 from src.env import DATA
+from src.postproc.utils import load_elec_file, order_dict
+from analysis.fig1_fig2_and_stats import plot_matrix, multipage
 
 import os
 from os.path import join as opj
 import numpy as np
 import scipy.io as sio
+from matplotlib import pyplot as plt
 
 RAW_ELEC = opj(DATA, 'raw', 'elec_record')
 PROCESSED_ELEC = opj(DATA, 'processed', 'elec_record')
@@ -12,6 +15,8 @@ PROCESSED_ELEC = opj(DATA, 'processed', 'elec_record')
 SUBJECTS = ['sub-001', 'sub-002', 'sub-003', 'sub-004']
 RITHMS = ['prefiltered', 'filtered', 'delta', 'theta',
           'alpha', 'beta', 'gamma', 'gamma_high']
+
+CWD = os.getcwd()
 
 
 def active_state_to_signal(as_data, real_data):
@@ -71,3 +76,49 @@ def create_active_state_records():
                                   'active_state_' + str(chunk) + '.npy')
                 np.save(output_file, as_signal)
     return
+
+
+def create_figures_active_state():
+    
+    for sub in SUBJECTS:
+        output_dir_path = opj(CWD, 'reports', 'figures', 'active_state')
+        figures = []
+        
+        elec_file = opj(DATA, 'raw', 'bids', sub, 'electrodes',
+                        'elec.loc')
+        elec_location_mni09 = load_elec_file(elec_file)
+
+        ordered_elec = order_dict(elec_location_mni09)
+
+        elec_tags = list(ordered_elec.keys())
+        
+            
+        for rit in RITHMS:
+            if rit == 'prefiltered':
+                    continue
+            files_path = opj(PROCESSED_ELEC, sub, 'active_state', rit)
+            
+            for num_file, file in enumerate(os.listdir(files_path)):
+                if num_file == 0:
+                    as_data = np.load(opj(files_path, file))
+                    elec_conn_mat = np.corrcoef(as_data.T)
+                else:
+                    as_data = np.load(opj(files_path, file))
+                    elec_conn_mat += np.corrcoef(as_data.T)
+            
+            elec_conn_mat = elec_conn_mat / (num_file+1)
+            
+            plot_matrix(elec_conn_mat, elec_tags)
+            ax = plt.title('Active state :' +
+                            ' sub: ' + sub +
+                            ' rithm: ' + rit)
+            fig = ax.get_figure()
+            figures.append(fig)
+            plt.close()
+            
+            multipage(opj(output_dir_path,
+                          'Active state :' +
+                            ' sub: ' + sub +
+                            '.pdf'),
+                          figures,
+                          dpi=250)
