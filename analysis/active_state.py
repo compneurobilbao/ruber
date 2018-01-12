@@ -109,6 +109,7 @@ def create_figures_active_state():
             elec_conn_mat = elec_conn_mat / (num_file+1)
             
             plot_matrix(elec_conn_mat, elec_tags)
+            plt.colorbar()
             ax = plt.title('Active state :' +
                             ' sub: ' + sub +
                             ' rithm: ' + rit)
@@ -118,6 +119,55 @@ def create_figures_active_state():
             
             multipage(opj(output_dir_path,
                           'Active state :' +
+                            ' sub: ' + sub +
+                            '.pdf'),
+                          figures,
+                          dpi=250)
+            
+            
+def create_figures_not_active_state():
+    
+    for sub in SUBJECTS:
+        output_dir_path = opj(CWD, 'reports', 'figures', 'active_state')
+        figures = []
+        
+        elec_file = opj(DATA, 'raw', 'bids', sub, 'electrodes',
+                        'elec.loc')
+        elec_location_mni09 = load_elec_file(elec_file)
+
+        ordered_elec = order_dict(elec_location_mni09)
+
+        elec_tags = list(ordered_elec.keys())
+        
+            
+        for rit in RITHMS:
+            if rit == 'prefiltered':
+                    continue
+            files_path = opj(PROCESSED_ELEC, sub, 'interictal_not_regressed', rit)
+            
+            for num_file, file in enumerate(os.listdir(files_path)):
+                if num_file == 0:
+                    if file.endswith('npy'):
+                        as_data = np.load(opj(files_path, file))
+                        elec_conn_mat = np.corrcoef(as_data.T)
+                else:
+                    if file.endswith('npy'):
+                        as_data = np.load(opj(files_path, file))
+                        elec_conn_mat += np.corrcoef(as_data.T)
+            
+            elec_conn_mat = elec_conn_mat / 12
+            
+            plot_matrix(elec_conn_mat, elec_tags)
+            plt.colorbar()
+            ax = plt.title('normal sig :' +
+                            ' sub: ' + sub +
+                            ' rithm: ' + rit)
+            fig = ax.get_figure()
+            figures.append(fig)
+            plt.close()
+            
+            multipage(opj(output_dir_path,
+                          'normal sig :' +
                             ' sub: ' + sub +
                             '.pdf'),
                           figures,
