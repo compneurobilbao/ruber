@@ -117,13 +117,13 @@ def create_figures_active_state():
             figures.append(fig)
             plt.close()
             
-            multipage(opj(output_dir_path,
-                          'Active state :' +
-                            ' sub: ' + sub +
-                            '.pdf'),
-                          figures,
-                          dpi=250)
-            
+        multipage(opj(output_dir_path,
+                      'Active state :' +
+                        ' sub: ' + sub +
+                        '.pdf'),
+                      figures,
+                      dpi=250)
+        
             
 def create_figures_not_active_state():
     
@@ -165,10 +165,10 @@ def create_figures_not_active_state():
             fig = ax.get_figure()
             figures.append(fig)
             plt.close()
-            
-            multipage(opj(output_dir_path,
-                          'normal sig :' +
-                            ' sub: ' + sub +
-                            '.pdf'),
-                          figures,
-                          dpi=250)
+        
+        multipage(opj(output_dir_path,
+                      'normal sig :' +
+                        ' sub: ' + sub +
+                        '.pdf'),
+                      figures,
+                      dpi=250)
