@@ -172,3 +172,44 @@ def create_figures_not_active_state():
                         '.pdf'),
                       figures,
                       dpi=250)
+
+
+def calc_distance(point1, point2):
+    """
+    calc euclidean distance
+    """
+    point1 = np.array(point1)
+    point2 = np.array(point2)
+    
+    return np.linalg.norm(point1 - point2)
+    
+
+def create_distance_matrices():
+    
+    for sub in SUBJECTS:
+        elec_file = opj(DATA, 'raw', 'bids', sub, 'electrodes',
+                        'elec.loc')
+        elec_location_mni09 = load_elec_file(elec_file)
+
+        ordered_elec = order_dict(elec_location_mni09)
+        
+        #get num elec and dist_mat
+        num_elec = len(ordered_elec)
+        dist_mat = np.zeros((num_elec, num_elec))
+        for idx_i, elec_pos1 in enumerate(ordered_elec.itervalues()):
+            for idx_j, elec_pos2 in enumerate(ordered_elec.itervalues()):
+                dist_mat[idx_i, idx_j] = calc_distance(elec_pos1, elec_pos2)
+
+        np.save('file_path', dist_mat)
+
+    return          
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
