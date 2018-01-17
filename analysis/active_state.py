@@ -205,10 +205,55 @@ def create_distance_matrices():
                 dist_mat[idx_i, idx_j] = calc_distance(elec_pos1, elec_pos2)
 
         np.save(opj(output_dir_path, 'DC.npy'),
-                 dist_mat)
+                dist_mat)
     return
 
+
+def corr_mat(X):
+    from scipy import stats
+
+    N=X.shape[1]
+    rho=np.empty((N,N), dtype=float)
+    pval=np.empty((N,N), dtype=float)
+    for i in range(N):
+        v1=X[:,i]
+        for j in range(i,N):
+             v2=X[:,j]
+             C,P=stats.pearsonr(v1,v2)
+             rho[i,j]=C
+             rho[j,i]=C
+             pval[i,j]=P
+             pval[j,i]=P
+    return rho, pval
+
+
+def create_elec_matrices():
+    th = 0.01 # threshold for getting just significant pvalues
+    for sub in SUBJECTS:
+        output_dir_path = opj(CWD, 'reports', 'matrices', sub)
+        if not os.path.exists(output_dir_path):
+            os.makedirs(output_dir_path)
+                          
+#        for rit in RITHMS:
+#            if rit == 'prefiltered':
+#                    continue      
+        rit = 'filtered' # only for "filtered"
+        files_path = opj(PROCESSED_ELEC, sub, 'active_state', rit)
+        
+        for num_file, file in enumerate(os.listdir(files_path)):
+            if num_file == 0:
+                as_data = np.load(opj(files_path, file))
+                total_as_data = as_data
+            else:
+                as_data = np.load(opj(files_path, file))
+                total_as_data = np.concatenate((total_as_data, as_data))
             
+        elec_conn_mat, pvals = corr_mat(total_as_data)    
+        elec_conn_mat[np.where(pvals > th)] = 0
+
+        np.save(opj(output_dir_path, 'EL.npy'),
+                elec_conn_mat)
+    return            
             
             
             
