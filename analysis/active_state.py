@@ -187,6 +187,10 @@ def calc_distance(point1, point2):
 def create_distance_matrices():
     
     for sub in SUBJECTS:
+        output_dir_path = opj(CWD, 'reports', 'matrices', sub)
+        if not os.path.exists(output_dir_path):
+            os.makedirs(output_dir_path)
+                              
         elec_file = opj(DATA, 'raw', 'bids', sub, 'electrodes',
                         'elec.loc')
         elec_location_mni09 = load_elec_file(elec_file)
@@ -196,14 +200,14 @@ def create_distance_matrices():
         #get num elec and dist_mat
         num_elec = len(ordered_elec)
         dist_mat = np.zeros((num_elec, num_elec))
-        for idx_i, elec_pos1 in enumerate(ordered_elec.itervalues()):
-            for idx_j, elec_pos2 in enumerate(ordered_elec.itervalues()):
+        for idx_i, elec_pos1 in enumerate(ordered_elec.values()):
+            for idx_j, elec_pos2 in enumerate(ordered_elec.values()):
                 dist_mat[idx_i, idx_j] = calc_distance(elec_pos1, elec_pos2)
 
-        np.save('file_path', dist_mat)
+        np.save(opj(output_dir_path, 'DC.npy'),
+                 dist_mat)
+    return
 
-    return          
-            
             
             
             
