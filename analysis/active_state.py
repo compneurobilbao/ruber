@@ -255,9 +255,37 @@ def create_elec_matrices():
                 elec_conn_mat)
     return            
             
+
+def create_FC_SC_matrices():
+    from nilearn.connectome import ConnectivityMeasure
+
+    sphere = 3
+    denoise_type = 'gsr'
+    ses = 'ses-presurg'
+    
+    for sub in SUBJECTS:    
+        output_dir_path = opj(CWD, 'reports', 'matrices', sub)
+        if not os.path.exists(output_dir_path):
+            os.makedirs(output_dir_path)
             
-            
-            
+        # load function (conn matrix?)
+        func_file = opj(DATA, 'processed', 'fmriprep', sub, ses, 'func',
+                        'time_series_noatlas_' + denoise_type + '_' +
+                        str(sphere) + '.txt')
+        func_mat = np.loadtxt(func_file)
+
+        correlation_measure = ConnectivityMeasure(kind='correlation')
+        fc_mat = correlation_measure.fit_transform([func_mat])[0]
+
+        # STRUCT MATRIX
+        sc_mat = np.load(opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
+                             'con_mat_noatlas_' +
+                             str(sphere) + '.npy'))
+        
+        np.save(opj(output_dir_path, 'FC.npy'),
+                fc_mat) 
+        np.save(opj(output_dir_path, 'SC.npy'),
+                sc_mat)             
             
             
             
