@@ -77,3 +77,4 @@ target/
 crash*
 reports/figures/*
 reports/stats/*
+reports/
