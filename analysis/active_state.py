@@ -2,6 +2,7 @@
 from src.env import DATA
 from src.postproc.utils import load_elec_file, order_dict
 from analysis.fig1_fig2_and_stats import plot_matrix, multipage
+from analysis.bha import cross_modularity
 
 import os
 from os.path import join as opj
@@ -276,17 +277,56 @@ def create_FC_SC_matrices():
 
         correlation_measure = ConnectivityMeasure(kind='correlation')
         fc_mat = correlation_measure.fit_transform([func_mat])[0]
+        
+        fc_mat_neg = fc_mat.copy()
+        fc_mat_pos = fc_mat.copy()
+        
+        fc_mat_neg[np.where(fc_mat>0)] = 0
+        fc_mat_pos[np.where(fc_mat<0)] = 0
 
         # STRUCT MATRIX
         sc_mat = np.load(opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
                              'con_mat_noatlas_' +
                              str(sphere) + '.npy'))
-        
+        sc_mat = sc_mat / np.max(sc_mat)
+
         np.save(opj(output_dir_path, 'FC.npy'),
                 fc_mat) 
+        np.save(opj(output_dir_path, 'FC_NEG.npy'),
+                fc_mat_neg) 
+        np.save(opj(output_dir_path, 'FC_POS.npy'),
+                fc_mat_pos) 
         np.save(opj(output_dir_path, 'SC.npy'),
                 sc_mat)             
-            
-            
-            
-            
+   
+         
+def modularity_analysis():
+
+    from scipy import spatial, cluster           
+    
+    SOURCES = ['SC', 'DC']
+    TARGETS = ['FC', 'FC_NEG', 'FC_POS', 'EL']
+    alpha = 0.45
+    beta = 0.0
+    
+    for sub in SUBJECTS:
+        
+
+
+        input_dir_path = opj(CWD, 'reports', 'matrices', sub)
+        
+        source_network =  np.load(opj(input_dir_path, source + '.npy'))
+        target_network = np.load(opj(input_dir_path, target + '.npy'))
+
+
+        """
+        Source dendogram -> target follows source
+        """
+        num_clusters = 20
+        Y = spatial.distance.pdist(struct_network, metric='cosine')
+        Z = cluster.hierarchy.linkage(Y, method='weighted')
+        T = cluster.hierarchy.cut_tree(Z, n_clusters=num_clusters)
+    
+        Xsf, Qff, Qsf, Lsf = cross_modularity(func_network, struct_network,
+                                              alpha, beta, T[:, 0])
+                    
