@@ -302,31 +302,53 @@ def create_FC_SC_matrices():
          
 def modularity_analysis():
 
-    from scipy import spatial, cluster           
+    from scipy import spatial, cluster
+    from itertools import product         
     
     SOURCES = ['SC', 'DC']
     TARGETS = ['FC', 'FC_NEG', 'FC_POS', 'EL']
-    alpha = 0.45
-    beta = 0.0
+    ALPHA = 0.45
+    BETA = 0.0
+    MAX_CLUSTERS = 50
     
     for sub in SUBJECTS:
-        
-
-
         input_dir_path = opj(CWD, 'reports', 'matrices', sub)
+       
+        for source, target in product(SOURCES, TARGETS):
+            
+            source_network =  np.load(opj(input_dir_path, source + '.npy'))
+            target_network = np.load(opj(input_dir_path, target + '.npy'))
+
+            result = np.zeros(MAX_CLUSTERS)
+            
+            for num_clusters in range(2,MAX_CLUSTERS):
+                print(source, target, num_clusters)
+                """
+                Source dendogram -> target follows source
+                """
+                Y = spatial.distance.pdist(source_network, metric='cosine')
+                Y = np.nan_to_num(Y)
+                Z = cluster.hierarchy.linkage(Y, method='weighted')
+                T = cluster.hierarchy.cut_tree(Z, n_clusters=num_clusters)
+            
+                Xsf, Qff, Qsf, Lsf = cross_modularity(target_network, source_network,
+                                                      ALPHA, BETA, T[:, 0])
+                result[num_clusters] = Xsf
+            
+            plt.plot(result)
+            plt.hold()
+
+        plt.xlabel('clusters')
+        plt.ylabel('modularity value')
+        plt.title('Modularity_' + sub )
+        fig = ax.get_figure()
         
-        source_network =  np.load(opj(input_dir_path, source + '.npy'))
-        target_network = np.load(opj(input_dir_path, target + '.npy'))
-
-
-        """
-        Source dendogram -> target follows source
-        """
-        num_clusters = 20
-        Y = spatial.distance.pdist(struct_network, metric='cosine')
-        Z = cluster.hierarchy.linkage(Y, method='weighted')
-        T = cluster.hierarchy.cut_tree(Z, n_clusters=num_clusters)
-    
-        Xsf, Qff, Qsf, Lsf = cross_modularity(func_network, struct_network,
-                                              alpha, beta, T[:, 0])
-                    
+        
+        
+        
+        
+        
+        
+        
+        
+        
