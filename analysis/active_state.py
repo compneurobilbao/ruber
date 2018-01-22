@@ -315,8 +315,8 @@ def modularity_analysis():
     from scipy import spatial, cluster
     from itertools import product         
     
-    SOURCES = ['SC', 'DC'] #, 'SC_BIN']
-    TARGETS = ['FC', 'FC_NEG', 'FC_POS', 'EL']
+    SOURCES = ['SC', 'DC', 'SC_BIN']
+    TARGETS = ['FC', 'FC_POS', 'EL'] # 'FC_NEG'
     ALPHA = 0.45
     BETA = 0.0
     MAX_CLUSTERS = 50
@@ -331,7 +331,7 @@ def modularity_analysis():
             
             source_network =  np.load(opj(input_dir_path, source + '.npy'))
             target_network = np.load(opj(input_dir_path, target + '.npy'))
-            legend.append(source + '_' + target)
+            legend.append(source + ' -> ' + target)
 
             result = np.zeros(MAX_CLUSTERS)
             
