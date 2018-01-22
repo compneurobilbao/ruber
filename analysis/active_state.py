@@ -260,6 +260,8 @@ def create_elec_matrices():
 def create_FC_SC_matrices():
     from nilearn.connectome import ConnectivityMeasure
 
+    MINIMUM_FIBERS = 10
+
     sphere = 3
     denoise_type = 'gsr'
     ses = 'ses-presurg'
@@ -288,6 +290,10 @@ def create_FC_SC_matrices():
         sc_mat = np.load(opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
                              'con_mat_noatlas_' +
                              str(sphere) + '.npy'))
+        
+        sc_mat_bin = sc_mat.copy()
+        sc_mat_bin[np.where(sc_mat_bin > MINIMUM_FIBERS)] = 1
+        
         sc_mat = sc_mat / np.max(sc_mat)
 
         np.save(opj(output_dir_path, 'FC.npy'),
@@ -298,14 +304,15 @@ def create_FC_SC_matrices():
                 fc_mat_pos) 
         np.save(opj(output_dir_path, 'SC.npy'),
                 sc_mat)             
-   
+        np.save(opj(output_dir_path, 'SC_BIN.npy'),
+                        sc_mat_bin)    
          
 def modularity_analysis():
 
     from scipy import spatial, cluster
     from itertools import product         
     
-    SOURCES = ['SC', 'DC']
+    SOURCES = ['SC', 'DC', 'SC_bin']
     TARGETS = ['FC', 'FC_NEG', 'FC_POS', 'EL']
     ALPHA = 0.45
     BETA = 0.0
@@ -342,12 +349,6 @@ def modularity_analysis():
         plt.ylabel('modularity value')
         plt.title('Modularity_' + sub )
         fig = ax.get_figure()
-        
-        
-        
-        
-        
-        
         
         
         
