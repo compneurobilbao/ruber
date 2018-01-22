@@ -63,8 +63,8 @@ def cross_modularity(A, B, alpha, beta, T):
     L = np.mean(sorensen)
 
     # Compute the modularity index
-    Qa = modularity_index(np.absolute(A), T)
-    Qb = modularity_index(np.absolute(B), T)
+    Qa = np.abs(modularity_index(np.absolute(A), T))
+    Qb = np.abs(modularity_index(np.absolute(B), T))
 
     # Compute the cross modularity
     X = np.power((np.multiply(np.multiply(Qa, Qb), L)), 1/3)
