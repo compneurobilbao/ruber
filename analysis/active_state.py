@@ -320,8 +320,8 @@ def modularity_analysis():
     from scipy import spatial, cluster
     from itertools import product         
     
-    SOURCES = ['SC', 'DC', 'SC_BIN']
-    TARGETS = ['FC', 'FC_POS', 'EL'] # 'FC_NEG'
+    SOURCES = ['SC', 'DC'] #, 'SC_BIN']
+    TARGETS = ['FC', 'FC_POS'] # 'FC_NEG'
     ALPHA = 0.45
     BETA = 0.0
     MAX_CLUSTERS = 50
@@ -358,6 +358,8 @@ def modularity_analysis():
                     result[num_clusters] = np.nan_to_num(Xsf)
                     
                 if source in ['SC_BIN']: 
+                    # SC_BIN discarded for the moment. 
+                    # TODO: Calculation of Y
                     Z = cluster.hierarchy.linkage(Y, method='average')
                     T = cluster.hierarchy.cut_tree(Z,  n_clusters=num_clusters)
                     Xsf, Qff, Qsf, Lsf = cross_modularity(target_network,
@@ -374,6 +376,7 @@ def modularity_analysis():
         plt.legend(bbox_to_anchor=(1.04,1), loc="upper left")
         plt.xlabel('# clusters')
         plt.ylabel('modularity value')
+        plt.ylim((0, 0.5))
         ax = plt.title('Modularity_' + sub )
         fig = ax.get_figure()
         figures.append(fig)
