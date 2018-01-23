@@ -238,25 +238,30 @@ def create_elec_matrices():
         if not os.path.exists(output_dir_path):
             os.makedirs(output_dir_path)
                           
-#        for rit in RITHMS:
-#            if rit == 'prefiltered':
-#                    continue      
-        rit = 'filtered' # only for "filtered"
-        files_path = opj(PROCESSED_ELEC, sub, 'active_state', rit)
-        
-        for num_file, file in enumerate(os.listdir(files_path)):
-            if num_file == 0:
-                as_data = np.load(opj(files_path, file))
-                total_as_data = as_data
-            else:
-                as_data = np.load(opj(files_path, file))
-                total_as_data = np.concatenate((total_as_data, as_data))
-            
-        elec_conn_mat, pvals = corr_mat(total_as_data)    
-        elec_conn_mat[np.where(pvals > th)] = 0
+        for rit in RITHMS:
+            if rit == 'prefiltered':
+                    continue      
 
-        np.save(opj(output_dir_path, 'EL.npy'),
-                elec_conn_mat)
+            # Active State
+            # files_path = opj(PROCESSED_ELEC, sub, 'active_state', rit)
+            
+            # Normal
+            files_path = opj(PROCESSED_ELEC, sub, 'interictal_not_regressed', rit)
+
+            
+            for num_file, file in enumerate(os.listdir(files_path)):
+                if num_file == 0:
+                    as_data = np.load(opj(files_path, file))
+                    total_as_data = as_data
+                else:
+                    as_data = np.load(opj(files_path, file))
+                    total_as_data = np.concatenate((total_as_data, as_data))
+                
+            elec_conn_mat, pvals = corr_mat(total_as_data)    
+            elec_conn_mat[np.where(pvals > th)] = 0
+    
+            np.save(opj(output_dir_path, 'EL_'+rit+'.npy'),
+                    elec_conn_mat)
     return            
             
 
