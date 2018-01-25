@@ -320,8 +320,9 @@ def modularity_analysis():
     from scipy import spatial, cluster
     from itertools import product         
     
-    SOURCES = ['SC', 'DC'] #, 'SC_BIN']
-    TARGETS = ['FC', 'FC_POS'] # 'FC_NEG'
+    SOURCES = ['EL_filtered', 'EL_delta', 'EL_theta', 'EL_alpha', 'EL_beta',
+               'EL_gamma', 'EL_gamma_high'] #, 'SC_BIN']
+    TARGETS = ['FC_POS']
     ALPHA = 0.45
     BETA = 0.0
     MAX_CLUSTERS = 50
@@ -344,24 +345,25 @@ def modularity_analysis():
                 """
                 Source dendogram -> target follows source
                 """
-                if source in ['SC', 'DC']:
-                    Y = spatial.distance.pdist(source_network, metric='cosine')
-                    Y = np.nan_to_num(Y)
-                    Z = cluster.hierarchy.linkage(Y, method='weighted')
-                    T = cluster.hierarchy.cut_tree(Z, n_clusters=num_clusters)
                 
-                    Xsf, Qff, Qsf, Lsf = cross_modularity(target_network,
-                                                          source_network,
-                                                          ALPHA,
-                                                          BETA,
-                                                          T[:, 0])
-                    result[num_clusters] = np.nan_to_num(Xsf)
                     
                 if source in ['SC_BIN']: 
                     # SC_BIN discarded for the moment. 
                     # TODO: Calculation of Y
                     Z = cluster.hierarchy.linkage(Y, method='average')
                     T = cluster.hierarchy.cut_tree(Z,  n_clusters=num_clusters)
+                    Xsf, Qff, Qsf, Lsf = cross_modularity(target_network,
+                                                          source_network,
+                                                          ALPHA,
+                                                          BETA,
+                                                          T[:, 0])
+                    result[num_clusters] = np.nan_to_num(Xsf)
+                else:
+                    Y = spatial.distance.pdist(source_network, metric='cosine')
+                    Y = np.nan_to_num(Y)
+                    Z = cluster.hierarchy.linkage(Y, method='weighted')
+                    T = cluster.hierarchy.cut_tree(Z, n_clusters=num_clusters)
+                
                     Xsf, Qff, Qsf, Lsf = cross_modularity(target_network,
                                                           source_network,
                                                           ALPHA,
@@ -383,7 +385,7 @@ def modularity_analysis():
         plt.close()
     
     multipage(opj(output_dir,
-                  'Hierarchichal xmodularity.pdf'),
+                  'xmod_el_2_fmri_pos.pdf'),
                     figures,
                     dpi=250)
     
