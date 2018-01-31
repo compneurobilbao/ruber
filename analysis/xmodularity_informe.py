@@ -14,36 +14,39 @@ RAW_ELEC = opj(DATA, 'raw', 'elec_record')
 PROCESSED_ELEC = opj(DATA, 'processed', 'elec_record')
 
 SUBJECTS = ['sub-001', 'sub-002', 'sub-003', 'sub-004']
-RITHMS = ['prefiltered', 'filtered', 'delta', 'theta',
-          'alpha', 'beta', 'gamma', 'gamma_high']
 
 CWD = os.getcwd()
 
+# TODO: target tags from informe
+target_tags = [ 'OIL4', 'OIL5', 'OIL6', 'OIL7',
+       'OIL8', 'OIL9',  'TI1', 'TI5',]
 
 def modularity_analysis():
 
     from scipy import spatial, cluster
     from itertools import product         
     
-    SOURCES = ['FC']
-    TARGETS = ['SC', 'EL_theta', 'EL_alpha', 'EL_beta']
-    ALPHA = 0.45
-    BETA = 0.0
-    MAX_CLUSTERS = 20
-    output_dir = opj(CWD, 'reports', 'figures', 'active_state')
-    
-    figures = []
+    SOURCES = ['FC', 'SC', 'EL_theta', 'EL_alpha', 'EL_beta']
 
-    for sub in SUBJECTS:
+    MAX_CLUSTERS = 20
+#    output_dir = opj(CWD, 'reports', 'figures', 'active_state')
+#    
+#    figures = []
+    result = np.zeros((len(SUBJECTS),MAX_CLUSTERS, MAX_CLUSTERS))
+
+
+    for idx_sub, sub in enumerate(SUBJECTS):
         input_dir_path = opj(CWD, 'reports', 'matrices', sub)
-        legend = []
-        for source, target in product(SOURCES, TARGETS):
+        elec_file = opj(DATA, 'raw', 'bids', sub, 'electrodes',
+                        'elec.loc')
+        elec_location_mni09 = load_elec_file(elec_file)
+        ordered_elec = order_dict(elec_location_mni09)
+        elec_tags = np.array(list(ordered_elec.keys()))
+
+        for source in SOURCES:
             
             source_network =  np.load(opj(input_dir_path, source + '.npy'))
-            target_network = np.load(opj(input_dir_path, target + '.npy'))
-            legend.append(source + ' -> ' + target)
 
-            result = np.zeros(MAX_CLUSTERS)
             
             for num_clusters in range(2,MAX_CLUSTERS):
                 """
@@ -53,11 +56,13 @@ def modularity_analysis():
                 Y = np.nan_to_num(Y)
                 Z = cluster.hierarchy.linkage(Y, method='weighted')
                 T = cluster.hierarchy.cut_tree(Z, n_clusters=num_clusters)[:, 0]
-            
-
-
-                result[num_clusters] = np.nan_to_num(Xsf)
-
+                
+                for clust in range(num_clusters):
+                    idx = np.where(T==clust)
+                    clust_tags = elec_tags[idx[0]]
+                    matching = set(clust_tags) & set(target_tags)
+                    result[idx_sub, num_clusters, clust] = len(matching) / len(target_tags) * 100
+                    
                             
 #            plt.plot(result)
 #            plt.hold(True)
