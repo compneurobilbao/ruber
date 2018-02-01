@@ -21,6 +21,22 @@ CWD = os.getcwd()
 target_tags = [ 'OIL4', 'OIL5', 'OIL6', 'OIL7',
        'OIL8', 'OIL9',  'TI1', 'TI5']
 
+
+def calc_clust_similarity(clust_size, target_size):
+    """ 
+    Linear function to calculate how close the size of the cluster
+    is to the real epileptogenic cluster that we want to find
+    """
+    
+    if clust_size > target_size:
+        if clust_size >= 2*target_size:
+            clust_size = 0
+        else:
+            clust_size = target_size - (clust_size - target_size)
+        
+    return (clust_size/target_size)
+
+
 def modularity_analysis():
 
     from scipy import spatial, cluster
@@ -47,7 +63,7 @@ def modularity_analysis():
             source_network =  np.load(opj(input_dir_path, source + '.npy'))
 
             result = np.zeros((MAX_CLUSTERS, MAX_CLUSTERS))
-            for num_clusters in range(MAX_CLUSTERS):
+            for num_clusters in range(1,MAX_CLUSTERS):
                 """
                 Source dendogram -> target follows source
                 """
@@ -60,7 +76,10 @@ def modularity_analysis():
                     idx = np.where(T==clust)
                     clust_tags = elec_tags[idx[0]]
                     matching = set(clust_tags) & set(target_tags)
-                    result[num_clusters, clust] = np.sqrt((len(matching) / len(target_tags)), np.abs((len(clust_tags) - len(target_tags))))
+                    
+                    clust_sim = calc_clust_similarity(len(target_tags),
+                                                      len(clust_tags))
+                    result[num_clusters, clust] = (len(matching) / len(target_tags)) * clust_sim
                     
                             
             plot_matrix(result, range(MAX_CLUSTERS))
