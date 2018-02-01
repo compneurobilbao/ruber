@@ -19,23 +19,22 @@ CWD = os.getcwd()
 
 # TODO: target tags from informe
 target_tags = [ 'OIL4', 'OIL5', 'OIL6', 'OIL7',
-       'OIL8', 'OIL9',  'TI1', 'TI5',]
+       'OIL8', 'OIL9',  'TI1', 'TI5']
 
 def modularity_analysis():
 
     from scipy import spatial, cluster
-    from itertools import product         
     
     SOURCES = ['FC', 'SC', 'EL_theta', 'EL_alpha', 'EL_beta']
 
-    MAX_CLUSTERS = 20
-#    output_dir = opj(CWD, 'reports', 'figures', 'active_state')
-#    
-#    figures = []
-    result = np.zeros((len(SUBJECTS),MAX_CLUSTERS, MAX_CLUSTERS))
+    MAX_CLUSTERS = 40
+    output_dir = opj(CWD, 'reports', 'figures', 'active_state')
+    
+    figures = []
+    
 
 
-    for idx_sub, sub in enumerate(SUBJECTS):
+    for sub in SUBJECTS:
         input_dir_path = opj(CWD, 'reports', 'matrices', sub)
         elec_file = opj(DATA, 'raw', 'bids', sub, 'electrodes',
                         'elec.loc')
@@ -47,8 +46,8 @@ def modularity_analysis():
             
             source_network =  np.load(opj(input_dir_path, source + '.npy'))
 
-            
-            for num_clusters in range(2,MAX_CLUSTERS):
+            result = np.zeros((MAX_CLUSTERS, MAX_CLUSTERS))
+            for num_clusters in range(MAX_CLUSTERS):
                 """
                 Source dendogram -> target follows source
                 """
@@ -61,22 +60,19 @@ def modularity_analysis():
                     idx = np.where(T==clust)
                     clust_tags = elec_tags[idx[0]]
                     matching = set(clust_tags) & set(target_tags)
-                    result[idx_sub, num_clusters, clust] = len(matching) / len(target_tags) * 100
+                    result[num_clusters, clust] = np.sqrt((len(matching) / len(target_tags)), np.abs((len(clust_tags) - len(target_tags))))
                     
                             
-#            plt.plot(result)
-#            plt.hold(True)
-#        plt.legend(legend)
-#        plt.legend(bbox_to_anchor=(1.04,1), loc="upper left")
-#        plt.xlabel('# clusters')
-#        plt.ylabel('modularity value')
-#        plt.ylim((0, 0.5))
-#        ax = plt.title('Modularity_' + sub )
-#        fig = ax.get_figure()
-#        figures.append(fig)
-#        plt.close()
-#    
-#    multipage(opj(output_dir,
-#                  'xmod_el_2_fmri_pos.pdf'),
-#                    figures,
-#                    dpi=250)
+            plot_matrix(result, range(MAX_CLUSTERS))
+            plt.clim(0,1)
+            plt.colorbar(orientation="vertical")
+            plt.xlabel('# clusters')
+            ax = plt.title('Informe match ' + sub + ' ' + source )
+            fig = ax.get_figure()
+            figures.append(fig)
+            plt.close()
+
+    multipage(opj(output_dir,
+                  'Informe match.pdf'),
+                    figures,
+                    dpi=250)
