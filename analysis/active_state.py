@@ -2,6 +2,7 @@
 from src.env import DATA
 from src.postproc.utils import load_elec_file, order_dict
 from analysis.fig1_fig2_and_stats import plot_matrix, multipage
+from analysis.bha import cross_modularity
 
 import os
 from os.path import join as opj
@@ -203,6 +204,9 @@ def create_distance_matrices():
         for idx_i, elec_pos1 in enumerate(ordered_elec.values()):
             for idx_j, elec_pos2 in enumerate(ordered_elec.values()):
                 dist_mat[idx_i, idx_j] = calc_distance(elec_pos1, elec_pos2)
+        
+        # Normalize
+        dist_mat = dist_mat / np.max(dist_mat)
 
         np.save(opj(output_dir_path, 'DC.npy'),
                 dist_mat)
@@ -234,30 +238,37 @@ def create_elec_matrices():
         if not os.path.exists(output_dir_path):
             os.makedirs(output_dir_path)
                           
-#        for rit in RITHMS:
-#            if rit == 'prefiltered':
-#                    continue      
-        rit = 'filtered' # only for "filtered"
-        files_path = opj(PROCESSED_ELEC, sub, 'active_state', rit)
-        
-        for num_file, file in enumerate(os.listdir(files_path)):
-            if num_file == 0:
-                as_data = np.load(opj(files_path, file))
-                total_as_data = as_data
-            else:
-                as_data = np.load(opj(files_path, file))
-                total_as_data = np.concatenate((total_as_data, as_data))
-            
-        elec_conn_mat, pvals = corr_mat(total_as_data)    
-        elec_conn_mat[np.where(pvals > th)] = 0
+        for rit in RITHMS:
+            if rit == 'prefiltered':
+                    continue      
 
-        np.save(opj(output_dir_path, 'EL.npy'),
-                elec_conn_mat)
+            # Active State
+            # files_path = opj(PROCESSED_ELEC, sub, 'active_state', rit)
+            
+            # Normal
+            files_path = opj(PROCESSED_ELEC, sub, 'interictal_not_regressed', rit)
+
+            
+            for num_file, file in enumerate(os.listdir(files_path)):
+                if num_file == 0:
+                    as_data = np.load(opj(files_path, file))
+                    total_as_data = as_data
+                else:
+                    as_data = np.load(opj(files_path, file))
+                    total_as_data = np.concatenate((total_as_data, as_data))
+                
+            elec_conn_mat, pvals = corr_mat(total_as_data)    
+            elec_conn_mat[np.where(pvals > th)] = 0
+    
+            np.save(opj(output_dir_path, 'EL_'+rit+'.npy'),
+                    elec_conn_mat)
     return            
             
 
 def create_FC_SC_matrices():
     from nilearn.connectome import ConnectivityMeasure
+
+    MINIMUM_FIBERS = 10
 
     sphere = 3
     denoise_type = 'gsr'
@@ -276,17 +287,164 @@ def create_FC_SC_matrices():
 
         correlation_measure = ConnectivityMeasure(kind='correlation')
         fc_mat = correlation_measure.fit_transform([func_mat])[0]
+        
+        fc_mat_neg = fc_mat.copy()
+        fc_mat_pos = fc_mat.copy()
+        
+        fc_mat_neg[np.where(fc_mat>0)] = 0
+        fc_mat_pos[np.where(fc_mat<0)] = 0
 
         # STRUCT MATRIX
         sc_mat = np.load(opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
                              'con_mat_noatlas_' +
                              str(sphere) + '.npy'))
         
+        sc_mat_bin = sc_mat.copy()
+        sc_mat_bin[np.where(sc_mat_bin > MINIMUM_FIBERS)] = 1
+        
+        sc_mat = sc_mat / np.max(sc_mat)
+
         np.save(opj(output_dir_path, 'FC.npy'),
                 fc_mat) 
+        np.save(opj(output_dir_path, 'FC_NEG.npy'),
+                fc_mat_neg) 
+        np.save(opj(output_dir_path, 'FC_POS.npy'),
+                fc_mat_pos) 
         np.save(opj(output_dir_path, 'SC.npy'),
                 sc_mat)             
+        np.save(opj(output_dir_path, 'SC_BIN.npy'),
+                        sc_mat_bin)    
+         
+def modularity_analysis():
+
+    from scipy import spatial, cluster
+    from itertools import product         
+    
+    SOURCES = ['EL_filtered', 'EL_delta', 'EL_theta', 'EL_alpha', 'EL_beta',
+               'EL_gamma', 'EL_gamma_high'] #, 'SC_BIN']
+    TARGETS = ['FC_POS']
+    ALPHA = 0.45
+    BETA = 0.0
+    MAX_CLUSTERS = 50
+    output_dir = opj(CWD, 'reports', 'figures', 'active_state')
+    
+    figures = []
+
+    for sub in SUBJECTS:
+        input_dir_path = opj(CWD, 'reports', 'matrices', sub)
+        legend = []
+        for source, target in product(SOURCES, TARGETS):
             
+            source_network =  np.load(opj(input_dir_path, source + '.npy'))
+            target_network = np.load(opj(input_dir_path, target + '.npy'))
+            legend.append(source + ' -> ' + target)
+
+            result = np.zeros(MAX_CLUSTERS)
             
+            for num_clusters in range(2,MAX_CLUSTERS):
+                """
+                Source dendogram -> target follows source
+                """
+                
+                    
+                if source in ['SC_BIN']: 
+                    # SC_BIN discarded for the moment. 
+                    # TODO: Calculation of Y
+                    Z = cluster.hierarchy.linkage(Y, method='average')
+                    T = cluster.hierarchy.cut_tree(Z,  n_clusters=num_clusters)
+                    Xsf, Qff, Qsf, Lsf = cross_modularity(target_network,
+                                                          source_network,
+                                                          ALPHA,
+                                                          BETA,
+                                                          T[:, 0])
+                    result[num_clusters] = np.nan_to_num(Xsf)
+                else:
+                    Y = spatial.distance.pdist(source_network, metric='cosine')
+                    Y = np.nan_to_num(Y)
+                    Z = cluster.hierarchy.linkage(Y, method='weighted')
+                    T = cluster.hierarchy.cut_tree(Z, n_clusters=num_clusters)
+                
+                    Xsf, Qff, Qsf, Lsf = cross_modularity(target_network,
+                                                          source_network,
+                                                          ALPHA,
+                                                          BETA,
+                                                          T[:, 0])
+                    result[num_clusters] = np.nan_to_num(Xsf)
+
+                            
+            plt.plot(result)
+            plt.hold(True)
+        plt.legend(legend)
+        plt.legend(bbox_to_anchor=(1.04,1), loc="upper left")
+        plt.xlabel('# clusters')
+        plt.ylabel('modularity value')
+        plt.ylim((0, 0.5))
+        ax = plt.title('Modularity_' + sub )
+        fig = ax.get_figure()
+        figures.append(fig)
+        plt.close()
+    
+    multipage(opj(output_dir,
+                  'xmod_el_2_fmri_pos.pdf'),
+                    figures,
+                    dpi=250)
+    
+        
+def single_link_analysis():
+
+    from itertools import combinations       
+    
+    MODALITIES = ['SC', 'DC', 'SC_BIN', 'FC', 'FC_POS', 'FC_NEG',
+                  'EL_filtered', 'EL_delta', 'EL_theta', 'EL_alpha', 'EL_beta',
+                  'EL_gamma', 'EL_gamma_high', 
+                  'EL_AS_filtered', 'EL_AS_delta', 'EL_AS_theta', 'EL_AS_alpha',
+                  'EL_AS_beta', 'EL_AS_gamma', 'EL_AS_gamma_high']
+    MOD_IDX = {v: k for k, v in dict(enumerate(MODALITIES)).items()}
+    num_mod = len(MOD_IDX)
+    output_dir = opj(CWD, 'reports', 'figures', 'active_state')
+    
+    result_mat = np.zeros((num_mod, num_mod))
+
+    figures = []
+
+    for sub in SUBJECTS:
+        input_dir_path = opj(CWD, 'reports', 'matrices', sub)
+
+        for source, target in combinations(MODALITIES, 2):
             
+            arr_1 =  np.load(opj(input_dir_path, source + '.npy')).flatten()
+            arr_2 = np.load(opj(input_dir_path, target + '.npy')).flatten()
+
+            if arr_1 in ['SC', 'SC_BIN']:
+                idx = np.where(arr_1==0)
+                arr_1 = np.delete(arr_1, idx)
+                arr_2 = np.delete(arr_2, idx)
             
+            result_mat[MOD_IDX[source],MOD_IDX[target]] = np.corrcoef(arr_1, arr_2)[0][1]
+        
+        plot_matrix(result_mat.T, MODALITIES)
+        plt.clim(-1,1)
+        plt.colorbar(orientation="horizontal")
+        ax = plt.title('Single_link_' + sub )
+        fig = ax.get_figure()
+        figures.append(fig)
+        plt.close()
+
+    multipage(opj(output_dir,
+                  'Single_link.pdf'),
+                    figures,
+                    dpi=250)                 
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+  
