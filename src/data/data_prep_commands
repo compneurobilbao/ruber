@@ -78,6 +78,12 @@ flirt -in /home/asier/Desktop/test_ruber/atlas_2514_1mm.nii.gz \
 -out /home/asier/git/ruber/data/external/bha_atlas_2514_1mm_mni09c.nii.gz \
 -init /home/asier/git/ruber/data/external/standard_mni_asym_09c/mni152_2_09c.mat -applyxfm -interp nearestneighbour 
 
+
+flirt -in /home/asier/Desktop/AAL_1mm.nii \
+-ref /home/asier/git/ruber/data/external/standard_mni_asym_09c/mni_icbm152_t1_tal_nlin_asym_09c_brain.nii \
+-out /home/asier/Desktop/AAL_1mm_mni09c.nii.gz \
+-init /home/asier/git/ruber/data/external/standard_mni_asym_09c/mni152_2_09c.mat -applyxfm -interp nearestneighbour 
+
 flirt -in /home/asier/Desktop/test_ruber/atlas_2754_1mm.nii.gz \
 -ref /home/asier/git/ruber/data/external/standard_mni_asym_09c/mni_icbm152_t1_tal_nlin_asym_09c_brain.nii \
 -out /home/asier/git/ruber/data/external/bha_atlas_2754_1mm_mni09c.nii.gz \
