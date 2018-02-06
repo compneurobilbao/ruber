@@ -116,7 +116,7 @@ def clean_and_get_time_series(subject_list, session_list):
 
                 # 2.- Scrubbing
                 # extract FramewiseDisplacement
-                FD = confounds.iloc[:, 5].as_matrix()
+                FD = confounds['FramewiseDisplacement'].as_matrix()
                 thres = 0.2
                 time_series = scrubbing(time_series, FD, thres)
 
