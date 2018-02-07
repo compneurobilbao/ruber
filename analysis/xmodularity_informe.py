@@ -13,19 +13,15 @@ from matplotlib import pyplot as plt
 RAW_ELEC = opj(DATA, 'raw', 'elec_record')
 PROCESSED_ELEC = opj(DATA, 'processed', 'elec_record')
 
-SUBJECTS = ['sub-001', 'sub-002', 'sub-004']
+SUBJECTS = ['sub-001', 'sub-002', 'sub-003', 'sub-004']
 
 CWD = os.getcwd()
 
 # Obtained from informe
 target_tags_dict = {'sub-001': ['OIL1', 'OIL2', 'OIL3', 'OIL4', 'OIL5', 'OIL6',
-                                'OIL7', 'OIL8', 'OIL9', 'OIL10', 'OIL11',
-                                'OIL12', 'TI1', 'TI2', 'TI3', 'TI4', 'TI5',
-                                'TI6', 'TI7', 'TI8'],
-                    'sub-002': ['A1', 'A2', 'A3', 'A4', 'A5', 'B1', 'B2', 'B3',
-                                'B4', 'B5', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6',
-                                'C7', 'C8', 'D1', 'D2', 'D3', 'D4', 'D5' ],
-                    'sub-003': [],
+                                'TI1', 'TI2', 'OIM1', 'OIM2', 'OIM3',],
+                    'sub-002': ['A2', 'A3', 'A4', 'C2', 'C3', 'C4', 'C5'],
+                    'sub-003': ['B1', 'B2', 'C1', 'C2', 'C3', 'C4'],
                     'sub-004': ['D6', 'D7', 'D8', 'D9', 'D10', 'C5', 'C6', 'C7', 'C8'],
                     }
 
