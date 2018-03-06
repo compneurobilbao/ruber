@@ -420,7 +420,7 @@ def single_link_analysis():
                 arr_1 = np.delete(arr_1, idx)
                 arr_2 = np.delete(arr_2, idx)
             
-            result_mat[MOD_IDX[source],MOD_IDX[target]] = np.corrcoef(arr_1, arr_2)[0][1]
+            result_mat[MOD_IDX[source],MOD_IDX[target]] = np.corrcoef(arr_1, arr_2)[0][1]       
         
         plot_matrix(result_mat.T, MODALITIES)
         plt.clim(-1,1)
@@ -435,12 +435,61 @@ def single_link_analysis():
                     figures,
                     dpi=250)                 
                     
+
+def single_link_analysis_mean_subjects():
+
+    from itertools import combinations       
+    
+    MODALITIES = ['SC', 'DC', 'SC_BIN', 'FC', 'FC_POS', 'FC_NEG',
+                  'EL_filtered', 'EL_delta', 'EL_theta', 'EL_alpha', 'EL_beta',
+                  'EL_gamma', 'EL_gamma_high', 
+                  'EL_AS_filtered', 'EL_AS_delta', 'EL_AS_theta', 'EL_AS_alpha',
+                  'EL_AS_beta', 'EL_AS_gamma', 'EL_AS_gamma_high']
+    MOD_IDX = {v: k for k, v in dict(enumerate(MODALITIES)).items()}
+    num_mod = len(MOD_IDX)
+    output_dir = opj(CWD, 'reports', 'figures', 'active_state')
+    
+    result_mat = np.zeros((num_mod, num_mod))
+    result_mat_all = np.zeros((num_mod, num_mod, 4))
+
+    figures = []
+
+    for i,sub in enumerate(SUBJECTS):
+        input_dir_path = opj(CWD, 'reports', 'matrices', sub)
+
+        for source, target in combinations(MODALITIES, 2):
+            
+            arr_1 =  np.load(opj(input_dir_path, source + '.npy')).flatten()
+            arr_2 = np.load(opj(input_dir_path, target + '.npy')).flatten()
+
+            if arr_1 in ['SC', 'SC_BIN']:
+                idx = np.where(arr_1==0)
+                arr_1 = np.delete(arr_1, idx)
+                arr_2 = np.delete(arr_2, idx)
+            
+            result_mat[MOD_IDX[source],MOD_IDX[target]] = np.corrcoef(arr_1, arr_2)[0][1]       
+        
+        result_mat_all[:,:,i] = result_mat
+        plot_matrix(result_mat.T, MODALITIES)
+        plt.clim(-1,1)
+        plt.colorbar(orientation="horizontal")
+        ax = plt.title('Single_link_' + sub )
+        fig = ax.get_figure()
+        figures.append(fig)
+        plt.close()
+
+    multipage(opj(output_dir,
+                  'Single_link.pdf'),
+                    figures,
+                    dpi=250)       
                     
                     
-                    
-                    
-                    
-                    
+plot_matrix(np.mean(result_mat_all, 2).T, MODALITIES)
+plt.clim(-1,1)
+ax = plt.title('Mean similiraty matrix')
+fig = ax.get_figure()
+figures.append(fig)
+plt.close()                    
                     
                     
                     

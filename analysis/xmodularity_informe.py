@@ -106,7 +106,7 @@ def single_link_analysis_informe():
 
     from itertools import combinations       
     
-    MODALITIES = ['SC', 'FC', 'FC_POS',  'EL_theta', 'EL_alpha', 'EL_beta']
+    MODALITIES = ['FC', 'EL_alpha', 'EL_beta']
     
     
     MOD_IDX = {v: k for k, v in dict(enumerate(MODALITIES)).items()}
@@ -114,11 +114,13 @@ def single_link_analysis_informe():
     output_dir = opj(CWD, 'reports', 'figures', 'active_state')
     
     result_mat_inside = np.zeros((num_mod, num_mod))
+    result_mat_inside_all = np.zeros((num_mod, num_mod, 4))
     result_mat_outside = np.zeros((num_mod, num_mod))
+    result_mat_outside_all = np.zeros((num_mod, num_mod, 4))
 
     figures = []
 
-    for sub in SUBJECTS:
+    for sub_idx, sub in enumerate(SUBJECTS):
         input_dir_path = opj(CWD, 'reports', 'matrices', sub)
         
         elec_file = opj(DATA, 'raw', 'bids', sub, 'electrodes',
@@ -162,6 +164,9 @@ def single_link_analysis_informe():
             
             result_mat_outside[MOD_IDX[source],MOD_IDX[target]] = np.corrcoef(arr_1, arr_2)[0][1]
         
+        result_mat_inside_all[:,:,sub_idx] = result_mat_inside
+        result_mat_outside_all[:,:,sub_idx] = result_mat_outside
+        
         plot_matrix(result_mat_inside.T, MODALITIES)
         plt.clim(-1,1)
         plt.colorbar()
@@ -183,3 +188,11 @@ def single_link_analysis_informe():
                     figures,
                     dpi=250)                 
                     
+            
+plot_matrix(np.mean(result_mat_inside_all, 2).T, MODALITIES)
+plt.clim(-1,1)
+ax = plt.title('Mean single link inside resection area')
+
+plot_matrix(np.mean(result_mat_outside_all, 2).T, MODALITIES)
+plt.clim(-1,1)
+ax = plt.title('Mean single link outside resection area' )
