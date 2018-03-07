@@ -320,9 +320,9 @@ def modularity_analysis():
     from scipy import spatial, cluster
     from itertools import product         
     
-    SOURCES = ['EL_filtered', 'EL_delta', 'EL_theta', 'EL_alpha', 'EL_beta',
-               'EL_gamma', 'EL_gamma_high'] #, 'SC_BIN']
-    TARGETS = ['FC_POS']
+    S_T = [['SC', 'FC_POS'],
+           ['DC', 'FC_POS'],['EL_alpha', 'FC_POS'],['EL_beta', 'FC_POS'],
+           ['FC_POS', 'EL_alpha'],['FC_POS', 'EL_beta']]
     ALPHA = 0.45
     BETA = 0.0
     MAX_CLUSTERS = 50
@@ -333,7 +333,7 @@ def modularity_analysis():
     for sub in SUBJECTS:
         input_dir_path = opj(CWD, 'reports', 'matrices', sub)
         legend = []
-        for source, target in product(SOURCES, TARGETS):
+        for source, target in S_T:
             
             source_network =  np.load(opj(input_dir_path, source + '.npy'))
             target_network = np.load(opj(input_dir_path, target + '.npy'))
@@ -385,7 +385,7 @@ def modularity_analysis():
         plt.close()
     
     multipage(opj(output_dir,
-                  'xmod_el_2_fmri_pos.pdf'),
+                  'xmod_2:fcpos.pdf'),
                     figures,
                     dpi=250)
     

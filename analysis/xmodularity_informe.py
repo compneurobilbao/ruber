@@ -196,3 +196,69 @@ ax = plt.title('Mean single link inside resection area')
 plot_matrix(np.mean(result_mat_outside_all, 2).T, MODALITIES)
 plt.clim(-1,1)
 ax = plt.title('Mean single link outside resection area' )
+
+
+
+
+
+def single_link_analysis_informe_scatter():
+
+    from itertools import combinations       
+    
+    MODALITIES = [['FC', 'EL_beta']]#,['FC', 'EL_alpha']]
+
+    output_dir = opj(CWD, 'reports', 'figures', 'active_state')
+
+
+    figures = []
+
+    for sub_idx, sub in enumerate(SUBJECTS):
+        input_dir_path = opj(CWD, 'reports', 'matrices', sub)
+        
+        elec_file = opj(DATA, 'raw', 'bids', sub, 'electrodes',
+                        'elec.loc')
+        elec_location_mni09 = load_elec_file(elec_file)
+        ordered_elec = order_dict(elec_location_mni09)
+        elec_tags = np.array(list(ordered_elec.keys()))
+        
+        target_tags = target_tags_dict[sub]
+        idx_targets = np.zeros(len(target_tags), dtype='int')
+        
+        for i, target in enumerate(target_tags):
+            idx_targets[i] = np.where(elec_tags == target)[0][0]
+        
+        idx_tags = np.delete(np.arange(len(elec_tags)), idx_targets)
+        
+        idx_targets = np.ix_(idx_targets, idx_targets)
+        idx_tags = np.ix_(idx_tags, idx_tags)
+
+        for source, target in MODALITIES:
+            
+            # inside resection
+            arr_1 =  np.load(opj(input_dir_path, source + '.npy'))[idx_targets].flatten()
+            arr_2 = np.load(opj(input_dir_path, target + '.npy'))[idx_targets].flatten()
+
+                        
+            # outside resection
+            arr_3 =  np.load(opj(input_dir_path, source + '.npy'))[idx_tags].flatten()
+            arr_4 = np.load(opj(input_dir_path, target + '.npy'))[idx_tags].flatten()
+
+            plt.scatter(arr_3,arr_4)
+            plt.scatter(arr_1,arr_2, c='red')
+            plt.xlabel(source)
+            plt.ylabel(target)
+            plt.legend(['outside resection', 'inside resection'])
+            ax = plt.title(sub)
+            fig = ax.get_figure()
+            figures.append(fig)
+            plt.close()
+       
+
+    multipage(opj(output_dir,
+                  'scatter_singlelink.pdf'),
+                    figures,
+                    dpi=250)                 
+
+
+
+
