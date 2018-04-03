@@ -264,4 +264,64 @@ def single_link_analysis_informe_scatter():
 
 
 
+# Obtained from informe
+target_tags_dict = {'sub-001': ['OIL1', 'OIL2', 'OIL3', 'OIL4'],
+                    'sub-002': [ 'A4', 'A5', 'B1', 'B2', 'B3', 'C1', 'C2', 'C3', 'C4', 'C5'],
+                    'sub-003': [ 'A1', 'A2','B1', 'B2', 'C1', 'C2', 'C3', 'C4'],
+                    'sub-004': ['D6', 'D7', 'D8', 'D9', 'D10', 'C5', 'C6', 'C7', 'C8'],
+                    }
+
+
+def fig_modularity_analysis_informe():
+
+    from scipy import spatial, cluster
+    
+    SOURCES = ['FC']
+    SUBJECTS = ['sub-003']
+
+    NUM_CLUSTERS = [7]
+    output_dir = opj(CWD, 'reports', 'figures', 'active_state')
+    
+    figures = []
+    
+    for sub in SUBJECTS:
+        input_dir_path = opj(CWD, 'reports', 'matrices', sub)
+        elec_file = opj(DATA, 'raw', 'bids', sub, 'electrodes',
+                        'elec.loc')
+        elec_location_mni09 = load_elec_file(elec_file)
+        ordered_elec = order_dict(elec_location_mni09)
+        elec_tags = np.array(list(ordered_elec.keys()))
+        
+        target_tags = target_tags_dict[sub]
+
+        for source in SOURCES:
+            
+            source_network =  np.load(opj(input_dir_path, source + '.npy'))
+
+            for num_clusters in NUM_CLUSTERS:
+                """
+                Source dendogram -> target follows source
+                """
+                Y = spatial.distance.pdist(source_network, metric='cosine')
+                Y = np.nan_to_num(Y)
+                Z = cluster.hierarchy.linkage(Y, method='weighted')
+                T = cluster.hierarchy.cut_tree(Z, n_clusters=num_clusters)[:, 0]
+                
+                for clust in range(num_clusters):
+                    idx = np.where(T==clust)
+                    clust_tags = elec_tags[idx[0]]
+                    matching = set(clust_tags) & set(target_tags)
+                    
+                    clust_sim = calc_clust_similarity(len(target_tags),
+                                                      len(clust_tags))
+                    print((len(matching) / len(target_tags)) * clust_sim)
+             
+# IMPORTANT TO PLOT RESECTIONS!
+plot_matrix(source_network, elec_tags)
+T_idx = np.argsort(T)
+source_network1 = source_network[:, T_idx][T_idx]
+plot_matrix(source_network1, elec_tags[T_idx])
+plt.clim(-1,1)
+plt.title('FC reordered in 7 modules')
+plt.savefig('/home/asier/Desktop/'+sub+'.eps', format='eps', dpi=300)
 
