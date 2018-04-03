@@ -192,10 +192,12 @@ def single_link_analysis_informe():
 plot_matrix(np.mean(result_mat_inside_all, 2).T, MODALITIES)
 plt.clim(-1,1)
 ax = plt.title('Mean single link inside resection area')
+plt.savefig('/home/asier/Desktop/in.eps', format='eps', dpi=300)
 
 plot_matrix(np.mean(result_mat_outside_all, 2).T, MODALITIES)
 plt.clim(-1,1)
 ax = plt.title('Mean single link outside resection area' )
+plt.savefig('/home/asier/Desktop/out.eps', format='eps', dpi=300)
 
 
 
@@ -251,6 +253,7 @@ def single_link_analysis_informe_scatter():
             ax = plt.title(sub)
             fig = ax.get_figure()
             figures.append(fig)
+            plt.savefig('/home/asier/Desktop/'+sub+'.eps', format='eps', dpi=300)
             plt.close()
        
 

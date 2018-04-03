@@ -487,13 +487,57 @@ def single_link_analysis_mean_subjects():
 plot_matrix(np.mean(result_mat_all, 2).T, MODALITIES)
 plt.clim(-1,1)
 ax = plt.title('Mean similiraty matrix')
+plt.savefig('/home/asier/Desktop/fig2.eps', format='eps', dpi=300)
+
 fig = ax.get_figure()
 figures.append(fig)
 plt.close()                    
                     
-                    
-                    
-                    
-                    
-                    
+   
+
+
+def plot_matrix2(matrix, elec_tags, log=False):
+    plt.figure(figsize=(10, 10))
+    # Mask the main diagonal for visualization:
+
+    if log:
+        matrix = log_transform(matrix)
+
+    plt.imshow(matrix, interpolation="nearest", cmap="RdBu_r")
+    # vmax=0.8, vmin=-0.8)
+
+    # Add labels and adjust margins
+    plt.xticks(range(len(elec_tags)), elec_tags, rotation=90, fontweight='bold')
+    plt.yticks(range(len(elec_tags)), elec_tags, fontweight='bold')
+    plt.gca().yaxis.tick_right()
+    plt.subplots_adjust(left=.01, bottom=.3, top=.99, right=.62)
+
+                 
+N = 6
+b =np.random.randint(0,1000,(N,N))
+mat = (b + b.T)/2         
+mat[np.diag_indices_from(mat)] = 1
+MODALITIES = ["CA1", "BLA", "mPFC", "S1", "M1", "PRh" ]
+plot_matrix2(mat, MODALITIES)
+plt.clim(0,1000)
+plt.colorbar(orientation="horizontal")
+plt.ylabel('regions', fontweight='bold')
+plt.xlabel('regions', fontweight='bold')
+plt.savefig('/home/asier/Desktop/SC.eps', format='eps', dpi=300)
+
+
+
+ax = plt.title('FC' )
+plt.close()             
+
+N = 6
+b = np.random.random_integers(-1,1,size=(N,N))
+mat = (b + b.T)/2         
+mat[np.diag_indices_from(mat)] = 1
+MODALITIES = ["CA1", "BLA", "mPFC", "S1", "M1", "PRh" ]
+plot_matrix(mat, MODALITIES)
+plt.clim(-1,1)
+plt.colorbar(orientation="horizontal")
+ax = plt.title('FC' )
+plt.close()                         
   

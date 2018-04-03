@@ -49,8 +49,8 @@ def plot_matrix(matrix, elec_tags, log=False):
     # vmax=0.8, vmin=-0.8)
 
     # Add labels and adjust margins
-    plt.xticks(range(len(elec_tags)), elec_tags, rotation=90)
-    plt.yticks(range(len(elec_tags)), elec_tags)
+    plt.xticks(range(len(elec_tags)), elec_tags, rotation=90, fontweight='bold')
+    plt.yticks(range(len(elec_tags)), elec_tags, fontweight='bold')
     plt.gca().yaxis.tick_right()
     plt.subplots_adjust(left=.01, bottom=.3, top=.99, right=.62)
 
