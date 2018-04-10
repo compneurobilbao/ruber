@@ -8,24 +8,14 @@ import numpy as np
 import nibabel as nib
 import subprocess
 
-from src.postproc.utils import load_elec_file, order_dict
+from src.postproc.utils import (load_elec_file,
+                                order_dict,
+                                execute,
+                                )
 
 PROCESSED = opj(DATA, 'processed', 'fmriprep')
 EXTERNAL = opj(DATA, 'external')
 EXTERNAL_MNI_09c = opj(EXTERNAL, 'standard_mni_asym_09c')
-
-
-def execute(cmd):
-    popen = subprocess.Popen(cmd,
-                             stdout=subprocess.PIPE,
-                             universal_newlines=True)
-    for stdout_line in iter(popen.stdout.readline, ""):
-        yield stdout_line
-    popen.stdout.close()
-    return_code = popen.wait()
-    if return_code:
-        raise subprocess.CalledProcessError(return_code, cmd)
-
 
 
 def create_balloon(subject_list):
@@ -66,8 +56,6 @@ def brain_mask_electrodes_to_09c(sub):
         print(output)
 
 
-
-
 def find_centroid_and_rad(sub):
     
     elec_file = opj(DATA, 'raw', 'bids', sub, 'electrodes',
@@ -86,8 +74,53 @@ def find_centroid_and_rad(sub):
     
 def create_ball(sub, centroid, rad):
     
+    import tempfile
+
+    x, y, z = centroid
+    temp_file = tempfile.mkstemp()
+
+    # Create point
+    command = ['fslmaths',
+               opj(EXTERNAL_MNI_09c,
+                   'mni_icbm152_t1_tal_nlin_asym_09c_brain.nii'),
+               '-mul', '0', '-add', '1',
+               '-roi', str(x), '1', str(y), '1', str(z), '1', '0', '1',
+               temp_file[1],
+               '-odt', 'float',
+               ]
+    for output in execute(command):
+        print(output)
+
+    sphere_size = rad
+
+    output_dir = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
+                     'balloon')
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    # Expand to sphere
+    command = ['fslmaths',
+               temp_file[1],
+               '-kernel', 'sphere', str(sphere_size + 3), # rad + 3 voxels
+               '-fmean',
+               temp_file[1],
+               ]
+    for output in execute(command):
+        print(output)
+
+    # Give value
+    output_roi_path = opj(output_dir, 'balloon.nii.gz')
+    command = ['fslmaths',
+               temp_file[1],
+               '-bin', '-mul', 1,
+               output_roi_path,
+               '-odt', 'float',
+               ]
+    for output in execute(command):
+        print(output)
     
-    
+
 def remove_outliers(sub):
     
     
