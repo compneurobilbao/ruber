@@ -75,6 +75,7 @@ def find_centroid_and_rad(sub):
 def create_ball(sub, centroid, rad):
     
     import tempfile
+    ses = 'electrodes'
 
     x, y, z = centroid
     temp_file = tempfile.mkstemp()
@@ -122,5 +123,17 @@ def create_ball(sub, centroid, rad):
     
 
 def remove_outliers(sub):
+    ses = 'electrodes'
+   
+    balloon_path = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
+                       'balloon', 'balloon.nii.gz')
     
+    mask_path = opj(DATA, 'raw', 'bids', sub, ses,
+                   'electrodes_brain_mask_09c.nii.gz')
     
+    nib.load(balloon_path)
+    nib.load(mask_path)
+    
+    intersected = nilearn.masking.intersect_masks(mask_imgs)
+    
+    nib.save()
