@@ -25,70 +25,57 @@ def execute(cmd):
         raise subprocess.CalledProcessError(return_code, cmd)
 
 
-def atlas_to_t1(subject_list, session_list):
-    """
-    Atlas to T1w space
-    """
-    sub_ses_comb = [[subject, session] for subject in subject_list
-                    for session in session_list]
 
-    for sub, ses in sub_ses_comb:
+def create_balloon(subject_list):
+        
+    for sub in subject_list:
+       brain_mask_electrodes_to_09c(subject_list)
+       find_centroid(subject_list)
+       create_ball(subject_list)
+       remove_outliers(subject_list)
 
-        print('Calculating: Subject ', sub, ' and session', ses)
 
-        # Extract brain from subject space
-        command = ['fslmaths',
-                   opj(PROCESSED, sub, ses, 'anat',
-                       sub + '_' + ses + '_T1w_preproc.nii.gz'),
-                   '-mas',
-                   opj(PROCESSED, sub, ses, 'anat',
-                       sub + '_' + ses + '_T1w_brainmask.nii.gz'),
-                   opj(PROCESSED, sub, ses, 'anat',
-                       sub + '_' + ses + '_T1w_brain.nii.gz'),
-                   ]
-        for output in execute(command):
-            print(output)
+def brain_mask_electrodes_to_09c(subject_list):
 
-        # Brain 09c -> Brain subject (save omat)
+    ses = 'electrodes'
+
+    for sub in subject_list:
+        """
+        Brainmask electrodes space to 09c (and save omat)
+        """
+                       
         command = ['flirt',
                    '-in',
+                   opj(DATA, 'raw', 'bids', sub, ses,
+                       'electrodes_brain_mask.nii.gz'),
+                   '-ref',
                    opj(EXTERNAL_MNI_09c,
                        'mni_icbm152_t1_tal_nlin_asym_09c_brain.nii'),
-                   '-ref',
-                   opj(PROCESSED, sub, ses, 'anat',
-                       sub + '_' + ses + '_T1w_brain.nii.gz'),
-                   '-omat',
-                   opj(PROCESSED, sub, ses, 'anat',
-                       '09c_2_' + sub + '_' + ses + '.mat'),
+                   '-out',
+                   opj(DATA, 'raw', 'bids', sub, ses,
+                       'electrodes_brain_mask_09c.nii.gz'),
+                   '-init',
+                   opj(DATA, 'raw', 'bids', sub, ses,
+                       'elec_2_09c_' + sub + '_' + ses + '.mat'),
+                   '-applyxfm', '-interp', 'nearestneighbour',
                    ]
+
+
         for output in execute(command):
             print(output)
 
-        for atlas in ATLAS_TYPES:
-            # Atlas 09c -> Subject space (using previous omat)
-            command = ['flirt',
-                       '-in',
-                       opj(EXTERNAL,
-                           'bha_' + atlas + '_1mm_mni09c.nii.gz'),
-                       '-ref',
-                       opj(PROCESSED, sub, ses, 'anat',
-                           sub + '_' + ses + '_T1w_brain.nii.gz'),
-                       '-out',
-                       opj(PROCESSED, sub, ses, 'anat',
-                           sub + '_' + ses + '_' + atlas + '.nii.gz'),
-                       '-init',
-                       opj(PROCESSED, sub, ses, 'anat',
-                           '09c_2_' + sub + '_' + ses + '.mat'),
-                       '-applyxfm', '-interp', 'nearestneighbour',
-                       ]
-            for output in execute(command):
-                print(output)
-            atlas_with_all_rois(sub, ses, atlas, opj(PROCESSED, sub, ses,
-                                                     'anat', sub + '_' +
-                                                     ses + '_' + atlas +
-                                                     '.nii.gz'))
-
-    return
 
 
 
+def find_centroid(subject_list):
+    
+
+    
+    
+def create_ball(subject_list):
+    
+    
+    
+def remove_outliers(subject_list):
+    
+    

@@ -204,7 +204,7 @@ def t1w_electrodes_to_09c(subject_list):
             print(output)
 
         """
-        Atlas to subject space
+        Electrodes brain space to 09c (and save omat)
         """
         command = ['flirt',
                    '-in',
@@ -216,8 +216,12 @@ def t1w_electrodes_to_09c(subject_list):
                    '-cost', 'mutualinfo',
                    '-out',
                    opj(DATA, 'raw', 'bids', sub, ses,
-                       'electrodes_brain_09c.nii.gz')
+                       'electrodes_brain_09c.nii.gz'),
+                   '-omat',
+                   opj(DATA, 'raw', 'bids', sub, ses,
+                       'elec_2_09c_' + sub + '_' + ses + '.mat'),
                    ]
+
 
         for output in execute(command):
             print(output)

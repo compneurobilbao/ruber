@@ -85,11 +85,11 @@ from src.balloon.balloon import (create_balloon,
                                  balloon_2_fMRI_space,
                                  )
 
-create_balloon(SUBJECT_LIST, SESSION_LIST)
+create_balloon(SUBJECT_LIST)
 
-balloon_2_fMRI_space(SUBJECT_LIST, SESSION_LIST)
+balloon_2_fMRI_space(SUBJECT_LIST)
 
-extract_voxelwise_ts(SUBJECT_LIST, SESSION_LIST)
+extract_voxelwise_ts(SUBJECT_LIST)
 
 
 
