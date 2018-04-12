@@ -77,7 +77,7 @@ def create_ball(sub, centroid, rad):
     import tempfile
     ses = 'electrodes'
 
-    x, y, z = centroid
+    x, y, z = centroid.astype(int)
     temp_file = tempfile.mkstemp()
 
     # Create point
@@ -92,10 +92,9 @@ def create_ball(sub, centroid, rad):
     for output in execute(command):
         print(output)
 
-    sphere_size = rad
+    sphere_size = int(rad)
 
-    output_dir = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
-                     'balloon')
+    output_dir = opj(DATA, 'raw', 'bids', sub, ses, 'ses-presurg', 'balloon')
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -103,7 +102,7 @@ def create_ball(sub, centroid, rad):
     # Expand to sphere
     command = ['fslmaths',
                temp_file[1],
-               '-kernel', 'sphere', str(sphere_size + 3), # rad + 3 voxels
+               '-kernel', 'sphere', str(sphere_size + 3),  # rad + 3 voxel
                '-fmean',
                temp_file[1],
                ]
