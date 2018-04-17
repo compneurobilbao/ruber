@@ -2,14 +2,9 @@
 from src.env import DATA
 
 import os
-import os.path as op
 from os.path import join as opj
-import numpy as np
-import nibabel as nib
-import subprocess
 
 from src.postproc.utils import (load_elec_file,
-                                order_dict,
                                 execute,
                                 )
 
@@ -103,7 +98,7 @@ def create_ball(sub, centroid, rad):
     command = ['fslmaths',
                temp_file[1],
                '-kernel', 'sphere', str(sphere_size + 3),  # rad + 3 voxel
-               '-fmean',
+               '-fmeanu',
                temp_file[1],
                ]
     for output in execute(command):
@@ -113,26 +108,31 @@ def create_ball(sub, centroid, rad):
     output_roi_path = opj(output_dir, 'balloon.nii.gz')
     command = ['fslmaths',
                temp_file[1],
-               '-bin', '-mul', 1,
+               '-thr', str(1e-8), '-bin',
                output_roi_path,
                '-odt', 'float',
                ]
     for output in execute(command):
         print(output)
-    
+
 
 def remove_outliers(sub):
+    import nibabel as nib
+    from nilearn.masking import intersect_masks
+
     ses = 'electrodes'
-   
-    balloon_path = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
-                       'balloon', 'balloon.nii.gz')
+    output_path = opj(DATA, 'raw', 'bids', sub, ses, 'ses-presurg', 'balloon',
+                      'balloon_correct.nii.gz')
+
+    balloon_path = opj(DATA, 'raw', 'bids', sub, ses, 'ses-presurg', 'balloon',
+                       'balloon.nii.gz')
     
     mask_path = opj(DATA, 'raw', 'bids', sub, ses,
                    'electrodes_brain_mask_09c.nii.gz')
     
-    nib.load(balloon_path)
-    nib.load(mask_path)
+    balloon_img = nib.load(balloon_path)
+    mask_img = nib.load(mask_path)
     
-    intersected = nilearn.masking.intersect_masks(mask_imgs)
+    intersected_img = intersect_masks([mask_img, balloon_img])
     
-    nib.save()
+    nib.save(intersected_img, output_path)
