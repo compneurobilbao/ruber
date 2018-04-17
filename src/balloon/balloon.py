@@ -7,6 +7,8 @@ from os.path import join as opj
 from src.postproc.utils import (load_elec_file,
                                 execute,
                                 )
+import nibabel as nib
+from nilearn.image import resample_img
 
 PROCESSED = opj(DATA, 'processed', 'fmriprep')
 EXTERNAL = opj(DATA, 'external')
@@ -20,6 +22,13 @@ def create_balloon(subject_list):
        centroid, rad = find_centroid_and_rad(sub)
        create_ball(sub, centroid, rad)
        remove_outliers(sub)
+       
+       
+def extract_voxelwise_ts(SUBJECT_LIST):
+    
+    for sub in subject_list:
+        identify_and_save_voxels(sub)  # identify, save info and create atlas
+        extract_timeseries(sub)
 
 
 def brain_mask_electrodes_to_09c(sub):
@@ -117,7 +126,6 @@ def create_ball(sub, centroid, rad):
 
 
 def remove_outliers(sub):
-    import nibabel as nib
     from nilearn.masking import intersect_masks
 
     ses = 'electrodes'
@@ -135,4 +143,48 @@ def remove_outliers(sub):
     
     intersected_img = intersect_masks([mask_img, balloon_img])
     
-    nib.save(intersected_img, output_path)
+    # To BOLD space
+    base_path = opj(PROCESSED, sub, 'ses-presurg', 'func')
+    preproc_data = opj(base_path, sub + '_ses-presurg' 
+                       '_task-rest_bold_space-MNI152NLin2009cAsym_preproc.nii.gz')
+    fmri = nib.load(preproc_data)
+    resampled_atlas = resample_img(intersected_img, target_affine=fmri.affine,
+                                   interpolation='nearest')
+    nib.save(resampled_atlas, output_path)
+
+
+def identify_and_save_voxels(sub): # identify, save info and create atlas
+    import json
+    
+    balloon_path = opj(DATA, 'raw', 'bids', sub, ses, 'ses-presurg', 'balloon',
+                      'balloon_correct.nii.gz')
+    output_path = opj(DATA, 'raw', 'bids', sub, ses, 'ses-presurg', 'balloon',
+                      'balloon_atlas.nii.gz')
+    output_json = opj(DATA, 'raw', 'bids', sub, ses, 'ses-presurg', 'balloon',
+                      'loc_info.json')
+    
+    balloon_img = nib.load(balloon_path)
+    affine = balloon_img.affine
+    balloon_data = balloon_img.get_data()
+    
+    atlas_data = np.zeros(balloon_data.shape)
+    
+    idx = np.array(np.where(balloon_data == 1))
+    
+    for i in range(idx.shape[1]):
+        atlas_data[idx[0,i], idx[1,i], idx[2,i]] = i+1
+        
+    atlas_img = nib.Nifti1Image(atlas_data,
+                                affine=affine)
+    nib.save(atlas_img, output_path)
+
+    # loc info atlas
+    loc_info = {i+1: [int(idx[0, i]),
+                      int(idx[1, i]),
+                      int(idx[2, i])] for i in range(idx.shape[1])}
+
+    with open(output_json, 'w') as file:
+        file.write(json.dumps(loc_info))
+    
+    
+def extract_timeseries(sub):
