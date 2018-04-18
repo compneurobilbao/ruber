@@ -158,12 +158,13 @@ def remove_outliers(sub):
 
 def identify_and_save_voxels(sub): # identify, save info and create atlas
     import json
+    ses = 'electrodes'
     
-    balloon_path = opj(DATA, 'raw', 'bids', sub, 'ses-presurg', 'ses-presurg', 'balloon',
+    balloon_path = opj(DATA, 'raw', 'bids', sub, ses, 'ses-presurg', 'balloon',
                       'balloon_correct.nii.gz')
-    output_path = opj(DATA, 'raw', 'bids', sub, 'ses-presurg', 'ses-presurg', 'balloon',
+    output_path = opj(DATA, 'raw', 'bids', sub, ses, 'ses-presurg', 'balloon',
                       'balloon_atlas.nii.gz')
-    output_json = opj(DATA, 'raw', 'bids', sub, 'ses-presurg', 'ses-presurg', 'balloon',
+    output_json = opj(DATA, 'raw', 'bids', sub, ses, 'ses-presurg', 'balloon',
                       'loc_info.json')
     
     balloon_img = nib.load(balloon_path)
@@ -202,7 +203,7 @@ def extract_timeseries(subject_list, session_list):
 
         print('Calculating: Subject ', sub, ' and session', ses)
 
-        base_path = opj(PROCESSED, 'fmriprep', sub, ses, 'func')
+        base_path = opj(PROCESSED, sub, ses, 'func')
         confounds_path = opj(base_path, sub + '_' + ses +
                              '_task-rest_bold_confounds.tsv')
         preproc_data = opj(base_path, sub + '_' + ses +
@@ -212,7 +213,7 @@ def extract_timeseries(subject_list, session_list):
                                 delimiter='\t', na_values='n/a').fillna(0)
 
     
-        atlas_path = opj(DATA, 'raw', 'bids', sub, 'ses-presurg', 'ses-presurg', 'balloon',
+        atlas_path = opj(DATA, 'raw', 'bids', sub, 'electrodes', 'ses-presurg', 'balloon',
                          'balloon_atlas.nii.gz')
 
         confounds_matrix = confounds[CONFOUNDS_ID].as_matrix()
