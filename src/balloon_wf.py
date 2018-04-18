@@ -87,7 +87,7 @@ from src.balloon.balloon import (create_balloon,
 
 create_balloon(SUBJECT_LIST)
 
-extract_voxelwise_ts(SUBJECT_LIST)
+extract_voxelwise_ts(SUBJECT_LIST, SESSION_LIST)
 
 
 

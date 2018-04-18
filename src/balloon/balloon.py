@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
-from src.env import DATA
+from src.env import DATA, CONFOUNDS_ID
 
 import os
 from os.path import join as opj
+import numpy as np
 
 from src.postproc.utils import (load_elec_file,
                                 execute,
+                                scrubbing,
                                 )
 import nibabel as nib
 from nilearn.image import resample_img
@@ -24,11 +26,12 @@ def create_balloon(subject_list):
        remove_outliers(sub)
        
        
-def extract_voxelwise_ts(SUBJECT_LIST):
+def extract_voxelwise_ts(subject_list, session_list):
     
     for sub in subject_list:
         identify_and_save_voxels(sub)  # identify, save info and create atlas
-        extract_timeseries(sub)
+    
+    extract_timeseries(subject_list, session_list)
 
 
 def brain_mask_electrodes_to_09c(sub):
@@ -156,11 +159,11 @@ def remove_outliers(sub):
 def identify_and_save_voxels(sub): # identify, save info and create atlas
     import json
     
-    balloon_path = opj(DATA, 'raw', 'bids', sub, ses, 'ses-presurg', 'balloon',
+    balloon_path = opj(DATA, 'raw', 'bids', sub, 'ses-presurg', 'ses-presurg', 'balloon',
                       'balloon_correct.nii.gz')
-    output_path = opj(DATA, 'raw', 'bids', sub, ses, 'ses-presurg', 'balloon',
+    output_path = opj(DATA, 'raw', 'bids', sub, 'ses-presurg', 'ses-presurg', 'balloon',
                       'balloon_atlas.nii.gz')
-    output_json = opj(DATA, 'raw', 'bids', sub, ses, 'ses-presurg', 'balloon',
+    output_json = opj(DATA, 'raw', 'bids', sub, 'ses-presurg', 'ses-presurg', 'balloon',
                       'loc_info.json')
     
     balloon_img = nib.load(balloon_path)
@@ -187,4 +190,53 @@ def identify_and_save_voxels(sub): # identify, save info and create atlas
         file.write(json.dumps(loc_info))
     
     
-def extract_timeseries(sub):
+def extract_timeseries(subject_list, session_list):
+    import pandas as pd
+    from nilearn.input_data import NiftiLabelsMasker
+
+    
+    sub_ses_comb = [[subject, session] for subject in subject_list
+                    for session in session_list]
+
+    for sub, ses in sub_ses_comb:
+
+        print('Calculating: Subject ', sub, ' and session', ses)
+
+        base_path = opj(PROCESSED, 'fmriprep', sub, ses, 'func')
+        confounds_path = opj(base_path, sub + '_' + ses +
+                             '_task-rest_bold_confounds.tsv')
+        preproc_data = opj(base_path, sub + '_' + ses +
+                           '_task-rest_bold_space-MNI152NLin2009cAsym_preproc.nii.gz')
+
+        confounds = pd.read_csv(confounds_path,
+                                delimiter='\t', na_values='n/a').fillna(0)
+
+    
+        atlas_path = opj(DATA, 'raw', 'bids', sub, 'ses-presurg', 'ses-presurg', 'balloon',
+                         'balloon_atlas.nii.gz')
+
+        confounds_matrix = confounds[CONFOUNDS_ID].as_matrix()
+
+        # atlas_2514
+        masker = NiftiLabelsMasker(labels_img=atlas_path,
+                                   background_label=0, verbose=5,
+                                   detrend=True, standardize=True,
+                                   t_r=2.72, smoothing_fwhm=6,
+                                   # TR should not be a variable
+                                   low_pass=0.1, high_pass=0.01)
+        # 1.- Confound regression
+        confounds_matrix = confounds[CONFOUNDS_ID].as_matrix()
+
+        time_series = masker.fit_transform(preproc_data,
+                                           confounds=confounds_matrix)
+
+        # 2.- Scrubbing
+        # extract FramewiseDisplacement
+        FD = confounds['FramewiseDisplacement'].as_matrix()
+        thres = 0.2
+        time_series = scrubbing(time_series, FD, thres)
+
+        # Save time series
+        np.savetxt(opj(base_path, 'time_series_balloon.txt'),
+                   time_series)
+    return
