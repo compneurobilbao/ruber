@@ -35,7 +35,7 @@ run_fmriprep(SUBJECT_LIST, SESSION_LIST)
 run_mriqc(SUBJECT_LIST, SESSION_LIST)
 
 # WARNING!! Execute permission change over files before continue
-#OUTPUT_DIR=/home/asier/git/ruber/src/data/processed/
+#OUTPUT_DIR=/home/asier/git/ruber/data/processed
 #sudo chmod 777 -R $OUTPUT_DIR
 
 
