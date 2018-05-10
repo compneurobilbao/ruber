@@ -23,7 +23,7 @@ from src.postproc.utils import (t1w_electrodes_to_09c,
                                 export_data_to_mat,
                                 )
 
-SUBJECT_LIST = ['sub-001','sub-002','sub-003', 'sub-004']
+SUBJECT_LIST = ['sub-100']
 SESSION_LIST = ['ses-presurg']
 
 """
@@ -35,8 +35,8 @@ run_fmriprep(SUBJECT_LIST, SESSION_LIST)
 run_mriqc(SUBJECT_LIST, SESSION_LIST)
 
 # WARNING!! Execute permission change over files before continue
-# sudo chmod d------rwx -R $OUTPUT_DIR
-# sudo chmod 777 -R $OUTPUT_DIR
+#OUTPUT_DIR=/home/asier/git/ruber/src/data/processed/
+#sudo chmod 777 -R $OUTPUT_DIR
 
 
 """
@@ -64,37 +64,3 @@ get_con_matrix_matlab(SUBJECT_LIST, SESSION_LIST)
 # Visualization
 # http://web4.cs.ucl.ac.uk/research/medic/camino/pmwiki/pmwiki.php?n=Tutorials.TrackingTutorial
 
-
-"""
-fMRI pipeline postproc
-"""
-
-clean_and_get_time_series(SUBJECT_LIST, SESSION_LIST)
-
-"""
-Electrodes location pipeline (WARNING: Some manual work)
-"""
-
-# FIRST: T1w_electrodes to 09c space
-
-t1w_electrodes_to_09c(SUBJECT_LIST)
-
-# WARNING! Create elec file for each subject manually !!
-# from src.postproc.utils import contacts_from_electrode
-# elec_name = 'OIM1'
-# contact_num = 12
-# first_contact_pos = [78, 73, 78]
-# last_contact_pos = [80, 26, 84]
-# contacts_from_electrode(first_contact_pos, last_contact_pos, contact_num, elec_name)
-
-"""
-Locate electrodes
-"""
-locate_electrodes(SUBJECT_LIST)
-# or
-locate_electrodes_closest_roi(SUBJECT_LIST)
-
-"""
-Export all data to matlab
-"""
-export_data_to_mat(SUBJECT_LIST, SESSION_LIST)

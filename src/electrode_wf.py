@@ -19,45 +19,10 @@ from src.postproc.utils import (t1w_electrodes_to_09c,
                                 calc_con_mat_electrodes_noatlas
                                 )
 
-SUBJECT_LIST = ['sub-005']
+SUBJECT_LIST = ['sub-100']
 SESSION_LIST = ['ses-presurg']
 
-"""
-fmriprep and mriqc calls
-"""
-
-run_fmriprep(SUBJECT_LIST, SESSION_LIST)
-
-run_mriqc(SUBJECT_LIST, SESSION_LIST)
-
-# WARNING!! Execute permission change over files before continue
-# OUTPUT_DIR=/home/asier/git/ruber/data
-# sudo chmod d------rwx -R $OUTPUT_DIR
-# sudo chmod 777 -R $OUTPUT_DIR
-
-"""
-Atlas to T1w space
-"""
-
-atlas_to_t1(SUBJECT_LIST, SESSION_LIST)
-
-"""
-dMRI pipeline
-"""
-
-run_dti_artifact_correction(SUBJECT_LIST, SESSION_LIST)
-
-run_spm_fsl_dti_preprocessing(SUBJECT_LIST, SESSION_LIST)
-
-correct_dwi_space_atlas(SUBJECT_LIST, SESSION_LIST)
-
-run_camino_tractography(SUBJECT_LIST, SESSION_LIST)
-
-run_dtk_tractography(SUBJECT_LIST, SESSION_LIST)
-
-
-# Visualization
-# http://web4.cs.ucl.ac.uk/research/medic/camino/pmwiki/pmwiki.php?n=Tutorials.TrackingTutorial
+## WARNING: FIRST RUN atlas_wf.py
 
 """
 Electrodes location pipeline (WARNING: Some manual work)
@@ -67,13 +32,18 @@ Electrodes location pipeline (WARNING: Some manual work)
 # TODO: This part to nipype
 t1w_electrodes_to_09c(SUBJECT_LIST)
 
-# WARNING! Create elec file for each subject manually !!
+# WARNING! Create elec file (/home/asier/git/ruber/data/raw/bids/sub-XXX/electrodes/elec.loc)
+# manually !! Use electrodes_brain_09c.nii.gz
+
 # from src.postproc.utils import contacts_from_electrode
 #elec_name = ''
 #contact_num = 
 #first_contact_pos = [,,]
 #last_contact_pos = [,,]
 #contacts_from_electrode(first_contact_pos, last_contact_pos, contact_num, elec_name)
+
+# copy the result from 'contacts_from_electrode' to elec.loc
+
 
 """
 APPROACH 2: NOATLAS

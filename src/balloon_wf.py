@@ -80,9 +80,11 @@ NOTE: until here, no difference with electrode_wf.
 We will need elec.loc (in 09c space)
 """
 
+SUBJECT_LIST = ['sub-100']
+SESSION_LIST = ['ses-presurg']
+
 from src.balloon.balloon import (create_balloon,
-                                 extract_voxel_ts,
-                                 balloon_2_fMRI_space,
+                                 extract_voxelwise_ts,
                                  )
 
 create_balloon(SUBJECT_LIST)
