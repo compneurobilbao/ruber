@@ -34,12 +34,12 @@ t1w_electrodes_to_09c(SUBJECT_LIST)
 
 # WARNING! Create elec file (/home/asier/git/ruber/data/raw/bids/sub-XXX/electrodes/elec.loc)
 # manually !! Use electrodes_brain_09c.nii.gz
-
-# from src.postproc.utils import contacts_from_electrode
-#elec_name = ''
-#contact_num = 
-#first_contact_pos = [,,]
-#last_contact_pos = [,,]
+#
+#from src.postproc.utils import contacts_from_electrode
+#elec_name = 'J'
+#contact_num = 5
+#first_contact_pos = [52, 141, 111]
+#last_contact_pos = [ 41, 150, 111]
 #contacts_from_electrode(first_contact_pos, last_contact_pos, contact_num, elec_name)
 
 # copy the result from 'contacts_from_electrode' to elec.loc

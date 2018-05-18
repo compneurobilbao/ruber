@@ -73,21 +73,10 @@ def identify_contacts_fmri(sub):
         file_path = opj(rois_path, file)
         data = nib.load(file_path).get_data()
         
-        locations = np.where(data!=0)
+        location = np.around(np.mean(np.asarray(np.where(data!=0)), axis=1))
         
-        
-        
-    
-    elec_location_mni09 = load_elec_file(elec_file)
-    
-    locations = [elec_location_mni09[key] for key in elec_location_mni09]
-    centroid = np.mean(locations, axis=0)[0]
-    
-    distances = [np.sqrt((centroid[0]-loc[0][0])**2+
-                         (centroid[1]-loc[0][1])**2+
-                         (centroid[2]-loc[0][2])**2) for loc in locations]
-        
-    return centroid, np.max(distances)
+        contact_name = file[4:-7]
+        print(contact_name + ': ' + str(location))
 
 
 def find_centroid_and_rad(sub):
