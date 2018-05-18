@@ -24,6 +24,7 @@ def create_balloon(subject_list):
        centroid, rad = find_centroid_and_rad(sub)
        create_ball(sub, centroid, rad)
        remove_outliers(sub)
+       identify_contacts_fmri(sub)
        
        
 def extract_voxelwise_ts(subject_list, session_list):
@@ -61,6 +62,32 @@ def brain_mask_electrodes_to_09c(sub):
 
     for output in execute(command):
         print(output)
+
+
+def identify_contacts_fmri(sub):
+    
+    rois_path = opj(DATA, 'raw', 'bids', sub, 'electrodes','ses-presurg',
+                    'noatlas_3')
+    
+    for file in os.listdir(rois_path):
+        file_path = opj(rois_path, file)
+        data = nib.load(file_path).get_data()
+        
+        locations = np.where(data!=0)
+        
+        
+        
+    
+    elec_location_mni09 = load_elec_file(elec_file)
+    
+    locations = [elec_location_mni09[key] for key in elec_location_mni09]
+    centroid = np.mean(locations, axis=0)[0]
+    
+    distances = [np.sqrt((centroid[0]-loc[0][0])**2+
+                         (centroid[1]-loc[0][1])**2+
+                         (centroid[2]-loc[0][2])**2) for loc in locations]
+        
+    return centroid, np.max(distances)
 
 
 def find_centroid_and_rad(sub):
