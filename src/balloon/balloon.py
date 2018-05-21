@@ -67,7 +67,7 @@ def brain_mask_electrodes_to_09c(sub):
 def identify_contacts_fmri(sub):
     
     rois_path = opj(DATA, 'raw', 'bids', sub, 'electrodes','ses-presurg',
-                    'noatlas_3')
+                    'noatlas_fmri_3')
     
     for file in os.listdir(rois_path):
         file_path = opj(rois_path, file)
