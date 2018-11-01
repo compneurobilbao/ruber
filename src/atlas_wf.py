@@ -46,6 +46,13 @@ Atlas to T1w space
 atlas_to_t1(SUBJECT_LIST, SESSION_LIST)
 
 """
+fMRI pipeline postproc
+"""
+
+clean_and_get_time_series(SUBJECT_LIST, SESSION_LIST)
+
+
+"""
 dMRI pipeline
 """
 
