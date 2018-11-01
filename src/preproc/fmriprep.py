@@ -35,9 +35,8 @@ def run_fmriprep(subject_list, session_list):
                    '/data', '/output', 'participant',
                    '--participant_label', sub, #'-s', ses,
                    '-w', '/work', '--no-freesurfer', '--ignore', 'fieldmaps',
-                   '--output-space', 'template',
-                   '--template', 'MNI152NLin2009cAsym',
-                ]
+                   '--output-space', 'T1w'
+                   ]
 
             for output in execute(command):
                 print(output)
