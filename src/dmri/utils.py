@@ -208,35 +208,30 @@ def correct_dwi_space_atlas(subject_list, session_list):
                     for session in session_list]
 
     for sub, ses in sub_ses_comb:
-        for atlas in ATLAS_TYPES:
+        atlas_old = opj(DATA, 'external','atlas_craddock',
+    	                  sub + '.nii.gz')
+        atlas_new = opj(DATA, 'processed', 'diff',
+                        '_session_id_' + ses + '_subject_id_' + sub,
+                        'r' + sub + '.nii')
 
-            atlas_old = opj(DATA, 'external',
-                            'bha_' + atlas + '_1mm_mni09c.nii.gz')
-            atlas_new = opj(DATA, 'processed', 'diff', '_session_id_' +
-                            ses + '_subject_id_' + sub,
-                            'r' + sub + '_' + ses + '_' + atlas + '.nii')
+        atlas_new_img = nib.load(atlas_new)
+        m = atlas_new_img.affine[:3, :3]
 
-            atlas_new_img = nib.load(atlas_new)
-            m = atlas_new_img.affine[:3, :3]
-
-            atlas_old_data = nib.load(atlas_old).get_data()
-            atlas_old_data_rois = np.unique(atlas_old_data)
-            atlas_new_data = atlas_new_img.get_data()
-            atlas_new_data_rois = np.unique(atlas_new_data)
-
-            diff_rois = np.setdiff1d(atlas_old_data_rois, atlas_new_data_rois)
-
-            for roi in diff_rois:
-                p = np.argwhere(atlas_old_data == roi)[0]
-                x, y, z = (np.round(np.diag(np.divide(p, m)))).astype(int)
-                atlas_new_data[x, y, z] = roi
-
-            atlas_new_data_img_corrected = nib.Nifti1Image(atlas_new_data,
-                                                           affine=atlas_new_img.affine)
-            os.remove(atlas_new)
-            nib.save(atlas_new_data_img_corrected,
-                     atlas_new)
-
+        atlas_old_data = nib.load(atlas_old).get_data()
+        atlas_old_data_rois = np.unique(atlas_old_data)
+        atlas_new_data = atlas_new_img.get_data()
+        atlas_new_data_rois = np.unique(atlas_new_data)
+        diff_rois = np.setdiff1d(atlas_old_data_rois, atlas_new_data_rois)
+ 
+        for roi in diff_rois:
+            p = np.argwhere(atlas_old_data == roi)[0]
+            x, y, z = (np.round(np.diag(np.divide(p, m)))).astype(int)
+            atlas_new_data[x, y, z] = roi
+        atlas_new_data_img_corrected = nib.Nifti1Image(atlas_new_data,
+                                                       affine=atlas_new_img.affine)
+        os.remove(atlas_new)
+        nib.save(atlas_new_data_img_corrected,
+                 atlas_new)
 
 def compress_file_gz(path_file):
     from subprocess import check_call
