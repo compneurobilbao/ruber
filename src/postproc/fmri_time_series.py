@@ -91,38 +91,39 @@ def clean_and_get_time_series(subject_list, session_list):
             confounds_path = opj(base_path, sub + '_' + ses +
                                  '_task-rest_bold_confounds.tsv')
             preproc_data = opj(base_path, sub + '_' + ses +
-                               '_task-rest_bold_space-MNI152NLin2009cAsym_preproc.nii.gz')
+                               '_task-rest_bold_space-T1w_preproc.nii.gz')
 
             confounds = pd.read_csv(confounds_path,
                                     delimiter='\t', na_values='n/a').fillna(0)
 
-            for atlas in ATLAS_TYPES:
-                atlas_path = atlas_2_bold_space(sub, ses, atlas, preproc_data)
+            atlas_path = opj(EXTERNAL,
+                             'atlas_craddock',
+                             sub + '.nii.gz')
 
-                confounds_matrix = confounds[CONFOUNDS_ID].as_matrix()
+            confounds_matrix = confounds[CONFOUNDS_ID].as_matrix()
 
-                # atlas_2514
-                masker = NiftiLabelsMasker(labels_img=atlas_path,
-                                           background_label=0, verbose=5,
-                                           detrend=True, standardize=True,
-                                           t_r=2.72, smoothing_fwhm=6,
-                                           # TR should not be a variable
-                                           low_pass=0.1, high_pass=0.01)
-                # 1.- Confound regression
-                confounds_matrix = confounds[CONFOUNDS_ID].as_matrix()
+            # atlas_2514
+            masker = NiftiLabelsMasker(labels_img=atlas_path,
+                                       background_label=0, verbose=5,
+                                       detrend=True, standardize=True,
+                                       t_r=2.72, smoothing_fwhm=6,
+                                       # TR should not be a variable
+                                       low_pass=0.1, high_pass=0.01)
+            # 1.- Confound regression
+            confounds_matrix = confounds[CONFOUNDS_ID].as_matrix()
 
-                time_series = masker.fit_transform(preproc_data,
-                                                   confounds=confounds_matrix)
+            time_series = masker.fit_transform(preproc_data,
+                                               confounds=confounds_matrix)
 
-                # 2.- Scrubbing
-                # extract FramewiseDisplacement
-                FD = confounds['FramewiseDisplacement'].as_matrix()
-                thres = 0.2
-                time_series = scrubbing(time_series, FD, thres)
+            # 2.- Scrubbing
+            # extract FramewiseDisplacement
+            FD = confounds['FramewiseDisplacement'].as_matrix()
+            thres = 0.2
+            time_series = scrubbing(time_series, FD, thres)
 
-                # Save time series
-                np.savetxt(opj(base_path, 'time_series_' + atlas + '.txt'),
-                           time_series)
+            # Save time series
+            np.savetxt(opj(base_path, 'time_series_craddock_' + sub + '.txt'),
+                       time_series)
     return
 
 

@@ -43,7 +43,7 @@ run_mriqc(SUBJECT_LIST, SESSION_LIST)
 Atlas to T1w space
 """
 
-atlas_to_t1(SUBJECT_LIST, SESSION_LIST)
+#atlas_to_t1(SUBJECT_LIST, SESSION_LIST)
 
 """
 fMRI pipeline postproc
