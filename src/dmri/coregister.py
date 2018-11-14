@@ -79,24 +79,19 @@ def spm_anat_to_diff_coregistration(wf_name="spm_anat_to_diff_coregistration"):
     wf: nipype Workflow
     """
     # specify input and output fields
-    in_fields  = ["avg_b0", "brain_mask", "anat", "atlas_2514", "atlas_2754"]
+    in_fields  = ["avg_b0", "brain_mask", "anat", "atlas"]
     out_fields = ["anat_diff",
                   "brain_mask_diff",
-                  "atlas_2514_diff",
-                  "atlas_2754_diff",
+                  "atlas_diff",
                   ]
     
-    gunzip_atlas_2514 = pe.Node(Gunzip(), name="gunzip_atlas_2514")
-    gunzip_atlas_2754 = pe.Node(Gunzip(), name="gunzip_atlas_2754")
+    gunzip_atlas = pe.Node(Gunzip(), name="gunzip_atlas_2514")
     gunzip_anat = pe.Node(Gunzip(), name="gunzip_anat")
     gunzip_brain_mask = pe.Node(Gunzip(), name="brain_mask")
-    coreg_atlas_2514 = pe.Node(spm_coregister(cost_function="mi"), name="coreg_atlas_2514")
+    coreg_atlas = pe.Node(spm_coregister(cost_function="mi"), name="coreg_atlas_2514")
     # set the registration interpolation to nearest neighbour.
-    coreg_atlas_2514.inputs.write_interp = 0
+    coreg_atlas.inputs.write_interp = 0
     
-    coreg_atlas_2754 = pe.Node(spm_coregister(cost_function="mi"), name="coreg_atlas_2754")
-    # set the registration interpolation to nearest neighbour.
-    coreg_atlas_2754.inputs.write_interp = 0
 
     # input interface
     dti_input = pe.Node(IdentityInterface(fields=in_fields, mandatory_inputs=True),
@@ -119,8 +114,7 @@ def spm_anat_to_diff_coregistration(wf_name="spm_anat_to_diff_coregistration"):
     wf = pe.Workflow(name=wf_name)
 
     # Connect the nodes
-    wf.connect([(dti_input, gunzip_atlas_2514,   [("atlas_2514",   "in_file")]),
-                (dti_input, gunzip_atlas_2754,   [("atlas_2754",   "in_file")]),
+    wf.connect([(dti_input, gunzip_atlas,   [("atlas",   "in_file")]),
                 (dti_input,  gunzip_anat , [("anat",          "in_file")]),
                 (dti_input,     gunzip_b0,   [("avg_b0",   "in_file")]),
                 (dti_input,     gunzip_brain_mask,   [("brain_mask",   "in_file")]),
@@ -132,21 +126,16 @@ def spm_anat_to_diff_coregistration(wf_name="spm_anat_to_diff_coregistration"):
                 (gunzip_brain_mask, coreg_b0, [("out_file",   "apply_to_files")]),
                 (gunzip_anat, coreg_b0, [("out_file", "source")]),
 
-                (gunzip_b0,     coreg_atlas_2514,    [("out_file", "target")]),
-                (gunzip_atlas_2514,   coreg_atlas_2514, [("out_file",   "apply_to_files")]),
-                (gunzip_anat,   coreg_atlas_2514, [("out_file",    "source"), ]),
-                
-                (gunzip_b0,     coreg_atlas_2754,    [("out_file", "target")]),
-                (gunzip_atlas_2754,   coreg_atlas_2754, [("out_file",   "apply_to_files")]),
-                (gunzip_anat,   coreg_atlas_2754, [("out_file",    "source"), ]),
+                (gunzip_b0,     coreg_atlas,    [("out_file", "target")]),
+                (gunzip_atlas,   coreg_atlas, [("out_file",   "apply_to_files")]),
+                (gunzip_anat,   coreg_atlas, [("out_file",    "source"), ]),
                 
                 (gunzip_b0,     coreg_brain,    [("out_file", "target")]),
                 (gunzip_brain_mask,   coreg_brain, [("out_file",   "apply_to_files")]),
                 (gunzip_anat,   coreg_brain, [("out_file",    "source"), ]),
                 
                 # output
-                (coreg_atlas_2514, dti_output,  [("coregistered_files", "atlas_2514_diff")]),
-                (coreg_atlas_2754, dti_output,  [("coregistered_files", "atlas_2754_diff")]),
+                (coreg_atlas, dti_output,  [("coregistered_files", "atlas_diff")]),
                 (coreg_b0,     dti_output,     [("coregistered_source", "anat_diff")]),
                 (coreg_brain,  dti_output,     [("coregistered_files",  "brain_mask_diff")]),
               ])
@@ -199,8 +188,7 @@ def run_spm_fsl_dti_preprocessing(subject_list, session_list):
     templates = {'avg_b0': 'processed/diff/_session_id_{session_id}_subject_id_{subject_id}/eddy_corrected_avg_b0.nii.gz',
                  'brain_mask': 'processed/fmriprep/{subject_id}/{session_id}/anat/{subject_id}_{session_id}_T1w_brainmask.nii.gz',
                  'anat_biascorr': 'processed/fmriprep/{subject_id}/{session_id}/anat/{subject_id}_{session_id}_T1w_brain.nii.gz',
-                 'atlas_2514': 'processed/fmriprep/{subject_id}/{session_id}/anat/{subject_id}_{session_id}_atlas_2514.nii.gz',
-                 'atlas_2754': 'processed/fmriprep/{subject_id}/{session_id}/anat/{subject_id}_{session_id}_atlas_2754.nii.gz',
+                 'atlas': 'external/atlas_craddock/{subject_id}.nii.gz',
                  }
     selectfiles = pe.Node(SelectFiles(templates,
                                       base_directory=DATA),
@@ -255,8 +243,7 @@ def run_spm_fsl_dti_preprocessing(subject_list, session_list):
                 (selectfiles, coreg_dti_wf, [("brain_mask", "dti_co_input.brain_mask"),
                                              ("anat_biascorr",  "dti_co_input.anat")
                                             ]),
-                (selectfiles,  coreg_dti_wf, [("atlas_2514", "dti_co_input.atlas_2514")]),
-                (selectfiles,  coreg_dti_wf, [("atlas_2754", "dti_co_input.atlas_2754")]),
+                (selectfiles,  coreg_dti_wf, [("atlas", "dti_co_input.atlas")]),
                 (coreg_dti_wf, datasink,     [("dti_co_output.atlas_2514_diff", "diff.@atlas_2514")]),
                 (coreg_dti_wf, datasink,     [("dti_co_output.atlas_2754_diff", "diff.@atlas_2754")]),
                 (coreg_dti_wf, datasink, [("dti_co_output.anat_diff",       "diff.@anat_diff"),
