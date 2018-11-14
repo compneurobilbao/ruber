@@ -85,10 +85,10 @@ def spm_anat_to_diff_coregistration(wf_name="spm_anat_to_diff_coregistration"):
                   "atlas_diff",
                   ]
     
-    gunzip_atlas = pe.Node(Gunzip(), name="gunzip_atlas_2514")
+    gunzip_atlas = pe.Node(Gunzip(), name="gunzip_atlas")
     gunzip_anat = pe.Node(Gunzip(), name="gunzip_anat")
     gunzip_brain_mask = pe.Node(Gunzip(), name="brain_mask")
-    coreg_atlas = pe.Node(spm_coregister(cost_function="mi"), name="coreg_atlas_2514")
+    coreg_atlas = pe.Node(spm_coregister(cost_function="mi"), name="coreg_atlas")
     # set the registration interpolation to nearest neighbour.
     coreg_atlas.inputs.write_interp = 0
     
@@ -244,8 +244,7 @@ def run_spm_fsl_dti_preprocessing(subject_list, session_list):
                                              ("anat_biascorr",  "dti_co_input.anat")
                                             ]),
                 (selectfiles,  coreg_dti_wf, [("atlas", "dti_co_input.atlas")]),
-                (coreg_dti_wf, datasink,     [("dti_co_output.atlas_2514_diff", "diff.@atlas_2514")]),
-                (coreg_dti_wf, datasink,     [("dti_co_output.atlas_2754_diff", "diff.@atlas_2754")]),
+                (coreg_dti_wf, datasink,     [("dti_co_output.atlas_diff", "diff.@atlas_crad")]),
                 (coreg_dti_wf, datasink, [("dti_co_output.anat_diff",       "diff.@anat_diff"),
                                            ("dti_co_output.brain_mask_diff", "diff.@brain_mask"),
                                           ]),

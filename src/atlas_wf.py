@@ -57,7 +57,7 @@ dMRI pipeline
 """
 
 # This correction might not be needed if we already run it!!
-run_dti_artifact_correction(SUBJECT_LIST, SESSION_LIST)
+# run_dti_artifact_correction(SUBJECT_LIST, SESSION_LIST)
 
 run_spm_fsl_dti_preprocessing(SUBJECT_LIST, SESSION_LIST)
 
