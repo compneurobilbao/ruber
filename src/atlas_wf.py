@@ -65,7 +65,8 @@ correct_dwi_space_atlas(SUBJECT_LIST, SESSION_LIST)
 
 run_camino_tractography(SUBJECT_LIST, SESSION_LIST)
 
-run_dtk_tractography(SUBJECT_LIST, SESSION_LIST)
+# This correction might not be needed if we already run it!!
+# run_dtk_tractography(SUBJECT_LIST, SESSION_LIST)
 
 get_con_matrix_matlab(SUBJECT_LIST, SESSION_LIST)
 

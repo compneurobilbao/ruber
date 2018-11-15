@@ -247,43 +247,44 @@ def get_con_matrix_matlab(subject_list, session_list):
     Function to get atlas-wise connectivity matrix. End-to-end fiber counting.
     Camino's workflow is not calculating end-to-end
     """
+    
     sub_ses_comb = [[subject, session] for subject in subject_list
                     for session in session_list]
 
     for sub, ses in sub_ses_comb:
-        for atlas in ATLAS_TYPES:
-
-            num_nodes = atlas[-4:]
-            out_folder = opj(DATA, 'processed', 'tract',
-                             '_session_id_' + ses + '_subject_id_' + sub)
-            tracts_file = opj(out_folder, 'tracts.Bfloat_' + num_nodes)
-            reference_file = opj(DATA, 'processed', 'diff',
-                                 '_session_id_' + ses + '_subject_id_' + sub,
-                                 'eddy_corrected_avg_b0.nii.gz')
-            atlas_file = opj(DATA, 'processed', 'diff',
+        out_folder = opj(DATA, 'processed', 'tract',
+                         '_session_id_' + ses + '_subject_id_' + sub)
+        tracts_file = opj(out_folder, 'tracts.Bfloat')
+        reference_file = opj(DATA, 'processed', 'diff',
                              '_session_id_' + ses + '_subject_id_' + sub,
-                             'r' + sub + '_' + ses + '_' + atlas + '.nii')
+                             'eddy_corrected_avg_b0.nii.gz')
+        atlas_file = opj(DATA, 'processed', 'diff',
+                         '_session_id_' + ses + '_subject_id_' + sub,
+                         'r' + sub + '.nii')
+                         
+        atlas_data = nib.load(atlas_file).get_data()
+        num_nodes = np.unique(atlas_data[~np.isnan(atlas_data)]).shape[0] - 1
 
-            try:
-                atlas_file = compress_file_gz(atlas_file)
-            except:
-                atlas_file = atlas_file + '.gz'
+        try:
+            atlas_file = compress_file_gz(atlas_file)
+        except:
+            atlas_file = atlas_file + '.gz'
 
-            matlab_path = opj(os.getcwd(), 'src', 'matlab')
+        matlab_path = opj(os.getcwd(), 'src', 'matlab')
 
-            # Extract brain from subject space
-            command = ["matlab",
-                       "-nodisplay",
-                       "-nojvm",
-                       "-r",
-                       "addpath(\'" + matlab_path + "\');" +
-                       "calc_cm(" +
-                       "\'" + tracts_file + "\'," +
-                       "\'" + reference_file + "\'," +
-                       "\'" + atlas_file + "\'," +
-                       "\'" + out_folder + "\'," +
-                       num_nodes +
-                       "); exit;"
-                       ]
-            for output in execute(command):
-                print(output)
+        # Extract brain from subject space
+        command = ["matlab",
+                   "-nodisplay",
+                   "-nojvm",
+                   "-r",
+                   "addpath(\'" + matlab_path + "\');" +
+                   "calc_cm(" +
+                   "\'" + tracts_file + "\'," +
+                   "\'" + reference_file + "\'," +
+                   "\'" + atlas_file + "\'," +
+                   "\'" + out_folder + "\'," +
+                   str(num_nodes) +
+                   "); exit;"
+                   ]
+        for output in execute(command):
+            print(output)
