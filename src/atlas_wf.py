@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 from src.preproc import run_fmriprep, run_mriqc
 
-from src.postproc.utils import atlas_to_t1
+from src.postproc.utils import elec_to_t1
 
 from src.dmri import (run_dti_artifact_correction,
                       run_spm_fsl_dti_preprocessing,
@@ -43,7 +43,7 @@ run_mriqc(SUBJECT_LIST, SESSION_LIST)
 Atlas to T1w space
 """
 
-#atlas_to_t1(SUBJECT_LIST, SESSION_LIST)
+elec_to_t1(SUBJECT_LIST, SESSION_LIST)
 
 """
 fMRI pipeline postproc
