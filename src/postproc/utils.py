@@ -41,7 +41,7 @@ def scrubbing(time_series, FD, thres=0.2):
 
 def elec_to_t1(subject_list, session_list):
     """
-    Atlas to T1w space
+    Elec to T1w space
     """
     sub_ses_comb = [[subject, session] for subject in subject_list
                     for session in session_list]
@@ -178,15 +178,15 @@ def t1w_electrodes_to_09c(subject_list):
                    opj(DATA, 'raw', 'bids', sub, ses,
                        'electrodes_brain.nii.gz'),
                    '-ref',
-                   opj(EXTERNAL_MNI_09c,
-                       'mni_icbm152_t1_tal_nlin_asym_09c_brain.nii'),
+                   opj(PROCESSED, sub, ses, 'anat',
+                           sub + '_' + ses + '_T1w_brain.nii.gz'),
                    '-cost', 'mutualinfo',
                    '-out',
                    opj(DATA, 'raw', 'bids', sub, ses,
-                       'electrodes_brain_09c.nii.gz'),
+                       'electrodes_brain_t1w.nii.gz'),
                    '-omat',
                    opj(DATA, 'raw', 'bids', sub, ses,
-                       'elec_2_09c_' + sub + '_' + ses + '.mat'),
+                       'elec_2_t1w_' + sub + '_' + ses + '.mat'),
                    ]
 
 
@@ -197,7 +197,7 @@ def t1w_electrodes_to_09c(subject_list):
 def load_elec_file(elec_file):
 
     elec = {}
-    with open(elec_file) as f:t1w
+    with open(elec_file) as f:
         content = f.readlines()
 
     for line in content:
@@ -368,7 +368,7 @@ def transform_roi_to_dwi_space(sub, ses, input_roi_path, output_roi_path):
         command = ['flirt',
                    '-in',
                    opj(DATA, 'raw', 'bids', sub, 'electrodes',
-                       'electrodes_brain_09c.nii.gz'),
+                       'electrodes_brain_t1w.nii.gz'),
                    '-ref',
                    opj(DATA, 'processed', 'diff',
                        '_session_id_' + ses + '_subject_id_' + sub,
@@ -423,8 +423,8 @@ def create_electrode_rois(sub, ses, atlas, vxl_loc, roi):
 
             # Create point
             command = ['fslmaths',
-                       opj(EXTERNAL_MNI_09c,
-                           'mni_icbm152_t1_tal_nlin_asym_09c_brain.nii'),
+                       opj(PROCESSED, sub, ses, 'anat',
+                           'elec_' + sub + '_' + ses + '_subjects_space.nii.gz'),
                        '-mul', '0', '-add', '1',
                        '-roi', str(x), '1', str(y), '1', str(z), '1', '0', '1',
                        temp_file[1],
@@ -557,7 +557,7 @@ def calc_con_mat_electrodes(subject_list, session_list):
                 con_mat[tag2, tag1] = results[idx]
 
             np.save(opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
-                        'con_mat_' + atlas), con_mat)
+                        'con_mat_t1w' + atlas), con_mat)
 
 """
 APROACH 2: NO ATLAS
@@ -574,8 +574,8 @@ def create_electrode_roi_noatlas(args):
 
     # Create point
     command = ['fslmaths',
-               opj(EXTERNAL_MNI_09c,
-                   'mni_icbm152_t1_tal_nlin_asym_09c_brain.nii'),
+               opj(PROCESSED, sub, ses, 'anat',
+                           'elec_' + sub + '_' + ses + '_subjects_space.nii.gz'),
                '-mul', '0', '-add', '1',
                '-roi', str(x), '1', str(y), '1', str(z), '1', '0', '1',
                temp_file[1],
@@ -725,7 +725,7 @@ def calc_con_mat_electrodes_noatlas(subject_list, session_list):
                 con_mat[tag2, tag1] = results[idx]
 
             np.save(opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
-                        'con_mat_noatlas_' + str(sphere_size)), con_mat)
+                        'con_mat_noatlas_t1w' + str(sphere_size)), con_mat)
 
             single_dwi_atlas_from_rois(sub, ses, sphere_size)
 
