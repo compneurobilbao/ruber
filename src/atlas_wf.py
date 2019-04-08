@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# you have to be in the ruber directory in the terminal befiore entering in python
 from src.preproc import run_fmriprep, run_mriqc
 
 from src.postproc.utils import elec_to_t1
@@ -34,8 +35,8 @@ run_fmriprep(SUBJECT_LIST, SESSION_LIST)
 
 run_mriqc(SUBJECT_LIST, SESSION_LIST)
 
-# WARNING!! Execute permission change over files before continue
-#OUTPUT_DIR=/home/asier/git/ruber/data/processed
+# WARNING!! Execute permission change over files before continue; so go to terminal by typing "exit()" and themn run the two commands below, then go back to python
+#OUTPUT_DIR=("/home/asier/git/ruber/data/processed")
 #sudo chmod 777 -R $OUTPUT_DIR
 
 
@@ -57,7 +58,7 @@ dMRI pipeline
 """
 
 # This correction might not be needed if we already run it!!
-# run_dti_artifact_correction(SUBJECT_LIST, SESSION_LIST)
+run_dti_artifact_correction(SUBJECT_LIST, SESSION_LIST)
 
 run_spm_fsl_dti_preprocessing(SUBJECT_LIST, SESSION_LIST)
 

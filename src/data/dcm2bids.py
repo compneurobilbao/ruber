@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 ONLY WORKS WITH python 2.7 DUE TO DCMSTACK. "source activate ruber"

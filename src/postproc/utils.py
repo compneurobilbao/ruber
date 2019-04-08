@@ -39,7 +39,7 @@ def scrubbing(time_series, FD, thres=0.2):
     return scrubbed_time_series.T
 
 
-def elect_to_t1(subject_list, session_list):
+def elec_to_t1(subject_list, session_list):
     """
     Atlas to T1w space
     """
@@ -197,7 +197,7 @@ def t1w_electrodes_to_09c(subject_list):
 def load_elec_file(elec_file):
 
     elec = {}
-    with open(elec_file) as f:
+    with open(elec_file) as f:t1w
         content = f.readlines()
 
     for line in content:

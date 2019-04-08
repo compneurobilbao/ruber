@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# you have to be in the ruber directory in the terminal befiore entering in python
 from src.preproc import run_fmriprep, run_mriqc
 
 from src.postproc.utils import atlas_to_t1
@@ -19,7 +20,7 @@ from src.postproc.utils import (t1w_electrodes_to_09c,
                                 calc_con_mat_electrodes_noatlas
                                 )
 
-SUBJECT_LIST = ['sub-100']
+SUBJECT_LIST = ['sub-001']
 SESSION_LIST = ['ses-presurg']
 
 ## WARNING: FIRST RUN atlas_wf.py
@@ -30,17 +31,18 @@ Electrodes location pipeline (WARNING: Some manual work)
 
 # FIRST: T1w_electrodes to 09c space
 # TODO: This part to nipype
-t1w_electrodes_to_09c(SUBJECT_LIST)
+t1w_electrodes_to_09c(SUBJECT_LIST) # Gianna: check if this is necessary!
 
 # WARNING! Create elec file (/home/asier/git/ruber/data/raw/bids/sub-XXX/electrodes/elec.loc)
 # manually !! Use electrodes_brain_09c.nii.gz
-#
-#from src.postproc.utils import contacts_from_electrode
-#elec_name = 'J'
-#contact_num = 5
-#first_contact_pos = [52, 141, 111]
-#last_contact_pos = [ 41, 150, 111]
-#contacts_from_electrode(first_contact_pos, last_contact_pos, contact_num, elec_name)
+# NOTE that in the common t1 space, I created the file elecT1space in the folder /home/asier/git/ruber/data/processed/fmriprep/sub-XXX/ses-presurg/anat/  
+#loc
+from src.postproc.utils import contacts_from_electrode
+elec_name = 'H'
+contact_num = 12
+first_contact_pos = [64, 95, 145]
+last_contact_pos = [ 34, 71, 141]
+contacts_from_electrode(first_contact_pos, last_contact_pos, contact_num, elec_name)
 
 # copy the result from 'contacts_from_electrode' to elec.loc
 
