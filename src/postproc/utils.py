@@ -362,7 +362,7 @@ def order_dict(dictionary):
 def transform_roi_to_dwi_space(sub, ses, input_roi_path, output_roi_path):
 
     omat = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
-               'elec2dwi.omat')
+               'elect12dwi.omat')
 
     if not os.path.exists(omat):
         command = ['flirt',
