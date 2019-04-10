@@ -3,8 +3,6 @@
 # you have to be in the ruber directory in the terminal befiore entering in python
 from src.preproc import run_fmriprep, run_mriqc
 
-from src.postproc.utils import atlas_to_t1
-
 from src.dmri import (run_dti_artifact_correction,
                       run_spm_fsl_dti_preprocessing,
                       run_camino_tractography,

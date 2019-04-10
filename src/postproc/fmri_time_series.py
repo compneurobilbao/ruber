@@ -172,7 +172,7 @@ def clean_and_get_time_series_noatlas(subject_list, session_list):
             confounds_path = opj(base_path, sub + '_' + ses +
                                  '_task-rest_bold_confounds.tsv')
             preproc_data = opj(base_path, sub + '_' + ses +
-                               '_task-rest_bold_space-T1W_preproc.nii.gz')
+                               '_task-rest_bold_space-T1w_preproc.nii.gz')
 
             confounds = pd.read_csv(confounds_path,
                                     delimiter='\t', na_values='n/a').fillna(0)
@@ -204,7 +204,7 @@ def clean_and_get_time_series_noatlas(subject_list, session_list):
                         print('fMRI signal extraction unsucccesful')
                             
 
-                np.savetxt(opj(base_path, 'time_series_noatlas_gsr_T1Wspace' + str(sphere_size) + '.txt'),
+                np.savetxt(opj(base_path, 'time_series_noatlas_gsr_T1wspace' + str(sphere_size) + '.txt'),
                            time_series)
 
     return
