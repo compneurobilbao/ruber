@@ -54,6 +54,19 @@ def elec_to_t1(subject_list, session_list):
             print('Calculating: Subject ', sub, ' and session', ses)
 
             # Brain elec -> Brain subject (save omat)
+            command = ['fslmaths',
+                       opj(PROCESSED, sub, ses, 'anat',
+                           sub + '_' + ses + '_T1w_preproc.nii.gz'),
+                       '-mas',
+                       opj(PROCESSED, sub, ses, 'anat',
+                           sub + '_' + ses + '_T1w_brainmask.nii.gz'),
+                       opj(PROCESSED, sub, ses, 'anat',
+                           sub + '_' + ses + '_T1w_brain.nii.gz'),
+                       ]
+            for output in execute(command):
+                print(output)
+                
+            # Brain elec -> Brain subject (save omat)
             command = ['flirt',
                        '-in',
                        opj(DATA,
