@@ -18,7 +18,7 @@ from src.postproc.utils import (t1w_electrodes_to_09c,
                                 calc_con_mat_electrodes_noatlas
                                 )
 
-SUBJECT_LIST = ['sub-002']
+SUBJECT_LIST = ['sub-007']
 SESSION_LIST = ['ses-presurg']
 
 ## WARNING: FIRST RUN atlas_wf.py
@@ -26,19 +26,15 @@ SESSION_LIST = ['ses-presurg']
 """
 Electrodes location pipeline (WARNING: Some manual work)
 """
-
-# FIRST: T1w_electrodes to 09c space
-# TODO: This part to nipype
-t1w_electrodes_to_09c(SUBJECT_LIST)
 # WARNING! Create elec file (/home/asier/git/ruber/data/raw/bids/sub-XXX/electrodes/elec.loc)
 # manually !! Use electrodes_brain_09c.nii.gz
 # NOTE that in the common t1 space, I created the file elecT1space in the folder /home/asier/git/ruber/data/processed/fmriprep/sub-XXX/ses-presurg/anat/  
 #loc
 from src.postproc.utils import contacts_from_electrode
-elec_name = 'H'
-contact_num = 12
-first_contact_pos = [64, 95, 145]
-last_contact_pos = [ 34, 71, 141]
+elec_name = 'G'
+contact_num = 10
+first_contact_pos = [54, 85, 131]
+last_contact_pos = [ 28, 72, 126]
 contacts_from_electrode(first_contact_pos, last_contact_pos, contact_num, elec_name)
 
 # copy the result from 'contacts_from_electrode' to elec.loc

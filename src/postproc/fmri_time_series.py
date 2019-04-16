@@ -71,7 +71,8 @@ def rois_2_bold_space_noatlas(sub, ses, preproc_data):
         for file in os.listdir(output_dir):
             roi_img = nib.load(opj(output_dir, file))
             resampled_roi = resample_img(roi_img, target_affine=fmri.affine,
-                                         interpolation='nearest')
+                                         interpolation='nearest',
+                                         target_shape=fmri.shape[:3])
             nib.save(resampled_roi, opj(output_dir_fmri, file))
 
 

@@ -24,7 +24,7 @@ from src.postproc.utils import (t1w_electrodes_to_09c,
                                 export_data_to_mat,
                                 )
 
-SUBJECT_LIST = ['sub-002']
+SUBJECT_LIST = ['sub-009']
 SESSION_LIST = ['ses-presurg']
 
 """
@@ -44,6 +44,7 @@ run_mriqc(SUBJECT_LIST, SESSION_LIST)
 Atlas to T1w space
 """
 
+t1w_electrodes_to_09c(SUBJECT_LIST, SESSION_LIST)
 elec_to_t1(SUBJECT_LIST, SESSION_LIST)
 
 """
