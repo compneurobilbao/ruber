@@ -149,7 +149,7 @@ def get_timeseries(args):
 
     # 2.- Scrubbing
     # extract FramewiseDisplacement
-    FD = confounds.iloc[:, 5].as_matrix()
+    FD = confounds.iloc[:, 6].as_matrix()
     time_series = scrubbing(time_series, FD, FRAMEWISE_DISP_THRES)
 
     # Save time series
