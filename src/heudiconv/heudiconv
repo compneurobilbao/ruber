@@ -305,7 +305,7 @@ def process_dicoms(fl, dcmsession=None, basedir=None, dcmfilter=None):
         #if dcminfo.SeriesDescription == 'ep2d_bold_moco_p2':
         #    import pdb; pdb.set_trace()
         seqinfo.append(info)
-    lgr.info("Generated sequence info with %d entries", len(info))
+    lgr.info("Generated sequence info with %d entries")#, len(info))
     return seqinfo, filegroup
 
 

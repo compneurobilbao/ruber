@@ -188,7 +188,10 @@ def dti_acquisition_parameters(in_file, epi_factor=128):
     # (number of phase-encode steps - 1) *
     # (echo spacing time in milliseconds) *
     # (seconds per millisecond)
-    total_readout_time = (epi_factor - 1) * float(descrip["dwell"]) * 1e-3
+    try:
+       total_readout_time = (epi_factor - 1) * float(descrip["dwell"]) * 1e-3
+    except:
+    	 total_readout_time = (epi_factor - 1) * 0.33 * 1e-3 # if not dwell (sub008 and onwards, let's put the default))
 
     with open(acqp_file, "wt") as fout:
         fout.write("{} {}\n".format(pe_axis, total_readout_time))

@@ -20,6 +20,7 @@ from src.postproc.utils import (scrubbing,
                                 atlas_with_all_rois,
                                 load_elec_file,
                                 order_dict,
+                                rois_not_empty,
                                 )
 import pandas as pd
 import numpy as np
@@ -179,6 +180,7 @@ def clean_and_get_time_series_noatlas(subject_list, session_list):
                                     delimiter='\t', na_values='n/a').fillna(0)
             
             rois_2_bold_space_noatlas(sub, ses, preproc_data)
+            rois_not_empty(sub, ses)
 
             elec_file_vxl = opj(DATA, 'raw', 'bids', sub, 'electrodes',
                                 'elec.loc')

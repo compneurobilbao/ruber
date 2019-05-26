@@ -123,6 +123,41 @@ def atlas_with_all_rois(sub, ses, atlas, atlas_new):
 #                 '_' + atlas + '_bold_space.nii.gz'))
 
 
+def rois_not_empty(sub, ses):
+    """
+    Function to correct rois after resampling (2mm),
+    this function recovers those lost rois
+    """
+    for sphere_size in ELECTRODE_SPHERE_SIZE:
+
+        input_dir = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
+                         'noatlas_' + str(sphere_size))
+        output_dir = opj(DATA, 'raw', 'bids', sub, 'electrodes', ses,
+                              'noatlas_fmri_' + str(sphere_size))
+
+        for file in os.listdir(output_dir):
+            output_img = nib.load(opj(output_dir, file))   
+            m = output_img.affine[:3, :3]
+            output_img_data = output_img.get_data()
+            output_img_data_rois = np.unique(output_img_data)
+
+            if output_img_data_rois.shape[0] == 1:
+                input_img_data = nib.load(opj(input_dir, file)).get_data()
+                input_img_data_rois = np.unique(input_img_data)
+                
+                input_img = nib.load(opj(input_dir, file))
+                size = np.argwhere(input_img_data == input_img_data_rois[1]).shape[0]//2
+                p = np.argwhere(input_img_data == input_img_data_rois[1])[size]
+                x, y, z = (np.round(np.diag(np.divide(p, m)))).astype(int)
+                output_img_data[x, y, z] = int(input_img_data_rois[1])
+
+                output_data_roi_corrected = nib.Nifti1Image(output_img_data,
+                                                            affine=output_img.affine)
+
+                nib.save(output_data_roi_corrected,
+                         opj(output_dir, file))
+
+
 def extend_elec_location(elec_location):
 
     for elec_key, value in elec_location.items():
