@@ -142,14 +142,17 @@ def rois_not_empty(sub, ses):
             output_img_data_rois = np.unique(output_img_data)
 
             if output_img_data_rois.shape[0] == 1:
-                input_img_data = nib.load(opj(input_dir, file)).get_data()
+                input_img_data_img = nib.load(opj(input_dir, file))
+                input_img_data = input_img_data_img.get_data()
                 input_img_data_rois = np.unique(input_img_data)
                 
-                input_img = nib.load(opj(input_dir, file))
-                size = np.argwhere(input_img_data == input_img_data_rois[1]).shape[0]//2
-                p = np.argwhere(input_img_data == input_img_data_rois[1])[size]
-                x, y, z = (np.round(np.diag(np.divide(p, m)))).astype(int)
-                output_img_data[x, y, z] = int(input_img_data_rois[1])
+                resampled = resample_img(input_img_data_img, target_affine=output_img.affine,
+                                               interpolation='continuous')
+                
+                p = np.argwhere(resampled.get_data()>0.1)
+                for point in p:
+                    x, y, z = point
+                    output_img_data[x, y, z] = int(input_img_data_rois[1])
 
                 output_data_roi_corrected = nib.Nifti1Image(output_img_data,
                                                             affine=output_img.affine)
